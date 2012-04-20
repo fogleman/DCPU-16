@@ -29,6 +29,7 @@ class Canvas(wx.Panel):
             0xe: wx.Brush(wx.Colour(0xff, 0xff, 0x55)),
             0xf: wx.Brush(wx.Colour(0xff, 0xff, 0xff)),
         }
+        self.key_index = 0
         self.bitmap = wx.EmptyBitmap(1, 1)
         self.cache = {}
         self.scale = SCALE
@@ -36,14 +37,20 @@ class Canvas(wx.Panel):
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.Bind(wx.EVT_PAINT, self.on_paint)
-        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.Bind(wx.EVT_CHAR, self.on_char)
         wx.CallAfter(self.on_timer)
     def update(self, dt):
         cycle = self.emu.cycle + int(dt * emulator.CYCLES_PER_SECOND)
         while self.emu.cycle < cycle:
             self.emu.step(False)
-    def on_key_down(self, event):
-        print event.GetKeyCode()
+    def on_char(self, event):
+        if event.GetKeyCode() == wx.WXK_RETURN:
+            code = 0x0a
+        else:
+            code = event.GetUniChar()
+        self.emu.ram[0x9000 + self.key_index] = code
+        self.emu.ram[0x9010] = self.key_index
+        self.key_index = (self.key_index + 1) % 16
     def on_timer(self):
         now = time.time()
         dt = now - self.last_time
