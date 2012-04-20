@@ -29,7 +29,6 @@ class Canvas(wx.Panel):
             0xe: wx.Brush(wx.Colour(0xff, 0xff, 0x55)),
             0xf: wx.Brush(wx.Colour(0xff, 0xff, 0xff)),
         }
-        self.key_index = 0
         self.bitmap = wx.EmptyBitmap(1, 1)
         self.cache = {}
         self.scale = SCALE
@@ -44,13 +43,19 @@ class Canvas(wx.Panel):
         while self.emu.cycle < cycle:
             self.emu.step(False)
     def on_char(self, event):
-        if event.GetKeyCode() == wx.WXK_RETURN:
-            code = 0x0a
-        else:
-            code = event.GetUniChar()
-        self.emu.ram[0x9000 + self.key_index] = code
-        self.emu.ram[0x9010] = self.key_index
-        self.key_index = (self.key_index + 1) % 16
+        lookup = {
+            wx.WXK_LEFT: 0x25,
+            wx.WXK_UP: 0x26,
+            wx.WXK_RIGHT: 0x27,
+            wx.WXK_DOWN: 0x28,
+            wx.WXK_RETURN: 0x0a,
+        }
+        code = lookup.get(event.GetKeyCode(), event.GetUniChar())
+        for address in xrange(0x9000, 0x9010):
+            if not self.emu.ram[address]:
+                self.emu.ram[address] = code
+                self.emu.ram[0x9010] = address
+                break
     def on_timer(self):
         now = time.time()
         dt = now - self.last_time
@@ -62,6 +67,9 @@ class Canvas(wx.Panel):
         event.Skip()
         w, h = self.GetClientSize()
         self.bitmap = wx.EmptyBitmap(w, h)
+        dc = wx.MemoryDC(self.bitmap)
+        dc.SetBackground(wx.BLACK_BRUSH)
+        dc.Clear()
         self.cache = {}
         self.Refresh()
     def on_paint(self, event):
