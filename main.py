@@ -66,7 +66,10 @@ class Emulator(object):
         self.reset()
     # Logging Functions
     def dump(self):
-        print self.pc, self.sp, self.o, self.ram[REGISTER:REGISTER+8]
+        for name, value in zip(['PC', 'SP'], [self.pc, self.sp]):
+            print '%s = 0x%x' % (name, value)
+        for name, value in zip(REGISTERS, self.ram[REGISTER:REGISTER+8]):
+            print '%s = 0x%x' % (name, value)
     # Helper Properties
     @property
     def pc(self):
