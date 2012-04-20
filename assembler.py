@@ -42,20 +42,49 @@ SPECIAL = {
     'O':    0x1d,
 }
 
+# Helper Functions
+def string_data(x):
+    result = []
+    if len(x) % 2:
+        x += chr(0)
+    for a, b in zip(x[::2], x[1::2]):
+        result.append(ord(a) << 8 | ord(b))
+    return result
+
 # Classes
 class Program(object):
     def __init__(self, instructions):
         self.instructions = instructions
+        self.lookup = {}
+        self.size = 0
+        for instruction in instructions:
+            instruction.offset = self.size
+            if isinstance(instruction, Label):
+                self.lookup[instruction.name] = instruction.offset
+            self.size += instruction.size
+    def assemble(self):
+        result = []
+        for instruction in self.instructions:
+            result.extend(instruction.assemble(self.lookup))
+        return result
 
 class Data(object):
     def __init__(self, data):
         self.data = data
+        self.size = len(data)
+        self.offset = None
+    def assemble(self, lookup):
+        return self.data
     def __repr__(self):
-        return '<Data>'
+        return '<Data %s>' % str(self.data)
 
 class Label(object):
     def __init__(self, name):
         self.name = name
+        self.size = 0
+        self.offset = None
+    def assemble(self, lookup):
+        return []
     def __repr__(self):
         return ':%s' % self.name
 
@@ -64,6 +93,17 @@ class BasicInstruction(object):
         self.opcode = opcode
         self.arg1 = arg1
         self.arg2 = arg2
+        value = self.opcode
+        value |= (self.arg1.value & 0x3f) << 4
+        value |= (self.arg2.value & 0x3f) << 10
+        self.value = value
+        self.size = 1 + arg1.size + arg2.size
+        self.offset = None
+    def assemble(self, lookup):
+        result = [self.value]
+        result.extend(self.arg1.assemble(lookup))
+        result.extend(self.arg2.assemble(lookup))
+        return result
     def __repr__(self):
         return repr((self.opcode, self.arg1, self.arg2))
 
@@ -71,6 +111,16 @@ class NonBasicInstruction(object):
     def __init__(self, opcode, arg):
         self.opcode = opcode
         self.arg = arg
+        value = 0
+        value |= (self.opcode & 0x3f) << 4
+        value |= (self.arg.value & 0x3f) << 10
+        self.value = value
+        self.size = 1 + arg.size
+        self.offset = None
+    def assemble(self, lookup):
+        result = [self.value]
+        result.extend(self.arg.assemble(lookup))
+        return result
     def __repr__(self):
         return repr((self.opcode, self.arg))
 
@@ -78,6 +128,9 @@ class Operand(object):
     def __init__(self, value, word=None):
         self.value = value
         self.word = word
+        self.size = int(word is not None)
+    def assemble(self, lookup):
+        return [] if self.word is None else [lookup.get(self.word, self.word)]
     def __repr__(self):
         return repr(self.value) if self.word is None else repr((self.value, self.word))
 
@@ -166,15 +219,15 @@ def p_data2(t):
 
 def p_data3(t):
     'data : STRING'
-    t[0] = (t[1],)
-
-def p_instruction_label(t):
-    'instruction : LABEL'
-    t[0] = Label(t[1])
+    t[0] = tuple(string_data(t[1]))
 
 def p_instruction_data(t):
     'instruction : DAT data'
     t[0] = Data(t[2])
+
+def p_instruction_label(t):
+    'instruction : LABEL'
+    t[0] = Label(t[1])
 
 def p_instruction_basic(t):
     'instruction : basic_opcode operand operand'
@@ -194,11 +247,11 @@ def p_operand_register_dereference(t):
 
 def p_operand_register_literal1(t):
     'operand : LBRACK register PLUS literal RBRACK'
-    t[0] = Operand(REGISTERS[t[2]] + 0x08, t[4])
+    t[0] = Operand(REGISTERS[t[2]] + 0x10, t[4])
 
 def p_operand_register_literal2(t):
     'operand : LBRACK literal PLUS register RBRACK'
-    t[0] = Operand(REGISTERS[t[4]] + 0x08, t[2])
+    t[0] = Operand(REGISTERS[t[4]] + 0x10, t[2])
 
 def p_operand_special(t):
     'operand : special'
@@ -222,12 +275,12 @@ def p_literal(t):
     t[0] = t[1]
 
 def p_basic_opcode(t):
-    t[0] = t[1]
+    t[0] = BASIC_OPCODES[t[1]]
 p_basic_opcode.__doc__ = ('basic_opcode : %s' % 
     '\n | '.join(sorted(BASIC_OPCODES)))
 
 def p_non_basic_opcode(t):
-    t[0] = t[1]
+    t[0] = NON_BASIC_OPCODES[t[1]]
 p_non_basic_opcode.__doc__ = ('non_basic_opcode : %s' % 
     '\n | '.join(sorted(NON_BASIC_OPCODES)))
 
@@ -244,11 +297,10 @@ p_special.__doc__ = ('special : %s' %
 def p_error(t):
     raise Exception(t)
 
-# Construct Lexer and Parser
+# Parsing Functions
 import ply.lex as lex
 import ply.yacc as yacc
 
-# Parsing Functions
 def parse(text):
     lexer = lex.lex()
     parser = yacc.yacc(debug=False, write_tables=False)
@@ -265,7 +317,6 @@ if __name__ == '__main__':
     for name in os.listdir('programs'):
         if '.dasm' not in name:
             continue
-        print name
         program = parse_file(os.path.join('programs', name))
-        for instruction in program.instructions:
-            print instruction
+        data = program.assemble()
+        print name, program.size
