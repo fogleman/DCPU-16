@@ -4,7 +4,8 @@ import sys
 import time
 import wx
 
-SCALE = 8
+SCALE = 4
+BORDER = 10
 
 class Canvas(wx.Panel):
     def __init__(self, parent, emu):
@@ -49,7 +50,7 @@ class Canvas(wx.Panel):
         self.last_time = now
         self.update(dt)
         self.Refresh()
-        wx.CallLater(15, self.on_timer)
+        wx.CallLater(5, self.on_timer)
     def on_size(self, event):
         event.Skip()
         w, h = self.GetClientSize()
@@ -78,8 +79,8 @@ class Canvas(wx.Panel):
                 key = (back, fore, bitmap)
                 if self.cache.get((i, j)) != key:
                     self.cache[(i, j)] = key
-                    x = i * 4 * self.scale
-                    y = j * 8 * self.scale
+                    x = i * 4 * self.scale + BORDER
+                    y = j * 8 * self.scale + BORDER
                     self.draw_character(dc, x, y, back, fore, bitmap)
                 address += 1
     def draw_character(self, dc, x, y, back, fore, bitmap):
@@ -99,10 +100,11 @@ class Canvas(wx.Panel):
 
 def main(emu):
     app = wx.App(None)
-    frame = wx.Frame(None)
+    style = wx.DEFAULT_FRAME_STYLE & ~wx.RESIZE_BORDER & ~wx.MAXIMIZE_BOX
+    frame = wx.Frame(None, style=style)
     Canvas(frame, emu)
     frame.SetTitle('DCPU-16 Emulator')
-    frame.SetClientSize((128 * SCALE, 96 * SCALE))
+    frame.SetClientSize((128 * SCALE + BORDER * 2, 96 * SCALE + BORDER * 2))
     frame.Center()
     frame.Show()
     app.MainLoop()
