@@ -56,8 +56,8 @@ class Canvas(wx.Panel):
                 color = (value >> 8) & 0xff
                 back = self.colors[color & 0x0f]
                 fore = self.colors[(color >> 4) & 0x0f]
-                left = self.emu.ram[0x8180 + character]
-                right = self.emu.ram[0x8181 + character]
+                left = self.emu.ram[0x8180 + character * 2]
+                right = self.emu.ram[0x8181 + character * 2]
                 bitmap = left << 16 | right
                 x = i * 4 * self.scale
                 y = j * 8 * self.scale
