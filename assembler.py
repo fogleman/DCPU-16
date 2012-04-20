@@ -44,7 +44,42 @@ SPECIAL = {
 
 # Classes
 class Program(object):
-    pass
+    def __init__(self, instructions):
+        self.instructions = instructions
+
+class Data(object):
+    def __init__(self, data):
+        self.data = data
+    def __repr__(self):
+        return '<Data>'
+
+class Label(object):
+    def __init__(self, name):
+        self.name = name
+    def __repr__(self):
+        return ':%s' % self.name
+
+class BasicInstruction(object):
+    def __init__(self, opcode, arg1, arg2):
+        self.opcode = opcode
+        self.arg1 = arg1
+        self.arg2 = arg2
+    def __repr__(self):
+        return repr((self.opcode, self.arg1, self.arg2))
+
+class NonBasicInstruction(object):
+    def __init__(self, opcode, arg):
+        self.opcode = opcode
+        self.arg = arg
+    def __repr__(self):
+        return repr((self.opcode, self.arg))
+
+class Operand(object):
+    def __init__(self, value, word=None):
+        self.value = value
+        self.word = word
+    def __repr__(self):
+        return repr(self.value) if self.word is None else repr((self.value, self.word))
 
 # Lexer Rules
 reserved = (
@@ -79,6 +114,7 @@ def t_newline(t):
 
 def t_STRING(t):
     r'"[^"]*"'
+    t.value = t.value[1:-1]
     return t
 
 def t_HEX(t):
@@ -108,12 +144,16 @@ def t_error(t):
     raise Exception(t)
 
 # Parser Rules
-def p_program1(t):
-    'program : instruction program'
+def p_program(t):
+    'program : instructions'
+    t[0] = Program(t[1])
+
+def p_instructions1(t):
+    'instructions : instruction instructions'
     t[0] = (t[1],) + t[2]
 
-def p_program2(t):
-    'program : instruction'
+def p_instructions2(t):
+    'instructions : instruction'
     t[0] = (t[1],)
 
 def p_data1(t):
@@ -130,61 +170,55 @@ def p_data3(t):
 
 def p_instruction_label(t):
     'instruction : LABEL'
-    t[0] = t[1]
+    t[0] = Label(t[1])
 
 def p_instruction_data(t):
     'instruction : DAT data'
-    t[0] = t[2]
+    t[0] = Data(t[2])
 
 def p_instruction_basic(t):
     'instruction : basic_opcode operand operand'
-    t[0] = (t[1], t[2], t[3])
+    t[0] = BasicInstruction(t[1], t[2], t[3])
 
 def p_instruction_non_basic(t):
     'instruction : non_basic_opcode operand'
-    t[0] = (t[1], t[2])
+    t[0] = NonBasicInstruction(t[1], t[2])
 
 def p_operand_register(t):
     'operand : register'
-    t[0] = t[1]
+    t[0] = Operand(REGISTERS[t[1]])
 
 def p_operand_register_dereference(t):
     'operand : LBRACK register RBRACK'
-    t[0] = t[2]
+    t[0] = Operand(REGISTERS[t[2]] + 0x08)
 
-def p_operand_label_dereference(t):
-    'operand : LBRACK ID RBRACK'
-    t[0] = t[2]
+def p_operand_register_literal1(t):
+    'operand : LBRACK register PLUS literal RBRACK'
+    t[0] = Operand(REGISTERS[t[2]] + 0x08, t[4])
 
-def p_operand_register_literal(t):
-    '''operand : LBRACK register PLUS literal RBRACK
-               | LBRACK literal PLUS register RBRACK'''
-    t[0] = t[1]
-
-def p_operand_register_id(t):
-    '''operand : LBRACK register PLUS ID RBRACK
-               | LBRACK ID PLUS register RBRACK'''
-    t[0] = t[1]
-
-def p_operand_literal_dereference(t):
-    'operand : LBRACK literal RBRACK'
-    t[0] = t[2]
+def p_operand_register_literal2(t):
+    'operand : LBRACK literal PLUS register RBRACK'
+    t[0] = Operand(REGISTERS[t[4]] + 0x08, t[2])
 
 def p_operand_special(t):
     'operand : special'
-    t[0] = t[1]
+    t[0] = Operand(SPECIAL[t[1]])
+
+def p_operand_literal_dereference(t):
+    'operand : LBRACK literal RBRACK'
+    t[0] = Operand(0x1e, t[2])
 
 def p_operand_literal(t):
     'operand : literal'
-    t[0] = t[1]
-
-def p_operand_id(t):
-    'operand : ID'
-    t[0] = t[1]
+    if t[1] < 0x20:
+        t[0] = Operand(t[1] + 0x20)
+    else:
+        t[0] = Operand(0x1f, t[1])
 
 def p_literal(t):
     '''literal : DECIMAL
-               | HEX'''
+               | HEX
+               | ID'''
     t[0] = t[1]
 
 def p_basic_opcode(t):
@@ -232,4 +266,6 @@ if __name__ == '__main__':
         if '.dasm' not in name:
             continue
         print name
-        parse_file(os.path.join('programs', name))
+        program = parse_file(os.path.join('programs', name))
+        for instruction in program.instructions:
+            print instruction
