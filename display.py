@@ -10,27 +10,30 @@ class Canvas(wx.Panel):
     def __init__(self, parent, emu):
         super(Canvas, self).__init__(parent, style=wx.WANTS_CHARS)
         self.emu = emu
-        self.colors = {
-            0x0: wx.Colour(0x00, 0x00, 0x00),
-            0x1: wx.Colour(0x00, 0x00, 0xaa),
-            0x2: wx.Colour(0x00, 0xaa, 0x00),
-            0x3: wx.Colour(0x00, 0xaa, 0xaa),
-            0x4: wx.Colour(0xaa, 0x00, 0x00),
-            0x5: wx.Colour(0xaa, 0x00, 0xaa),
-            0x6: wx.Colour(0xaa, 0x55, 0x00),
-            0x7: wx.Colour(0xaa, 0xaa, 0xaa),
-            0x8: wx.Colour(0x55, 0x55, 0x55),
-            0x9: wx.Colour(0x55, 0x55, 0xff),
-            0xa: wx.Colour(0x55, 0xff, 0x55),
-            0xb: wx.Colour(0x55, 0xff, 0xff),
-            0xc: wx.Colour(0xff, 0x55, 0x55),
-            0xd: wx.Colour(0xff, 0x55, 0xff),
-            0xe: wx.Colour(0xff, 0xff, 0x55),
-            0xf: wx.Colour(0xff, 0xff, 0xff),
+        self.brushes = {
+            0x0: wx.Brush(wx.Colour(0x00, 0x00, 0x00)),
+            0x1: wx.Brush(wx.Colour(0x00, 0x00, 0xaa)),
+            0x2: wx.Brush(wx.Colour(0x00, 0xaa, 0x00)),
+            0x3: wx.Brush(wx.Colour(0x00, 0xaa, 0xaa)),
+            0x4: wx.Brush(wx.Colour(0xaa, 0x00, 0x00)),
+            0x5: wx.Brush(wx.Colour(0xaa, 0x00, 0xaa)),
+            0x6: wx.Brush(wx.Colour(0xaa, 0x55, 0x00)),
+            0x7: wx.Brush(wx.Colour(0xaa, 0xaa, 0xaa)),
+            0x8: wx.Brush(wx.Colour(0x55, 0x55, 0x55)),
+            0x9: wx.Brush(wx.Colour(0x55, 0x55, 0xff)),
+            0xa: wx.Brush(wx.Colour(0x55, 0xff, 0x55)),
+            0xb: wx.Brush(wx.Colour(0x55, 0xff, 0xff)),
+            0xc: wx.Brush(wx.Colour(0xff, 0x55, 0x55)),
+            0xd: wx.Brush(wx.Colour(0xff, 0x55, 0xff)),
+            0xe: wx.Brush(wx.Colour(0xff, 0xff, 0x55)),
+            0xf: wx.Brush(wx.Colour(0xff, 0xff, 0xff)),
         }
+        self.bitmap = wx.EmptyBitmap(1, 1)
+        self.cache = {}
         self.scale = SCALE
         self.last_time = time.time()
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
+        self.Bind(wx.EVT_SIZE, self.on_size)
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         wx.CallAfter(self.on_timer)
@@ -47,10 +50,18 @@ class Canvas(wx.Panel):
         self.update(dt)
         self.Refresh()
         wx.CallLater(15, self.on_timer)
+    def on_size(self, event):
+        event.Skip()
+        w, h = self.GetClientSize()
+        self.bitmap = wx.EmptyBitmap(w, h)
+        self.cache = {}
+        self.Refresh()
     def on_paint(self, event):
+        bitmap = self.bitmap
+        mdc = wx.MemoryDC(bitmap)
+        self.draw_screen(mdc)
         dc = wx.AutoBufferedPaintDC(self)
-        dc.Clear()
-        self.draw_screen(dc)
+        dc.Blit(0, 0, bitmap.GetWidth(), bitmap.GetHeight(), mdc, 0, 0)
     def draw_screen(self, dc):
         dc.SetPen(wx.TRANSPARENT_PEN)
         address = 0x8000
@@ -59,27 +70,31 @@ class Canvas(wx.Panel):
                 value = self.emu.ram[address]
                 character = value & 0xff
                 color = (value >> 8) & 0xff
-                back = self.colors[color & 0x0f]
-                fore = self.colors[(color >> 4) & 0x0f]
-                left = self.emu.ram[0x8180 + character * 2]
-                right = self.emu.ram[0x8181 + character * 2]
-                bitmap = left << 16 | right
-                x = i * 4 * self.scale
-                y = j * 8 * self.scale
-                dc.SetDeviceOrigin(x, y)
-                self.draw_character(dc, back, fore, bitmap)
+                back = color & 0x0f
+                fore = (color >> 4) & 0x0f
+                a = self.emu.ram[0x8180 + character * 2]
+                b = self.emu.ram[0x8181 + character * 2]
+                bitmap = a << 16 | b
+                key = (back, fore, bitmap)
+                if self.cache.get((i, j)) != key:
+                    self.cache[(i, j)] = key
+                    x = i * 4 * self.scale
+                    y = j * 8 * self.scale
+                    self.draw_character(dc, x, y, back, fore, bitmap)
                 address += 1
-    def draw_character(self, dc, back, fore, bitmap):
+    def draw_character(self, dc, x, y, back, fore, bitmap):
+        back = self.brushes[back]
+        fore = self.brushes[fore]
         mask = 1
-        for i in reversed(xrange(4)):
+        for i in xrange(3, -1, -1):
             for j in xrange(8):
-                x = i * self.scale
-                y = j * self.scale
+                dx = i * self.scale
+                dy = j * self.scale
                 if bitmap & mask:
-                    dc.SetBrush(wx.Brush(fore))
+                    dc.SetBrush(fore)
                 else:
-                    dc.SetBrush(wx.Brush(back))
-                dc.DrawRectangle(x, y, self.scale, self.scale)
+                    dc.SetBrush(back)
+                dc.DrawRectangle(x + dx, y + dy, self.scale, self.scale)
                 mask <<= 1
 
 def main(emu):
