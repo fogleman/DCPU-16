@@ -4,6 +4,8 @@ import sys
 import time
 import wx
 
+SCALE = 8
+
 class Canvas(wx.Panel):
     def __init__(self, parent, emu):
         super(Canvas, self).__init__(parent)
@@ -26,7 +28,7 @@ class Canvas(wx.Panel):
             0xe: wx.Colour(0xff, 0xff, 0x55),
             0xf: wx.Colour(0xff, 0xff, 0xff),
         }
-        self.scale = 4
+        self.scale = SCALE
         self.last_time = time.time()
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_PAINT, self.on_paint)
@@ -82,7 +84,7 @@ def main(emu):
     frame = wx.Frame(None)
     Canvas(frame, emu)
     frame.SetTitle('DCPU-16 Emulator')
-    frame.SetClientSize((128 * 4, 96 * 4))
+    frame.SetClientSize((128 * SCALE, 96 * SCALE))
     frame.Center()
     frame.Show()
     app.MainLoop()

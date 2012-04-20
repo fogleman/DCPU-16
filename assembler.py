@@ -42,15 +42,6 @@ SPECIAL = {
     'O':    0x1d,
 }
 
-# Helper Functions
-def string_data(x):
-    result = []
-    if len(x) % 2:
-        x += chr(0)
-    for a, b in zip(x[::2], x[1::2]):
-        result.append(ord(a) << 8 | ord(b))
-    return result
-
 # Classes
 class Program(object):
     def __init__(self, instructions):
@@ -209,7 +200,7 @@ def p_data2(t):
 
 def p_data3(t):
     'data : STRING'
-    t[0] = tuple(string_data(t[1]))
+    t[0] = tuple(ord(x) for x in t[1])
 
 def p_instruction_data(t):
     'instruction : DAT data'

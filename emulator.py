@@ -218,10 +218,11 @@ class Emulator(object):
         return 2
     def MUL(self, a, b):
         o, self.ram[a] = divmod(self.ram[a] * b, SIZE)
-        self.o = 1 if o else 0
+        self.o = o % SIZE
         return 2
     def DIV(self, a, b):
         if b:
+            self.o = ((self.ram[a] << 16) / b) % SIZE
             self.ram[a] /= b
         else:
             self.ram[a] = 0
@@ -234,9 +235,10 @@ class Emulator(object):
         return 3
     def SHL(self, a, b):
         o, self.ram[a] = divmod(self.ram[a] << b, SIZE)
-        self.o = 1 if o else 0
+        self.o = o % SIZE
         return 2
     def SHR(self, a, b):
+        self.o = ((self.ram[a] << 16) >> b) % SIZE
         self.ram[a] >>= b
         return 2
     def AND(self, a, b):
