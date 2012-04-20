@@ -4,6 +4,10 @@
 - Assembler
 - 32x12 Display
 
+### Videos
+
+- http://www.youtube.com/watch?v=qIyYhIZ0VqI
+
 ### Screenshot
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/screenshot.png)
