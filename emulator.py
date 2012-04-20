@@ -142,9 +142,9 @@ class Emulator(object):
             self.basic_instruction(op, a, b)
         else:
             self.non_basic_instruction(a, b)
-        cycles = self.cycle - last_cycle
-        seconds = float(cycles) / CYCLES_PER_SECOND
         if sleep:
+            cycles = self.cycle - last_cycle
+            seconds = float(cycles) / CYCLES_PER_SECOND
             time.sleep(seconds)
     def basic_instruction(self, op, a, b):
         a, _ta = self.operand(a, False)
