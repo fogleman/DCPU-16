@@ -301,6 +301,15 @@ def parse_file(path):
         text = fp.read()
     return parse(text)
 
+def assemble(text):
+    program = parse(text)
+    return program.assemble()
+
+def assemble_file(path):
+    with open(path) as fp:
+        text = fp.read()
+    return assemble(text)
+
 # Main
 if __name__ == '__main__':
     import os
