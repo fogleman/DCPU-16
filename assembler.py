@@ -75,8 +75,6 @@ class Data(object):
         self.offset = None
     def assemble(self, lookup):
         return self.data
-    def __repr__(self):
-        return '<Data %s>' % str(self.data)
 
 class Label(object):
     def __init__(self, name):
@@ -85,8 +83,6 @@ class Label(object):
         self.offset = None
     def assemble(self, lookup):
         return []
-    def __repr__(self):
-        return ':%s' % self.name
 
 class BasicInstruction(object):
     def __init__(self, opcode, arg1, arg2):
@@ -104,8 +100,6 @@ class BasicInstruction(object):
         result.extend(self.arg1.assemble(lookup))
         result.extend(self.arg2.assemble(lookup))
         return result
-    def __repr__(self):
-        return repr((self.opcode, self.arg1, self.arg2))
 
 class NonBasicInstruction(object):
     def __init__(self, opcode, arg):
@@ -121,8 +115,6 @@ class NonBasicInstruction(object):
         result = [self.value]
         result.extend(self.arg.assemble(lookup))
         return result
-    def __repr__(self):
-        return repr((self.opcode, self.arg))
 
 class Operand(object):
     def __init__(self, value, word=None):
@@ -131,8 +123,6 @@ class Operand(object):
         self.size = int(word is not None)
     def assemble(self, lookup):
         return [] if self.word is None else [lookup.get(self.word, self.word)]
-    def __repr__(self):
-        return repr(self.value) if self.word is None else repr((self.value, self.word))
 
 # Lexer Rules
 reserved = (
