@@ -8,7 +8,7 @@ SCALE = 8
 
 class Canvas(wx.Panel):
     def __init__(self, parent, emu):
-        super(Canvas, self).__init__(parent)
+        super(Canvas, self).__init__(parent, style=wx.WANTS_CHARS)
         self.emu = emu
         self.colors = {
             0x0: wx.Colour(0x00, 0x00, 0x00),
@@ -32,11 +32,14 @@ class Canvas(wx.Panel):
         self.last_time = time.time()
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_PAINT, self.on_paint)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
         wx.CallAfter(self.on_timer)
     def update(self, dt):
         cycle = self.emu.cycle + int(dt * emulator.CYCLES_PER_SECOND)
         while self.emu.cycle < cycle:
             self.emu.step(False)
+    def on_key_down(self, event):
+        print event.GetKeyCode()
     def on_timer(self):
         now = time.time()
         dt = now - self.last_time

@@ -7,6 +7,7 @@ REGISTER = 0x10000
 PC = 0x10008
 SP = 0x10009
 O = 0x1000a
+LIT = 0x1000b
 REGISTERS = 'ABCXYZIJ'
 CYCLES_PER_SECOND = 100000
 
@@ -104,6 +105,12 @@ class Emulator(object):
     @o.setter
     def o(self, x):
         self.ram[O] = x
+    @property
+    def lit(self):
+        return self.ram[LIT]
+    @lit.setter
+    def lit(self, x):
+        self.ram[LIT] = x
     # Initialization Functions
     def reset(self):
         self.ram = [0] * (SIZE + 12)
@@ -201,6 +208,9 @@ class Emulator(object):
             literal = True
             desc = '0x%04x' % (x - 0x20)
             result = x - 0x20
+        if literal and not dereference:
+            self.lit = result
+            result = LIT
         if dereference and not literal:
             result = self.ram[result]
         return result, desc
