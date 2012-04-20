@@ -1,0 +1,1272 @@
+;                         MINESWEEPER by RHY3756547
+;
+;                          My first DCPU-16 project
+;               Feel free to fork and port for operating systems.
+;                           Heavily commented. :>
+;
+;                           Twitter: #RHY3756547
+
+;                    ARROW KEYS to move, ENTER to select.
+;                       F to toggle flag on location.
+
+;            Upon winning or losing, press enter to start again.
+
+JSR intro
+
+SET A, tile0
+SET B, 89
+SET C, 0x8182
+JSR storetiles
+:restart
+SET [gamestate], 0
+SET [gametimer], 0
+SET [game_started], 0
+SET [old_select_x], 10
+SET [old_select_y], 10
+JSR clear_board
+SET A, boardtiles_l1
+SET B, 384
+SET C, 0x8000
+JSR drawtiles
+
+SET A, minestext
+SET B, 2
+SET C, 0x8122
+SET Y, 0x8F00
+JSR drawtext
+JSR draw_timer
+
+JSR change_selection
+SET PC, gameloop
+
+:gametimer DAT 0
+:timer_second_value DAT 575
+:youwintext DAT 0x004F, 0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055
+:youlosetext DAT 0x004F, 0x0050, 0x0051, 0x0056, 0x0057, 0x0058, 0x0059
+:logosmiley1 DAT 0x0000, 0xF014, 0xF015, 0xF016, 0xF017, 0x0000
+:logosmiley2 DAT 0xF033, 0xF034, 0xF035, 0xF036, 0xF037, 0xF038
+:logosmiley3 DAT 0x0000, 0xF039, 0xF03A, 0xF03B, 0xF03C, 0x0000
+:logosmiley2g DAT 0xF033, 0xF018, 0xF05C, 0xF07C, 0xF01C, 0xF038
+
+:blklogosmiley1 DAT 0xFF00, 0x0F14, 0x0F15, 0x0F16, 0x0F17, 0xFF00
+:blklogosmiley2 DAT 0x0F33, 0x0F18, 0x0F5C, 0x0F7C, 0x0F1C, 0x0F38
+:blklogosmiley3 DAT 0xFF00, 0x0F39, 0x0F3A, 0x0F3B, 0x0F3C, 0xFF00
+
+:spectrum DAT 0x0001, 0x0009, 0x0003, 0x000B, 0x0003, 0x0009
+
+:glasses1 DAT 0xF019, 0xF01A, 0xF01B, 0xF01C
+:glasses2 DAT 0xF01D, 0xF01E, 0xF01F, 0xF03D
+:glasses3 DAT 0xF03F, 0xF03F, 0xF03F, 0xF03F
+:glasses4 DAT 0x0000, 0xF05F, 0xF07D, 0xF07E
+:glasblank DAT 0x0000, 0x0000, 0x0000, 0x0000
+
+:minewhitetop DAT 0xF000, 0xF001, 0xF002, 0xF003, 0xF004, 0xF005, 0xF006, 0xF007, 0xF008, 0xF009, 0xF00A, 0xF00B, 0xF00C, 0xF00D, 0xF00E, 0xF00F, 0xF010, 0xF011, 0xF012
+
+:minewhitebtm DAT 0xF020, 0xF021, 0xF022, 0xF023, 0xF024, 0xF025, 0xF026 0xF027, 0xF028, 0xF029, 0xF02A, 0xF02B, 0xF02C, 0xF02D, 0xF02E, 0xF02F, 0xF030, 0xF031, 0xF032, 0xF032
+
+:sweeperwhitetop DAT 0xF040, 0xF041, 0xF042, 0xF043, 0xF044, 0xF045, 0xF046, 0xF047, 0xF048, 0xF049, 0xF04A, 0xF04B, 0xF04C, 0xF04D, 0xF04E, 0xF04F, 0xF050, 0xF051, 0xF052, 0xF053, 0xF054, 0xF055, 0xF056, 0xF057, 0xF058, 0xF059, 0xF05A, 0xF05B
+
+:sweeperwhitebtm DAT 0xF060, 0xF061, 0xF062, 0xF063, 0xF064, 0xF065, 0xF066 0xF067, 0xF068, 0xF069, 0xF06A, 0xF06B, 0xF06C, 0xF06D, 0xF06E, 0xF06F, 0xF070, 0xF071, 0xF072, 0xF073, 0xF074, 0xF075, 0xF076, 0xF077, 0xF078, 0xF079, 0xF07A, 0xF07B
+
+:mines DAT 10 ;change to your liking
+:minestext DAT 0x004E, 0x0045, 0x004E ;you should probably change this too
+
+:intro
+SET A, intro0
+SET B, 128
+SET C, 0x8180
+JSR storetiles
+SET I, 0
+SET A, 0x8000
+
+SET A, logosmiley1
+SET B, 5
+SET C, 0x808D
+JSR drawtiles
+SET A, logosmiley2
+SET B, 5
+SET C, 0x80AD
+JSR drawtiles
+SET A, logosmiley3
+SET B, 5
+SET C, 0x80CD
+JSR drawtiles
+
+SET I, 0
+
+:glasses_fall_loop ;deal with it, limited memory
+
+SET J, 0
+:slowdown_anim
+ADD J, 1
+IFN J, 1000
+    SET PC, slowdown_anim
+
+SET B, 3
+SET X, I
+MOD X, 3 ;3 animation frames
+SET C, 0x800E
+SET Z, I
+DIV Z, 3 ;y pos
+MUL Z, 32
+ADD C, Z
+
+IFE X, 0
+    SET A, glasses1
+IFE X, 1
+    SET A, glasses2
+IFE X, 2
+    SET A, glasses3
+    
+JSR drawtiles
+
+SET A, glasblank
+SUB C, 32
+JSR drawtiles
+    
+IFE X, 2
+    JSR glassesbottom
+
+ADD I, 1
+
+IFN I, 17
+    SET PC, glasses_fall_loop
+    
+;draw white smiley
+SET A, logosmiley1
+SET B, 5
+SET C, 0x808D
+JSR drawtiles
+SET A, logosmiley2g
+SET B, 5
+SET C, 0x80AD
+JSR drawtiles
+SET A, logosmiley3
+SET B, 5
+SET C, 0x80CD
+JSR drawtiles    
+;draw mine in white
+SET A, minewhitetop
+SET B, 18
+SET C, 0x8046
+JSR drawtiles
+SET A, minewhitebtm 
+SET B, 18
+SET C, 0x8066
+JSR drawtiles
+;draw sweeper in white
+SET A, sweeperwhitetop
+SET B, 27
+SET C, 0x80E2
+JSR drawtiles
+SET A, sweeperwhitebtm  
+SET B, 27
+SET C, 0x8102
+JSR drawtiles
+
+SET J, 0 ;wait for a bit
+:wait_logo
+ADD J, 1
+IFN J, 1000
+    SET PC, wait_logo
+    
+SET J, 0 ;wait for a bit
+SET A, 0x8000
+:white_screen
+SET [A], 0xFF00
+ADD J, 1
+ADD A, 1
+IFN J, 384
+    SET PC, white_screen
+   
+    
+;draw black smiley
+SET A, blklogosmiley1
+SET B, 5
+SET C, 0x808D
+JSR drawtiles
+SET A, blklogosmiley2
+SET B, 5
+SET C, 0x80AD
+JSR drawtiles
+SET A, blklogosmiley3
+SET B, 5
+SET C, 0x80CD
+JSR drawtiles  
+    
+SET J, 0 ;cycle for a bit
+:cycle_logo
+ADD J, 1
+
+;draw mine in rainbow
+SET A, minewhitetop
+SET B, 18
+SET C, 0x8046
+JSR drawrainbow
+SET A, minewhitebtm 
+SET B, 18
+SET C, 0x8066
+JSR drawrainbow
+;draw sweeper in rainbow
+SET A, sweeperwhitetop
+SET B, 27
+SET C, 0x80E2
+JSR drawrainbow
+SET A, sweeperwhitebtm  
+SET B, 27
+SET C, 0x8102
+JSR drawrainbow
+
+IFN J, 66
+    SET PC, cycle_logo ;just animate a few times as a kind of wait
+    
+SET PC, POP
+
+:drawrainbow
+SET PUSH, I
+SET PUSH, C
+SET I, 0
+SET X, J
+MOD X, 6 ;number of colours in spectrum
+
+:drawrainbow_loop
+SET [C], [A]
+SHL [C], 8
+SHR [C], 8
+ADD [C], 0x0F00
+SET Y, X
+ADD Y, spectrum ;select colour from spectrum
+SET Y, [Y]
+SHL Y, 12
+BOR [C], Y
+ADD C, 1
+ADD A, 1
+ADD I, 1
+ADD X, 1
+MOD X, 6
+IFG I, B
+    SET PC, drawrainbow_end
+SET PC, drawrainbow_loop
+
+:drawrainbow_end
+SET C, POP
+SET I, POP
+SET PC, POP
+
+:glassesbottom
+ADD C, 64
+SET A, glasses4
+JSR drawtiles
+SET PC, POP
+
+:clear_board
+SET I, 0
+SET J, board
+SET Y, flag
+
+:clearboard_loop
+SET [J], 0
+SET [Y], 0
+ADD J, 1
+ADD Y, 1
+ADD I, 1
+IFN I, 81
+    SET PC, clearboard_loop
+    
+SET A, tiletypes_left ;reset mines too, shouldn't be visible
+ADD A, 10
+SET [A], 0x8701
+
+SET A, tiletypes_right
+ADD A, 10
+SET [A], 0x8702
+    
+SET PC, POP
+
+:drawtext ; Y is colour
+SET PUSH, I
+SET I, 0
+SET PUSH, X
+
+:drawtext_loop
+SET X, [A]
+BOR X, Y
+SET [C], X
+ADD C, 1
+ADD A, 1
+ADD I, 1
+IFG I, B
+    SET PC, drawtext_end
+SET PC, drawtext_loop
+
+:drawtext_end
+SET X, POP
+SET I, POP
+SET PC, POP
+
+:gamestate DAT 0 ;0 = normal, 1 = win, 2 = lose
+
+:endgame
+
+IFE [gamestate], 1
+    SET A, youwintext
+IFE [gamestate], 2
+    SET A, youlosetext
+SET B, 6
+SET C, 0x816C
+IFE [gamestate], 1
+    SET Y, 0x9700
+IFE [gamestate], 2
+    SET Y, 0x4700
+JSR drawtext
+
+:endgame_loop
+
+SET C, 0x9000
+SET B, 0x0000
+:buffloop2
+    IFN [C], 0
+        SET B, [C]
+    SET [C], 0
+    ADD C, 1
+    IFN C, 0x9010
+    SET pc, buffloop2
+    
+IFE B, 0x000a
+    SET PC, restart
+    
+SET [C], 0
+SET C, 0x9000
+    
+SET PC, endgame_loop
+
+;--------------------------------------------------------------------
+;this is the gameloop
+;it loops while the game is running
+; :)
+;--------------------------------------------------------------------
+
+:gameloop
+IFN [gamestate], 0 ;won or lost
+    SET PC, endgame
+ADD [timer], 1
+IFE [game_started], 0 ;timer is non functional
+    SET PC, skip_timer
+    
+SET A, [timer]
+MOD A, [timer_second_value]
+IFN A, 0
+    SET PC, skip_timer
+    
+ADD [gametimer], 1
+IFG [gametimer], 999
+    SET [gametimer], 999
+    
+JSR draw_timer
+    
+:skip_timer
+SET C, 0x9000
+SET B, 0x0000
+:buffloop
+    IFN [C], 0
+        SET B, [C]
+    SET [C], 0
+    ADD C, 1
+    IFN C, 0x9010
+    SET pc, buffloop
+    
+SET A, 0
+IFE B, 0x0025
+    SET A, 2
+IFE B, 0x0026
+    SET A, 4
+IFE B, 0x0027
+    SET A, 1
+IFE B, 0x0028
+    SET A, 3
+IFE B, 0x000a
+    JSR action
+IFE B, 0x0066 ;f to flag
+    JSR flagspace
+
+IFN A, 0
+    JSR select_move
+    
+SET [C], 0
+
+    
+SET PC, gameloop
+
+:select_move
+IFE A, 1 ;right
+    ADD [select_x], 1
+IFE A, 2 ;left
+    SUB [select_x], 1
+IFE A, 3 ;down
+    ADD [select_y], 1
+IFE A, 4 ;up
+    SUB [select_y], 1
+IFG [select_x], 10
+    SET [select_x], 0
+IFG [select_y], 10
+    SET [select_y], 0
+IFG [select_x], 8
+    SET [select_x], 8
+IFG [select_y], 8
+    SET [select_y], 8
+        
+JSR change_selection
+SET PC, POP
+
+:draw_timer
+SET PUSH, A
+SET PUSH, B
+SET PUSH, C
+SET A, 0x813B ;timer's positon on the screen
+
+SET C, [gametimer]
+DIV C, 100 ;to get NXX (n being this character)
+MOD C, 10 ;get lowest int
+SET B, 0x8F44
+ADD B, C ;get tile pos
+IFE C, 0
+    SET B, 0x8F4E ;0
+    
+SET [A], B
+ADD A, 1
+
+SET C, [gametimer]
+DIV C, 10 ;to get XNX (n being this character)
+MOD C, 10 ;get lowest int
+SET B, 0x8F44
+ADD B, C ;get tile pos
+IFE C, 0
+    SET B, 0x8F4E ;0
+    
+SET [A], B
+ADD A, 1
+
+SET C, [gametimer]
+MOD C, 10 ;get lowest int
+SET B, 0x8F44
+ADD B, C ;get tile pos
+IFE C, 0
+    SET B, 0x8F4E ;0
+    
+SET [A], B
+
+SET C, POP
+SET B, POP
+SET A, POP
+SET PC, POP
+
+:flagspace
+SET PUSH, A
+SET A, [select_x]
+SET B, [select_y]
+MUL B, 9
+ADD A, B
+ADD A, flag ;move to flag memory
+ADD [A], 1 ;change flag value
+MOD [A], 2 ;can only be 0 or 1
+
+JSR redraw_board
+
+SET A, POP
+SET PC, POP
+
+:action
+IFE [game_started], 0
+    JSR, generate_board
+    
+SET [game_started], 1
+
+SET PUSH, A
+SET PUSH, C
+
+SET A, [select_x]
+SET B, [select_y]
+SET X, A ;get normal position for mine seeking
+SET Y, B ;^^^
+MUL B, 9
+ADD A, B
+SET Z, A
+ADD Z, flag ;move to flag memory
+ADD A, board ;move to board memory
+
+IFE [Z], 1 ;space is flagged
+    SET PC, end_action ;yo don't do it bro
+
+IFE [A], 0
+    SET PC, mine_seek
+IFE [A], 10
+    JSR lose
+    
+:end_action
+
+SET C, POP
+SET A, POP
+;SET J, POP ;j-pop is shit
+SET PC, POP
+
+:mine_seek
+SET Z, 1
+SET I, 0
+SET J, surrounding_work
+IFG [A], 0
+    ADD I, 1
+IFG 10, [A]
+    ADD I, 1
+IFG I, 1 ;within selected tile range
+    SET PC, POP ;do nothing because the tile's already selected
+    
+SET PUSH, A
+SET PUSH, B
+SET PUSH, C
+    
+SET A, surprised_top
+SET B, 3
+SET C, 0x800E
+JSR drawtiles
+
+SET A, surprised_btm
+SET B, 3
+SET C, 0x802E
+JSR drawtiles
+
+SET C, POP
+SET B, POP
+SET A, POP
+
+SET I, 0
+JSR check_surroundings ;check the surroundings of the selected tile
+IFE I, 0
+    SET PC, skip_surrounding_loop ;if it's secluded don't do anything (or it'll like crash or something)
+
+:mine_seek_loop ;oh god
+JSR move_surrounding_table
+SET J, surrounding_work
+SET I, 0
+
+:surrounding_process_loop
+IFE [J], 0
+    SET PC, skip_surrounding
+SET Y, J
+SUB Y, surrounding_work
+SET A, Y
+ADD A, board
+DIV Y, 9 ;remove x
+SET X, J
+SUB X, surrounding_work
+MOD X, 9 
+JSR check_surroundings ;check the surroundings of the selected tile
+:skip_surrounding
+ADD J, 1
+IFN [J], 2 ;end byte 2
+    SET PC, surrounding_process_loop
+    
+IFN I, 0 ;if nothing was added to surrounding exit the loops
+    SET PC mine_seek_loop
+
+:skip_surrounding_loop
+
+JSR redraw_board
+
+SET A, norm_top
+SET B, 3
+SET C, 0x800E
+JSR drawtiles
+
+SET A, norm_btm
+SET B, 3
+SET C, 0x802E
+JSR drawtiles
+
+JSR wincheck
+
+SET PC, end_action
+
+:wincheck
+SET A, board
+SET I, 0
+
+:wincheckloop
+IFE [A], 0
+    SET PC, POP
+ADD I, 1
+ADD A, 1
+IFN I, 81
+    SET PC, wincheckloop
+SET [gamestate], 1 ;win is gamestate 1
+SET PC, POP
+
+:move_surrounding_table
+SET A, surrounding_next
+SET B, surrounding_work
+
+:move_s_table_loop
+SET [B], [A] ;just put it into the read table
+SET [A], 0 ;simultaneously clearing the write table
+ADD A, 1
+ADD B, 1
+IFN [A], 2 ;if it hasn't reached the end byte (2, how imaginative) then loop
+    SET PC, move_s_table_loop
+SET PC, POP
+
+:redraw_board
+SET X, 0
+SET Y, 0
+SET I, 0
+SET A, board
+SET Z, flag
+SET PC, redraw_loop
+
+
+:tiletypes_left DAT 0x8701, 0x7F1E, 0x7F21, 0x7F23, 0x7F25, 0x7F27, 0x7F29, 0x7F2B, 0x7F2D, 0x7F2F, 0x8701, 0x3B31
+
+
+:tiletypes_right DAT 0x8702, 0x7F1F, 0x7F22, 0x7F24, 0x7F26, 0x7F28, 0x7F2A, 0x7F2C, 0x7F2E, 0x7F30, 0x8702, 0x3B32
+
+:redraw_loop
+SET B, X
+SET C, Y
+MUL B, 2
+ADD B, 7 ;change board pos to screen pos
+ADD C, 2
+MUL C, 32
+ADD B, C
+ADD B, 0x8000 ;move to video ram
+
+SET C, [A]
+
+IFN [Z], 1 ;flagged
+    SET PC, ingame_continue
+    
+SET J, tiletypes_left
+ADD J, [A]
+
+IFE [J], 0x8701 ;if hidden and flagged then show the flag
+    SET C, 11
+    
+:ingame_continue
+SET J, tiletypes_left
+ADD J, C
+SET [B], [J]
+    
+ADD B, 1
+
+SET J, tiletypes_right
+ADD J, C
+SET [B], [J]
+
+ADD I, 1
+ADD X, 1
+ADD A, 1
+ADD Z, 1
+IFG X, 8
+    ADD Y, 1
+IFG X, 8
+    SET X, 0
+IFG 81, I
+    SET PC, redraw_loop ; loop until whole thing is done
+    
+JSR redefine_selection ; the selected tile may have changed   
+JSR change_selection
+
+ADD [moves], 1
+
+SET PC, POP
+
+:moves DAT 0
+
+:redefine_selection
+SET B, [select_x]
+SET C, [select_y]
+MUL B, 2
+ADD B, 7 ;change board pos to screen pos
+ADD C, 2
+MUL C, 32
+ADD B, C
+ADD B, 0x8000 ;move to video ram
+SET [old_select_tile1], [B]
+ADD B, 1
+SET [old_select_tile2], [B]
+SET PC, POP
+
+:check_surroundings ;i had to fix endless bugs with this
+SET Z, 1
+
+ADD X, 1 ;check right
+ADD A, 1
+    JSR checkblock
+SUB Y, 1 ;check up-right
+SUB A, 9
+    JSR checkblock
+SUB X, 1 ;check up
+SUB A, 1
+    JSR checkblock
+SUB X, 1 ;check up-left
+SUB A, 1
+    JSR checkblock
+ADD Y, 1 ;check left
+ADD A, 9
+    JSR checkblock
+ADD Y, 1 ;check down-left
+ADD A, 9
+    JSR checkblock
+ADD X, 1 ;check down
+ADD A, 1
+    JSR checkblock
+ADD X, 1 ;check down-right
+ADD A, 1
+    JSR checkblock
+SUB X, 1
+SUB Y, 1
+SUB A, 10 ;back to center
+SET [A], Z ;set tile type
+IFG 2, Z
+    JSR countsurroundings ;if this isn't a number then every surrounding block becomes visible
+SET PC, POP
+    
+:countsurroundings
+ADD X, 1 ;check right
+ADD A, 1
+IFE [A], 0
+    JSR add_to_surroundings
+SUB Y, 1 ;check up-right
+SUB A, 9
+IFE [A], 0
+    JSR add_to_surroundings
+SUB X, 1 ;check up
+SUB A, 1
+IFE [A], 0
+    JSR add_to_surroundings
+SUB X, 1 ;check up-left
+SUB A, 1
+IFE [A], 0
+    JSR add_to_surroundings
+ADD Y, 1 ;check left
+ADD A, 9
+IFE [A], 0
+    JSR add_to_surroundings
+ADD Y, 1 ;check down-left
+ADD A, 9
+IFE [A], 0
+    JSR add_to_surroundings
+ADD X, 1 ;check down
+ADD A, 1
+IFE [A], 0
+    JSR add_to_surroundings
+ADD X, 1 ;check down-right
+ADD A, 1
+IFE [A], 0
+    JSR add_to_surroundings
+    
+SET PC, POP
+
+:add_to_surroundings
+ADD I, 1
+IFG X, 8 ;illegal block
+    SET PC, POP
+IFG Y, 8 ;illegal block
+    SET PC, POP
+SET B, A
+SUB B, board
+ADD B, surrounding_next ;change from board id into surroundings id
+SET [B], 1 ;1 means active
+SET PC, POP
+    
+:checkblock
+IFG X, 8 ;illegal block
+    SET PC, POP
+IFG Y, 8 ;illegal block
+    SET PC, POP
+IFE [A], 10
+    ADD Z, 1 ;increment block number
+SET PC, POP
+
+:lose
+SET A, wtf_top
+SET B, 3
+SET C, 0x800E
+JSR drawtiles
+
+SET A, wtf_btm
+SET B, 3
+SET C, 0x802E
+JSR drawtiles
+
+SET A, tiletypes_left
+ADD A, 10
+SET [A], 0x4C33
+
+SET A, tiletypes_right
+ADD A, 10
+SET [A], 0x4C34
+
+JSR redraw_board
+
+SET [gamestate], 2 ;2 is lose
+
+SET PC, POP ;????
+
+
+:generate_board
+SET PUSH, A
+SET PUSH, B
+SET PUSH, C
+SET PUSH, X
+SET PUSH, I ;iterator
+SET I, 0
+
+:g_board_loop
+ADD [timer], 1
+SET A, [timer]
+MUL A, A ;entropy
+MOD A, 9 ;a is x of random mine placement
+SET B, [timer]
+ADD B, 317 ;b is y of mine placement, needs to be very different from A
+MUL B, B
+MOD B, 9
+
+SET C, A ;check if in proximity to cursor, if yes then position again. x
+SUB C, [select_x]
+ADD C, 10 ;work around underflow
+SET X, 0 ;used for checking and condition
+IFG C, 8
+    ADD X, 1
+IFG 12, C
+    ADD X, 1
+    
+SET C, B ;do it for the y placement too
+SUB C, [select_y]
+ADD C, 10 ;work around underflow
+IFG C, 8
+    ADD X, 1
+IFG 12, C
+    ADD X, 1
+    
+    
+IFE X, 4
+    SET PC g_board_loop
+    
+MUL B, 9
+ADD A, B
+SET C, board
+ADD C, A
+IFE [C], 10  ;defined at top
+    SET PC g_board_loop ;already a mine there
+SET [C], 10  
+    
+ADD I, 1
+IFG [mines], I
+    SET PC g_board_loop ;not enough mines
+    
+SET [timer], 0
+
+SET I, POP
+SET X, POP
+SET C, POP
+SET B, POP
+SET A, POP
+SET PC, POP
+
+:old_select_operation
+SET [A], [old_select_tile1]
+ADD A, 1 ;and the other side
+SET [A], [old_select_tile2]
+SET PC, POP
+
+:change_selection
+SET PUSH, A ; x value
+SET PUSH, B ; y value
+SET A, [old_select_x]
+SET B, [old_select_y]
+JSR get_selection
+
+IFN [old_select_x], 10 ;10 is the number which tells it not to do anything
+    JSR old_select_operation
+
+SET A, [select_x]
+SET B, [select_y]
+JSR get_selection
+
+SET [old_select_tile1], [A]
+SHL [A], 4 ;remove highest 2 bits
+SHR [A], 4
+BOR [A], 0x2A00
+ADD A, 1 ;and the other side
+SET [old_select_tile2], [A]
+SHL [A], 4 ;remove highest 2 bits
+SHR [A], 4  
+BOR [A], 0x2A00
+
+SET [old_select_x], [select_x]
+SET [old_select_y], [select_y]
+
+SET B, POP
+SET A, POP
+SET PC, POP
+
+:get_selection
+ADD B, 2
+MUL A, 2
+ADD A, 7 ;change x and y into screen position instead of game position
+MUL B, 32 ;multiply y by screen width to get memory offset
+ADD A, B ;the final offset moves into A
+ADD A, 0x8000 ;now it's the memory address, wasn't that fun
+SET PC, POP
+
+:old_select_x DAT 10 ;doesn't exist
+:old_select_y DAT 10 ;doesn't exist
+:old_select_tile1 DAT 10 ;ok that does exist but you get the point
+:old_select_tile2 DAT 10
+:select_x DAT 4
+:select_y DAT 4
+
+:timer DAT 0
+:game_started DAT 0
+
+:flag DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0
+
+:board DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 ;10 for mines, 0 for undiscovered, 1-9 for selected, 11 for flagged.
+
+:surrounding_work DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 ;working table, reads from
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0, 2
+
+:surrounding_next DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 ;next table, writes to
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0 
+DAT 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 ;board of surrounding tiles because my last idea overflowed all the way into the graphics :@
+
+:end
+SET PC, end
+
+:drawtiles
+SET PUSH, I
+SET PUSH, C
+SET I, 0
+
+:drawtiles_loop
+SET [C], [A]
+ADD C, 1
+ADD A, 1
+ADD I, 1
+IFG I, B
+    SET PC, drawtiles_end
+SET PC, drawtiles_loop
+
+:drawtiles_end
+SET C, POP
+SET I, POP
+SET PC, POP
+
+;tilemap data for the main map
+
+:norm_top DAT 0x6F03, 0x6F04, 0x6F05, 0x6F06
+:norm_btm DAT 0x6F07, 0x6F08, 0x6F09, 0x6F0A
+
+:surprised_top DAT 0x6F35, 0x6F36, 0x6F37, 0x6F38
+:surprised_btm DAT 0x6F39, 0x6F3A, 0x6F3B, 0x6F3C
+
+:wtf_top DAT 0x6F3D, 0x6F3E, 0x6F3F, 0x6F40
+:wtf_btm DAT 0x6F41, 0x6F42, 0x6F43, 0x6F44
+
+:boardtiles_l1 DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x6F03, 0x6F04, 0x6F05, 0x6F06, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+
+:boardtiles_l2 DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x70B, 0x711, 0x711, 0x711, 0x711, 0x711, 0x711, 0x711, 0x6F07, 0x6F08, 0x6F09, 0x6F0A, 0x711, 0x711, 0x711, 0x711, 0x711, 0x711, 0x711, 0x70C, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+
+:boardtiles_l3 DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x70F, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720 
+
+:boardtiles_l4 DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x70F, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720 
+
+:boardtiles_l5 DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x70F, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720 
+
+:boardtiles_l6 DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x70F, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720 
+
+:boardtiles_l7 DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x70F, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720 
+
+:boardtiles_l8 DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x70F, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720 
+
+:boardtiles_l9 DAT 0x8720, 0x8713, 0x8714, 0x8715, 0x8716, 0x8717, 0x70F, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x710, 0x8718, 0x8719, 0x871A, 0x871B, 0x871C, 0x8720 
+
+:boardtiles_20 DAT 0x8720, 0x871D, 0x8F20, 0x8F20, 0x8F20, 0x8710, 0x70F, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x710, 0x871D, 0x8F20, 0x8F20, 0x8F20, 0x8710, 0x8720 
+
+:boardtiles_21 DAT 0x8720, 0x870D, 0x8712, 0x8712, 0x8712, 0x870E, 0x70F, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x710, 0x870D, 0x8712, 0x8712, 0x8712, 0x870E, 0x8720 
+
+:boardtiles_22 DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x70D, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x70E, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+
+:boardtiles_22 DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x70D, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x712, 0x70E, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+
+
+; Tiles.
+
+:tile0 DAT 0xff83, 0x45a9
+:tile1 DAT 0x51b9, 0x7dff
+:tile2 DAT 0xff01, 0x1c1
+:tile3 DAT 0x7151, 0xc9c9
+:tile4 DAT 0x49c9, 0xd171
+:tile5 DAT 0xc101, 0x1ff
+:tile6 DAT 0xff80, 0x8083
+:tile7 DAT 0x8c89, 0x9292
+:tile8 DAT 0x9290, 0x888c
+:tile9 DAT 0x8380, 0x80ff
+:tile10 DAT 0x0, 0x80
+:tile11 DAT 0x8000, 0x0
+:tile12 DAT 0x0, 0x1
+:tile13 DAT 0x100, 0x0
+:tile14 DAT 0x0, 0x55ff
+:tile15 DAT 0xff00, 0x0
+:tile16 DAT 0xc080, 0xc080
+:tile17 DAT 0x101, 0x101
+:tile18 DAT 0x3c, 0x888
+:tile19 DAT 0xbc80, 0xbc80
+:tile20 DAT 0xbc88, 0x90bc
+:tile21 DAT 0x80bc, 0xaca4
+:tile22 DAT 0x8028, 0x2414
+:tile23 DAT 0x0, 0x84
+:tile24 DAT 0xbc84, 0x80bc
+:tile25 DAT 0x80bc, 0x8888
+:tile26 DAT 0xbc80, 0xbcac
+:tile27 DAT 0xa400, 0x0
+:tile28 DAT 0x0, 0xff
+:tile29 DAT 0xff01, 0x101
+:tile30 DAT 0x101, 0x101
+:tile31 DAT 0x0, 0x0
+:tile32 DAT 0xff01, 0x149
+:tile33 DAT 0x7d41, 0x101
+:tile34 DAT 0xff01, 0x149
+:tile35 DAT 0x6559, 0x101
+:tile36 DAT 0xff01, 0x145
+:tile37 DAT 0x5539, 0x101
+:tile38 DAT 0xff01, 0x11d
+:tile39 DAT 0x117d, 0x101
+:tile40 DAT 0xff01, 0x15d
+:tile41 DAT 0x5525, 0x101
+:tile42 DAT 0xff01, 0x139
+:tile43 DAT 0x5525, 0x101
+:tile44 DAT 0xff01, 0x145
+:tile45 DAT 0x350d, 0x101
+:tile46 DAT 0xff01, 0x129
+:tile47 DAT 0x5529, 0x101
+:tile48 DAT 0xff83, 0x10d
+:tile49 DAT 0xd7d, 0x183
+:tile50 DAT 0xff01, 0x5539
+:tile51 DAT 0x6d39, 0x5501
+:tile52 DAT 0xff01, 0x1e1
+:tile53 DAT 0x3131, 0xa969
+:tile54 DAT 0x69a9, 0x7171
+:tile55 DAT 0xa101, 0x1ff
+:tile56 DAT 0xff80, 0x8083
+:tile57 DAT 0x8c88, 0x9096
+:tile58 DAT 0x9690, 0x888c
+:tile59 DAT 0x8380, 0x80ff
+:tile60 DAT 0xff01, 0x1c1
+:tile61 DAT 0x3151, 0xc949
+:tile62 DAT 0x2999, 0x1131
+:tile63 DAT 0xc101, 0x1ff
+:tile64 DAT 0xff80, 0x8083
+:tile65 DAT 0xcc88, 0xd0de
+:tile66 DAT 0x9ed0, 0xc8cc
+:tile67 DAT 0x8380, 0x80ff
+:tile68 DAT 0x48, 0x7c40
+:tile69 DAT 0x48, 0x6458
+:tile70 DAT 0x44, 0x5438
+:tile71 DAT 0x1c, 0x107c
+:tile72 DAT 0x5c, 0x5424
+:tile73 DAT 0x38, 0x5424
+:tile74 DAT 0x44, 0x340c
+:tile75 DAT 0x28, 0x5428
+:tile76 DAT 0x48, 0x5438
+:tile77 DAT 0x38, 0x4438
+:tile78 DAT 0x18, 0xe018
+:tile79 DAT 0x60, 0x9060
+:tile80 DAT 0x70, 0x80f0
+:tile81 DAT 0x0, 0xf8
+:tile82 DAT 0x8040, 0x80f8
+:tile83 DAT 0xe8, 0xf0
+:tile84 DAT 0x20e0, 0x0
+:tile85 DAT 0xf8, 0x8080
+:tile86 DAT 0x60, 0x9060
+:tile87 DAT 0xb0, 0x90d0
+:tile88 DAT 0xf0, 0x90b0
+
+;1kb worth of tiles used for the intro sequence. worth it!
+
+
+:intro0 DAT 0x0, 0x101
+:intro1 DAT 0xc3eb, 0xebeb
+:intro2 DAT 0xebea, 0xe8e0
+:intro3 DAT 0xc000, 0x80e0
+:intro4 DAT 0xe0e8, 0xeaeb
+:intro5 DAT 0xebeb, 0xb01
+:intro6 DAT 0x101, 0x0
+:intro7 DAT 0x1, 0x1e1
+:intro8 DAT 0xebeb, 0xebeb
+:intro9 DAT 0xeb0b, 0x101
+:intro10 DAT 0x100, 0x101
+:intro11 DAT 0xc1eb, 0xebeb
+:intro12 DAT 0xebea, 0xe8eb
+:intro13 DAT 0xe3eb, 0x2b03
+:intro14 DAT 0x101, 0x0
+:intro15 DAT 0x101, 0xc1eb
+:intro16 DAT 0xebeb, 0xebeb
+:intro17 DAT 0xeb43, 0xc1c1
+:intro18 DAT 0x303, 0xb00
+:intro19 DAT 0x0, 0x0
+:intro20 DAT 0xf0f0, 0x3030
+:intro21 DAT 0xc0c, 0xc0c
+:intro22 DAT 0xc0c, 0xc0c
+:intro23 DAT 0x3030, 0xf0f0
+:intro24 DAT 0x303, 0x3333
+:intro25 DAT 0x303, 0x303
+:intro26 DAT 0xf0f, 0xf0f
+:intro27 DAT 0x303, 0xf0f
+:intro28 DAT 0xf0f, 0x303
+:intro29 DAT 0x1818, 0x1818
+:intro30 DAT 0x7878, 0x7878
+:intro31 DAT 0x1818, 0x7878
+:intro32 DAT 0x4040, 0x6078
+:intro33 DAT 0x7f61, 0x434f
+:intro34 DAT 0x1f7f, 0x3f1f
+:intro35 DAT 0x4f47, 0x417f
+:intro36 DAT 0x7f7f, 0x7f7f
+:intro37 DAT 0x7f6f, 0x4040
+:intro38 DAT 0x0, 0x40
+:intro39 DAT 0x4040, 0x787f
+:intro40 DAT 0x7f7f, 0x7f7f
+:intro41 DAT 0x4740, 0x4040
+:intro42 DAT 0x40, 0x6070
+:intro43 DAT 0x7f71, 0x6347
+:intro44 DAT 0xf1f, 0x3f7f
+:intro45 DAT 0x7f0f, 0x0
+:intro46 DAT 0x0, 0x4040
+:intro47 DAT 0x4060, 0x7f7f
+:intro48 DAT 0x7f7f, 0x7f7f
+:intro49 DAT 0x4340, 0x6073
+:intro50 DAT 0x703c, 0x600
+:intro51 DAT 0x0, 0xffff
+:intro52 DAT 0x0, 0x3030
+:intro53 DAT 0xc3c3, 0xc0c0
+:intro54 DAT 0xc0c0, 0x303
+:intro55 DAT 0x0, 0x0
+:intro56 DAT 0xffff, 0x0
+:intro57 DAT 0xf0f, 0xc0c
+:intro58 DAT 0x3030, 0x3030
+:intro59 DAT 0x3030, 0x3030
+:intro60 DAT 0xc0c, 0xf0f
+:intro61 DAT 0x7878, 0x1818
+:intro62 DAT 0xc0c0, 0xc0c0
+:intro63 DAT 0xc0c0, 0xc0c0
+:intro64 DAT 0xc0d0, 0xd4d4
+:intro65 DAT 0xd2d2, 0xc2c6
+:intro66 DAT 0xc6d6, 0x601
+:intro67 DAT 0x0, 0x216
+:intro68 DAT 0xd6d6, 0xd6d6
+:intro69 DAT 0xd6d2, 0x12d0
+:intro70 DAT 0xd0d0, 0xd4d4
+:intro71 DAT 0xd486, 0x284
+:intro72 DAT 0x4416, 0x602
+:intro73 DAT 0x2, 0x2d6
+:intro74 DAT 0xd6d6, 0xd6d6
+:intro75 DAT 0xd686, 0x8282
+:intro76 DAT 0x616, 0x0
+:intro77 DAT 0x2, 0x2d6
+:intro78 DAT 0xd6d6, 0xd6d6
+:intro79 DAT 0xd686, 0x8282
+:intro80 DAT 0x616, 0x0
+:intro81 DAT 0x2, 0x2d6
+:intro82 DAT 0xd6d6, 0xd6d6
+:intro83 DAT 0xd602, 0x2d6
+:intro84 DAT 0xd400, 0x2
+:intro85 DAT 0x2d6, 0xd6d6
+:intro86 DAT 0xd6d6, 0xd686
+:intro87 DAT 0x8282, 0x616
+:intro88 DAT 0x0, 0x0
+:intro89 DAT 0x202, 0xd6d6
+:intro90 DAT 0xd6d6, 0xd6d6
+:intro91 DAT 0x606, 0x8454
+:intro92 DAT 0xcfcf, 0xcfcf
+:intro93 DAT 0xc0c0, 0xc0c0
+:intro94 DAT 0xc0c0, 0xc0c0
+:intro95 DAT 0x303, 0x303
+:intro96 DAT 0xfb67, 0xcf8f
+:intro97 DAT 0x9f9f, 0x9f7f
+:intro98 DAT 0x7f1f, 0x700
+:intro99 DAT 0x0, 0x0
+:intro100 DAT 0xf7f, 0xffff
+:intro101 DAT 0x3f1f, 0xe03
+:intro102 DAT 0xf3f, 0xff7f
+:intro103 DAT 0x3f0f, 0x601
+:intro104 DAT 0x0, 0x80
+:intro105 DAT 0x8080, 0xf0ff
+:intro106 DAT 0xffff, 0xffff
+:intro107 DAT 0x87c0, 0xc3e7
+:intro108 DAT 0xf00c, 0x80
+:intro109 DAT 0x8080, 0xf0ff
+:intro110 DAT 0xffff, 0xffff
+:intro111 DAT 0x87c0, 0xc3e7
+:intro112 DAT 0xf00c, 0x80
+:intro113 DAT 0x80c0, 0xfeff
+:intro114 DAT 0xffff, 0xffff
+:intro115 DAT 0x8282, 0x301
+:intro116 DAT 0x80, 0x8080
+:intro117 DAT 0xf0ff, 0xffff
+:intro118 DAT 0xffff, 0x87c0
+:intro119 DAT 0xc3e7, 0xf00c
+:intro120 DAT 0x0, 0x8080
+:intro121 DAT 0xc0fe, 0xffff
+:intro122 DAT 0xffff, 0xbf81
+:intro123 DAT 0x83ff, 0xfffe
+:intro124 DAT 0xc3c3, 0xf0f
+:intro125 DAT 0x0, 0x303
+:intro126 DAT 0x303, 0x0
+:intro127 DAT 0x0, 0x0
+
+    
+
+:storetiles ;A = Data to Read, B = Length, C = Destination, I = Iterator
+SET PUSH, I
+MUL B, 2 ;2 words to a character
+SET I, 0
+
+:storetiles_loop
+SET [C], [A]
+ADD A, 1
+ADD I, 1
+ADD C, 1
+IFE I, B
+    SET PC, storetiles_end
+SET PC, storetiles_loop
+
+:storetiles_end
+SET I, POP
+SET PC, POP

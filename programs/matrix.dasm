@@ -1,0 +1,114 @@
+set z, 0x1234 ; rand_seed
+set y, z ; cur_rand
+set pc, main_loop
+
+:next_rand
+mul y, 10061
+add y, 1
+set pc, pop
+
+:main_loop
+set i, 0
+set x, y
+set y, z
+set a, 0x8000
+
+:next_row1
+  set j, 0
+  :next_char1
+    jsr next_rand
+    ife [a], 0
+    set pc, skip1
+    ifb y, 0x7000
+    set pc, skip1
+
+    ; mutate char at [a] (j, i)
+    set push, y
+    set y, x
+    jsr next_rand
+    and [a], 0xff00 ; reset char
+    and y, 0x003f
+    bor [a], [code+y] ; set letter
+    set x, y
+    set y, pop
+    
+    :skip1
+    add j, 1
+    add a, 1
+    ifg 32, j
+    set pc, next_char1
+  add i, 1
+  ifg 12, i
+  set pc, next_row1
+set y, x
+
+; step 2: move all columns down
+set i, 12
+set a, 0x817f
+
+:next_row2
+  set j, 32
+  :next_char2
+    ife [a], 0
+    set pc, empty_char
+    ifb [a+32], 0xffff
+    set pc, move_down
+
+    ; add new char at [a+32] (j, i+1)
+    jsr next_rand
+    set [a+32], [a]
+    and [a+32], 0xff00
+    set x, y
+    and x, 0x003f
+    bor [a+32], [code+x]
+    and [a], 0x7fff
+    set pc, skip2
+    
+    :empty_char
+    set [a+32], 0
+
+    :move_down
+    and [a+32], 0x7fff
+
+    :skip2
+    sub j, 1
+    sub a, 1
+    ifg j, 0
+    set pc, next_char2
+  sub i, 1
+  ifg i, 0
+  set pc, next_row2
+set y, x
+
+; step 3: update top layer
+set a, 0x8000
+set j, 0
+:next_char3
+  jsr next_rand
+  ifb y, 0x0700
+  set pc, skip3
+  ifb [a], 0xffff
+  set pc, empty_char2
+  
+  set [a], 0x2000
+  ifb y, 0x0800
+  set [a], 0xa000
+  set x, y
+  and x, 0x003f
+  bor [a], [code+x]
+  set pc, skip3
+
+  :empty_char2
+  set [a], 0
+
+  :skip3
+  add j, 1
+  add a, 1
+  ifg 32, j
+  set pc, next_char3
+
+set PC, main_loop
+
+sub PC, 1
+
+:code dat "00112334567889&||!!@==::**##<>>__TYYUDQZJJIX- ~~oiwlrkm//\\'[]^)`"
