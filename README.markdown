@@ -1,5 +1,18 @@
-Python scripts for DCPU-16 emulation. Work in progress!
+## Python scripts for DCPU-16 emulation
 
-Dependencies
-- PLY for the assembler: http://www.dabeaz.com/ply/
-- wxPython for the display: http://www.wxpython.org/
+- Emulator
+- Assembler
+- 32x12 Display
+
+### Screenshot
+
+![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/screenshot.png)
+
+### Dependencies
+- **Python 2.5+**: http://www.python.org/
+- **PLY**: http://www.dabeaz.com/ply/
+- **wxPython**: http://www.wxpython.org/
+
+### Usage
+
+    python display.py programs/minesweeper.dasm
