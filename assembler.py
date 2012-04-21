@@ -148,7 +148,7 @@ def t_newline(t):
 
 def t_STRING(t):
     r'"[^"]*"'
-    t.value = t.value[1:-1]
+    t.value = tuple(ord(x) for x in t.value[1:-1])
     return t
 
 def t_HEX(t):
@@ -192,15 +192,13 @@ def p_instructions2(t):
 
 def p_data1(t):
     'data : literal data'
-    t[0] = (t[1],) + t[2]
+    arg = t[1] if isinstance(t[1], tuple) else (t[1],)
+    t[0] = arg + t[2]
 
 def p_data2(t):
     'data : literal'
-    t[0] = (t[1],)
-
-def p_data3(t):
-    'data : STRING'
-    t[0] = tuple(ord(x) for x in t[1])
+    arg = t[1] if isinstance(t[1], tuple) else (t[1],)
+    t[0] = arg
 
 def p_instruction_data(t):
     'instruction : DAT data'
@@ -252,7 +250,8 @@ def p_operand_literal(t):
 def p_literal(t):
     '''literal : DECIMAL
                | HEX
-               | ID'''
+               | ID
+               | STRING'''
     t[0] = t[1]
 
 def p_basic_opcode(t):
