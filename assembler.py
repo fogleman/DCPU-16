@@ -42,6 +42,12 @@ SPECIAL = {
     'O':    0x1d,
 }
 
+# Reverse Lookups
+REV_BASIC_OPCODES = dict((v, k) for k, v in BASIC_OPCODES.items())
+REV_NON_BASIC_OPCODES = dict((v, k) for k, v in NON_BASIC_OPCODES.items())
+REV_REGISTERS = dict((v, k) for k, v in REGISTERS.items())
+REV_SPECIAL = dict((v, k) for k, v in SPECIAL.items())
+
 # Classes
 class Program(object):
     def __init__(self, instructions):
@@ -58,22 +64,37 @@ class Program(object):
         for instruction in self.instructions:
             result.extend(instruction.assemble(self.lookup))
         return result
+    def pretty(self):
+        lines = []
+        previous = None
+        for instruction in self.instructions:
+            lines.append(instruction.pretty(previous))
+            previous = instruction
+        return '\n'.join(lines)
 
 class Data(object):
     def __init__(self, data):
         self.data = data
         self.size = len(data)
         self.offset = None
+        self.conditional = False
     def assemble(self, lookup):
         return self.data
+    def pretty(self, previous):
+        data = ', '.join('"%s"' % x if isinstance(x, str) else '0x%04x' % x
+            for x in self.data)
+        return '    DAT %s' % data
 
 class Label(object):
     def __init__(self, name):
         self.name = name
         self.size = 0
         self.offset = None
+        self.conditional = False
     def assemble(self, lookup):
         return []
+    def pretty(self, previous):
+        return ':%s' % self.name
 
 class BasicInstruction(object):
     def __init__(self, opcode, arg1, arg2):
@@ -86,11 +107,20 @@ class BasicInstruction(object):
         self.value = value
         self.size = 1 + arg1.size + arg2.size
         self.offset = None
+        self.conditional = 0xc <= self.opcode <= 0xf
     def assemble(self, lookup):
         result = [self.value]
         result.extend(self.arg1.assemble(lookup))
         result.extend(self.arg2.assemble(lookup))
         return result
+    def pretty(self, previous):
+        a = REV_BASIC_OPCODES[self.opcode]
+        b = self.arg1.pretty()
+        c = self.arg2.pretty()
+        p = '    '
+        if previous and previous.conditional:
+            p *= 2
+        return '%s%s %s, %s' % (p, a, b, c)
 
 class NonBasicInstruction(object):
     def __init__(self, opcode, arg):
@@ -102,10 +132,15 @@ class NonBasicInstruction(object):
         self.value = value
         self.size = 1 + arg.size
         self.offset = None
+        self.conditional = False
     def assemble(self, lookup):
         result = [self.value]
         result.extend(self.arg.assemble(lookup))
         return result
+    def pretty(self, previous):
+        a = REV_NON_BASIC_OPCODES[self.opcode]
+        b = self.arg.pretty()
+        return '    %s %s' % (a, b)
 
 class Operand(object):
     def __init__(self, value, word=None):
@@ -114,6 +149,25 @@ class Operand(object):
         self.size = int(word is not None)
     def assemble(self, lookup):
         return [] if self.word is None else [lookup.get(self.word, self.word)]
+    def pretty(self):
+        x = self.value
+        word = self.word
+        if isinstance(word, int):
+            word = '0x%04x' % word
+        if x in REV_REGISTERS:
+            return REV_REGISTERS[x]
+        elif x - 0x08 in REV_REGISTERS:
+            return '[%s]' % REV_REGISTERS[x - 0x08]
+        elif x - 0x10 in REV_REGISTERS:
+            return '[%s + %s]' % (REV_REGISTERS[x - 0x10], word)
+        elif x in REV_SPECIAL:
+            return REV_SPECIAL[x]
+        elif x == 0x1e:
+            return '[%s]' % word
+        elif x == 0x1f:
+            return '%s' % word
+        elif x >= 0x20:
+            return '0x%04x' % (x - 0x20)
 
 # Lexer Rules
 reserved = (
@@ -309,3 +363,4 @@ if __name__ == '__main__':
         program = parse_file(os.path.join('programs', name))
         data = program.assemble()
         print name, program.size
+        print program.pretty()
