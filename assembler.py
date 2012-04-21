@@ -94,7 +94,7 @@ class Label(object):
     def assemble(self, lookup):
         return []
     def pretty(self, previous):
-        return ':%s' % self.name
+        return ':%s' % self.name.lower()
 
 class BasicInstruction(object):
     def __init__(self, opcode, arg1, arg2):
@@ -154,6 +154,8 @@ class Operand(object):
         word = self.word
         if isinstance(word, int):
             word = '0x%04x' % word
+        elif isinstance(word, str):
+            word = word.lower()
         if x in REV_REGISTERS:
             return REV_REGISTERS[x]
         elif x - 0x08 in REV_REGISTERS:
@@ -363,4 +365,3 @@ if __name__ == '__main__':
         program = parse_file(os.path.join('programs', name))
         data = program.assemble()
         print name, program.size
-        print program.pretty()
