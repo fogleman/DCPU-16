@@ -1,0 +1,599 @@
+;************************************************************
+; minecraft.dasm16
+; v1.6
+; Created by Pseudox/trevs231
+;************************************************************
+;This file is stand alone.
+
+;It does NOT currently support keyboard ring buffer. (It will soon)
+
+;NOTE: If the Keyword RESERVE is not supported, go to 'mc_water_flow_saves'
+;    at the end of the variables section, and change it to DAT and copy
+;    '0x0,' 64 times
+
+;************************************************************
+;NOTES FOR USING IN AN OS
+;************************************************************
+
+;Copy code after line 47, indicated below.
+;Call 'JSR minecraft_init' to start.
+
+;NOTE Atlas OS USERS:
+;      You should NOT copy 'video_mem',
+;            as it is included in the OS. It is situated directly below
+;            the lines indicated previously.
+;      You can also delete the pushes and pops and insert pusha and popa,
+;            before and after calling 'minecraft_init'
+;      If you plan on suspending the program to run background
+;            functions, putting the suspend in 'mc_reset_input' is likely
+;            optimal. Remember to kill programs using the screen first.
+;      The program is designed to be killed after it exits.
+
+
+; NOTE: for other OS, you may want to check if there are other
+;       conflicts with 'video mem', 'video_mem_end", and 'kbrd_in'
+
+;*************************************************************
+;*************************************************************
+
+    JSR minecraft_init
+
+:crash SET PC, crash
+; end of main section-----------------
+
+
+;********************************************************
+;COPY CODE BELOW into your OS AND CALL 'JSR minecraft_init'
+;vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+:video_mem DAT 0x8000 ;first screen location
+
+
+
+;============================================================
+;MINECRAFT GAME FOR DCPU-16 v1.5 by Pseudox/trevs231
+;============================================================
+
+;====================================================
+;Variables and constants
+
+:video_mem_end DAT 0x81FF  ;last screen location
+:kbrd_in DAT 0x9000  ;where inputs are read from keyboard
+
+:mc_key_in_reset DAT 0x100
+:mc_fall_timer DAT 0x500
+:mc_fall_time DAT 0x500
+:mc_water_timer DAT 0x500
+
+:mc_player_pos DAT 0x80F0
+:mc_player_char DAT 0x4058
+
+:mc_current_block DAT 0x862A
+
+:mc_sky_char DAT 0x0B00
+:mc_water_char DAT 0x0100
+:mc_block_chars DAT 0x182A, 0x862A, 0x0200, 0x0800, 0x0600
+                DAT 0x782A, 0xE82A, 0xC82A, 0xB82A, 0
+; water source, dirt, grass, rock, cobblestone, wood, gold deposit
+; redstone, diamond,
+
+:mc_up_key DAT 0x0003    ;up arrow
+:mc_left_key DAT 0x0001    ;left arrow
+:mc_right_key DAT 0x0002   ;right arrow
+
+:mc_do_up_key DAT 0x0077    ;w
+:mc_do_down_key DAT 0x0073 ;s
+:mc_do_left_key DAT 0x0061    ;a
+:mc_do_right_key DAT 0x0064   ;d
+
+:mc_swap_key DAT 0x0065 ;e
+
+:mc_reset_key DAT 0x006F ;o
+:mc_quit_key DAT 0x0070 ;p
+
+:mc_water_flow_saves DAT
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0
+
+
+
+;=====================================================
+
+:minecraft_init
+               ;(Atlas OS only! can delete from here)
+    SET PUSH, A
+    SET PUSH, B
+    SET PUSH, C
+    SET PUSH, X
+    SET PUSH, Y
+    SET PUSH, Z
+    SET PUSH, I
+    SET PUSH, J    ;(to here. dont forget to add pusha)
+
+:mc_reset_point
+    SET z, [kbrd_in] ;initialize input buffer
+    SET [z], 0
+
+    SET x, [video_mem]
+    SET [mc_fall_timer], [mc_fall_time]     ;for fall speed
+    SET [mc_water_timer], [mc_fall_time]     ;for water flow speed
+    SET J, x
+    ADD j, 0x100
+:minecraft_init_loop1
+    SET [x], [mc_sky_char]          ;setting terrain
+    ADD x, 1
+    IFG j, x
+        SET PC, minecraft_init_loop1
+
+    ADD j, 0x20
+    SET i, 2
+:minecraft_init_loop2
+    SET [x], [mc_block_chars+i]
+    ADD x, 1
+    IFG j, x
+        SET PC, minecraft_init_loop2
+
+    ADD j, 0x40
+    SET i, 1
+:minecraft_init_loop3
+    SET [x], [mc_block_chars+i]
+    ADD x, 1
+    IFG j, x
+        SET PC, minecraft_init_loop3
+
+    SET j, [video_mem_end]
+    ADD j, 0x1
+    SET i, 3
+:minecraft_init_loop4
+    SET [x], [mc_block_chars+i]
+    ADD x, 1
+    IFG j, x
+        SET PC, minecraft_init_loop4
+
+    SET i, 1
+    SET [mc_current_block], [mc_block_chars+i]    ;show current block
+    SET x, [video_mem]
+    SET [x], [mc_current_block]
+
+     ;initialize player
+    SET [mc_player_pos], [video_mem]
+    ADD [mc_player_pos], 0xF0
+
+    JSR mc_print_player
+
+    SET [mc_key_in_reset], 0x100
+
+
+;===========================================================
+:mc_game_loop
+    JSR mc_in_air_check
+    JSR mc_water_flow
+
+    IFE [z],  [mc_up_key]
+        JSR mc_jump
+    IFE [z], [mc_left_key]
+        JSR mc_move_left
+    IFE [z], [mc_right_key]
+        JSR mc_move_right
+
+    IFE [z], [mc_do_up_key]
+        JSR mc_do_up
+    IFE [z], [mc_do_down_key]
+        JSR mc_do_down
+    IFE [z], [mc_do_left_key]
+        JSR mc_do_left
+    IFE [z], [mc_do_right_key]
+        JSR mc_do_right
+
+    IFE [z], [mc_swap_key]
+        JSR mc_swap_item
+
+    IFE [z], [mc_reset_key]
+        SET PC, mc_reset_game
+
+    IFE [z], [mc_quit_key]
+        SET PC, mc_game_exit
+
+    SUB [mc_key_in_reset], 1
+    IFE [mc_key_in_reset], 0
+        JSR mc_reset_input
+
+    SET PC, mc_game_loop
+
+;===================================================
+:mc_game_exit
+    SET [z], 0
+                ;(Atlas OS only! delete from here)
+    SET J, POP
+    SET I, POP
+    SET Z, POP
+    SET Y, POP
+    SET X, POP
+    SET C, POP
+    SET B, POP
+    SET A, POP      ; (to here. don't forget to add popa!)
+
+    SET PC, POP
+
+;=====================================================
+;prevents input buffer from getting full
+;while preventing issues with input
+:mc_reset_input
+    SET [z], 0
+    SET [mc_key_in_reset], 0x100
+    SET PC, POP
+
+
+
+;=====================================================
+:mc_jump
+    SET [z], 0
+:mc_jump_water
+    SET J, [mc_player_pos]
+    SET X, [mc_player_pos]
+    SUB J, 0x20
+    IFG [video_mem], j       ;at the top?
+        SET PC, POP
+    IFE [j], [mc_water_char]
+        SET PC, mc_jump2
+    IFN [j], [mc_sky_char]  ;block above?
+        SET PC, POP
+    IFG [mc_fall_time], [mc_fall_timer]   ;can't if in the air
+        SET PC, POP
+:mc_jump2
+    AND [X], 0x0F00
+    SET [mc_player_pos], j
+    JSR mc_print_player
+    SUB [mc_fall_timer], 1
+    SET PC, POP
+
+;=====================================================
+:mc_move_left
+    SET [z], 0
+    SET j, [mc_player_pos]
+    SET x, [mc_player_pos]
+    MOD j, 0x20
+    IFE j, 0
+        SET PC, mc_wrap_left       ;at left edge?
+
+    SET J, [mc_player_pos]
+    SUB j, 1
+    IFE [j], [mc_sky_char]  ;block above?
+        SET PC, mc_move_left2
+    IFN [j], [mc_water_char]
+        SET PC, POP
+:mc_move_left2
+    AND [X], 0x0F00
+    SET [mc_player_pos], j
+    JSR mc_print_player
+    SET PC, POP
+
+:mc_wrap_left
+    SET J, [mc_player_pos]
+    ADD J, 0x1F
+    IFE [j], [mc_sky_char]  ;block above?
+        SET PC, mc_move_leftw2
+    IFN [j], [mc_water_char]
+        SET PC, POP
+:mc_move_leftw2
+    AND [X], 0x0F00
+    SET [mc_player_pos], j
+    JSR mc_print_player
+    SET PC, POP
+
+;====================================================
+:mc_move_right
+    SET [z], 0
+    SET x, [mc_player_pos]
+    SET j, [mc_player_pos]
+    MOD j, 0x20
+    IFE j, 0x1F                      ;at right edge?
+        SET PC, mc_wrap_right
+
+    SET J, [mc_player_pos]
+    ADD j, 1
+    IFE [j], [mc_sky_char]  ;block above?
+        SET PC, mc_move_right2
+    IFN [j], [mc_water_char]
+        SET PC, POP
+:mc_move_right2
+    AND [X], 0x0F00
+    SET [mc_player_pos], j
+    JSR mc_print_player
+    SET PC, POP
+
+
+:mc_wrap_right
+    SET J, [mc_player_pos]
+    SUB J, 0x1F
+    IFE [j], [mc_sky_char]  ;block above?
+        SET PC, mc_move_rightw2
+    IFN [j], [mc_water_char]
+        SET PC, POP
+:mc_move_rightw2
+    AND [X], 0x0F00
+    SET [mc_player_pos], j
+    JSR mc_print_player
+    SET PC, POP
+
+;======================================================
+:mc_do_up
+    SET [z], 0
+    SET J, [mc_player_pos]
+    SUB J, 0x20
+    IFG [video_mem], j       ;at the top?
+        SET PC, POP
+    IFE [video_mem], j       ;current block?
+        SET PC, POP
+
+    IFN [j], [mc_sky_char]      ;is it a block?
+        SET PC, mc_do_is_block
+    SET [j], [mc_current_block]
+
+    SET PC, POP
+
+;======================================================
+:mc_do_down
+    SET [z], 0
+    SET J, [mc_player_pos]
+    ADD J, 0x20
+    IFG J, [video_mem_end]      ;at the bottom?
+        SET PC, POP
+
+    IFN [j], [mc_sky_char]      ;is it a block?
+        SET PC, mc_do_is_block
+    SET [j], [mc_current_block]
+
+    SET PC, POP
+
+;======================================================
+:mc_do_left
+    SET [z], 0
+    SET j, [mc_player_pos]
+    MOD j, 0x20
+    IFE j, 0x0                      ;at left edge?
+        SET PC, mc_do_wrap_left
+
+    SET J, [mc_player_pos]
+    SUB j, 1
+    IFE j, [video_mem]       ;current block?
+        SET PC, POP
+
+    IFN [j], [mc_sky_char]     ;block there?
+        SET PC, mc_do_is_block
+    SET [j], [mc_current_block]
+
+    SET PC, POP
+
+
+:mc_do_wrap_left
+    SET J, [mc_player_pos]
+    ADD J, 0x1F
+
+    IFN [J], [mc_sky_char]       ;block there?
+        SET PC, mc_do_is_block
+    SET [j], [mc_current_block]
+
+    SET PC, POP
+
+;======================================================
+:mc_do_right
+    SET [z], 0
+    SET j, [mc_player_pos]
+    MOD j, 0x20
+    IFE j, 0x1F                      ;at right edge?
+        SET PC, mc_do_wrap_right
+
+    SET J, [mc_player_pos]
+    ADD j, 1
+    IFN [j], [mc_sky_char]     ;block there?
+        SET PC, mc_do_is_block
+    SET [j], [mc_current_block]
+
+    SET PC, POP
+
+
+:mc_do_wrap_right
+    SET J, [mc_player_pos]
+    SUB J, 0x1F
+    IFE j, [video_mem]       ;current block?
+        SET PC, POP
+
+    IFN [J], [mc_sky_char]       ;block there?
+        SET PC, mc_do_is_block
+    SET [j], [mc_current_block]
+
+    SET PC, POP
+
+;======================================================
+:mc_do_is_block
+    SET [j], [mc_sky_char]
+
+    SET PC, POP
+
+;======================================================
+:mc_swap_item
+    SET [z], 0
+    SET j, mc_block_chars
+:mc_swap_item_loop
+    IFE [mc_current_block], [j]
+        SET PC, mc_swap_item_x
+    ADD j, 1
+    SET PC, mc_swap_item_loop
+
+:mc_swap_item_x
+    ADD j, 1
+    IFE [j], 0
+        SET PC, mc_swap_item_reset
+    SET [mc_current_block], [j]
+    SET x, [video_mem]
+    SET [x], [mc_current_block]
+    SET PC, POP
+:mc_swap_item_reset
+    SET [mc_current_block], [mc_block_chars]
+    SET x, [video_mem]
+    SET [x], [mc_current_block]
+    SET PC, POP
+
+;======================================================
+:mc_reset_game
+    SET [z], 0
+    SET PC, mc_reset_point
+
+;======================================================
+;checks if player is in the air
+:mc_in_air_check
+    SET X, [mc_player_pos]
+    ADD X, 0x20
+
+    IFG x, [video_mem_end]            ;at bottom?
+        SET PC, POP
+
+    IFE [x], [mc_sky_char]    ;ground below?
+        SET PC, mc_in_air
+    IFE [x], [mc_water_char]
+        SET PC, mc_in_air
+    SET [mc_fall_timer], [mc_fall_time]
+    SET PC, pop
+
+:mc_in_air
+    SUB [mc_fall_timer], 1
+    IFN [mc_fall_timer], 0                      ;time up?
+        SET PC, POP
+;dont put anything here
+:mc_fall
+    SET x, [mc_player_pos]
+    AND [x], 0x0F00
+    ADD [mc_player_pos], 0x20
+    SET [mc_fall_timer], [mc_fall_time]
+    JSR mc_print_player
+    SET PC, POP
+
+ :mc_in_air_check_on_ground
+    SET C, [mc_fall_time]
+    SET PC, POP
+
+
+;======================================================
+:mc_print_player
+    SET X, [mc_player_pos]
+    BOR [x], [mc_player_char]
+    SET PC, POP
+
+;======================================================
+:mc_water_flow
+    IFE [mc_water_timer], 0
+       SET PC, mc_water_check
+    SUB [mc_water_timer], 1                        ;only does this every so often
+    SET PC, POP
+
+:mc_water_check
+    SET j, mc_water_flow_saves      ;where it is to be stored
+    SET i, [video_mem]
+    ADD i, 1
+:mc_water_check_loop
+    IFE [i], [mc_block_chars]       ;are there any sources or water?
+        JSR mc_flow
+    SET a, [i]
+    AND a, 0x0F00
+    IFE a, [mc_water_char]
+        JSR mc_flow
+    ADD i, 1
+    IFG [video_mem_end], i
+        SET PC, mc_water_check_loop
+
+    SET [j], 0
+    SET j, mc_water_flow_saves
+:mc_water_print_loop
+    SET i, [j]
+    IFE i, 0
+        SET PC, mc_flow_done
+    AND [i], 0xF0FF
+    BOR [i], [mc_water_char]
+    ADD j, 1
+    SET PC, mc_water_print_loop
+
+:mc_flow_done
+    SET [mc_water_timer], [mc_fall_time]
+    SET PC, POP
+
+:mc_flow_save
+    SET [j], x         ;saves location on screen
+    ADD j, 1
+    SET PC, POP
+
+;=====================================================
+:mc_flow
+    SET x, i
+    ADD x, 0x20
+    IFG x, [video_mem_end]       ;at bottom?
+        SET PC, mc_flow_left
+    SET a, [x]
+    AND a, 0x0F00
+    IFE a, [mc_sky_char]   ;block below?
+        JSR mc_flow_save
+
+
+:mc_flow_left
+    SET x, i
+    MOD x, 0x20
+    IFE x, 0x0                      ;at left edge?
+        SET PC, mc_flow_wrap_left
+
+    SET x, i
+    SUB x, 1
+    IFE x, [video_mem]       ;current block?
+        SET PC, mc_flow_right
+
+    SET a, [x]
+    AND a, 0x0F00
+    IFE a, [mc_sky_char]   ;block below?
+        JSR mc_flow_save
+
+    SET PC, mc_flow_right
+
+:mc_flow_wrap_left
+    SET x, i
+    ADD x, 0x1F
+
+    SET a, [x]
+    AND a, 0x0F00
+    IFE a, [mc_sky_char]   ;block below?
+        JSR mc_flow_save
+
+:mc_flow_right
+    SET x, i
+    MOD x, 0x20
+    IFE x, 0x1F                      ;at right edge?
+        SET PC, mc_flow_wrap_right
+
+    SET x, i
+    ADD x, 1
+    SET a, [x]
+    AND a, 0x0F00
+    IFE a, [mc_sky_char]   ;block below?
+        JSR mc_flow_save
+
+    SET PC, POP
+
+:mc_flow_wrap_right
+    SET x, i
+    SUB x, 0x1F
+    IFE x, [video_mem]       ;current block?
+        SET PC, POP
+
+    SET a, [x]
+    AND a, 0x0F00
+    IFE a, [mc_sky_char]   ;block below?
+        JSR mc_flow_save
+
+    SET PC, POP
+;==============================================================
+
+
+
