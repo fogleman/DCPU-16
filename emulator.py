@@ -172,19 +172,21 @@ class Emulator(object):
             desc = '[%s]' % REGISTERS[x - 0x08]
             result = self.ram[REGISTER + x - 0x08]
         elif 0x10 <= x <= 0x17: # [register + next word]
-            word = self.next_word(1)
+            word = self.next_word(int(not self.skip))
             desc = '[%s + 0x%04x]' % (REGISTERS[x - 0x10], word)
             result = self.ram[REGISTER + x - 0x10] + word
         elif x == 0x18: # POP [SP++]
             desc = 'POP'
             result = self.sp
-            self.sp = (self.sp + 1) % SIZE
+            if not self.skip:
+                self.sp = (self.sp + 1) % SIZE
         elif x == 0x19: # PEEK [SP]
             desc = 'PEEK'
             result = self.sp
         elif x == 0x1a: # PUSH [--SP]
             desc = 'PUSH'
-            self.sp = (self.sp - 1) % SIZE
+            if not self.skip:
+                self.sp = (self.sp - 1) % SIZE
             result = self.sp
         elif x == 0x1b: # SP
             desc = 'SP'
@@ -196,12 +198,12 @@ class Emulator(object):
             desc = 'O'
             result = O
         elif x == 0x1e: # [next word]
-            word = self.next_word(1)
-            desc = '0x%04x' % word
+            word = self.next_word(int(not self.skip))
+            desc = '[0x%04x]' % word
             result = word
         elif x == 0x1f: # literal (next word)
             literal = True
-            word = self.next_word(1)
+            word = self.next_word(int(not self.skip))
             desc = '0x%04x' % word
             result = word
         elif x >= 0x20: # literal (constant)
