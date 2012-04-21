@@ -76,9 +76,9 @@
 ; water source, dirt, grass, rock, cobblestone, wood, gold deposit
 ; redstone, diamond,
 
-:mc_up_key DAT 0x0003    ;up arrow
-:mc_left_key DAT 0x0001    ;left arrow
-:mc_right_key DAT 0x0002   ;right arrow
+:mc_up_key DAT 0x26    ;up arrow
+:mc_left_key DAT 0x25    ;left arrow
+:mc_right_key DAT 0x27   ;right arrow
 
 :mc_do_up_key DAT 0x0077    ;w
 :mc_do_down_key DAT 0x0073 ;s
