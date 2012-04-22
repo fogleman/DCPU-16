@@ -1,9 +1,6 @@
 from ctypes import *
 
-try:
-    dll = CDLL('_emulator.so')
-except Exception:
-    pass
+dll = CDLL('_emulator.so')
 
 EXT_SIZE = 0x1000c
 

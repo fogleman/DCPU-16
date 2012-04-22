@@ -1,8 +1,15 @@
 import assembler
-import cEmulator as emulator
+import emulator
 import sys
 import time
 import wx
+
+try:
+    import cEmulator
+except Exception:
+    cEmulator = None
+
+emulator = cEmulator or emulator
 
 SCALE = 4
 BORDER = 10
