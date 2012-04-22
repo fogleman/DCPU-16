@@ -69,7 +69,8 @@ class Canvas(wx.Panel):
         self.last_time = now
         self.update(dt)
         self.Refresh()
-        wx.CallLater(5, self.on_timer)
+        self.Update()
+        wx.CallLater(10, self.on_timer)
     def on_size(self, event):
         event.Skip()
         w, h = self.GetClientSize()
