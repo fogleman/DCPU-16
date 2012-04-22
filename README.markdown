@@ -1,16 +1,16 @@
 ## Python scripts for DCPU-16 emulation
 
-### Usage: Visualizer
+### Visualizer
 
-    python display.py programs/minesweeper.dasm
+    Usage: python display.py programs/minesweeper.dasm
 
 Run the specified program with the visualizer. See video here: http://www.youtube.com/watch?v=qIyYhIZ0VqI
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/screenshot.png)
 
-### Usage: Benchmarks
+### Benchmarks
 
-    python benchmark.py
+    Usage: python benchmark.py
 
 Run benchmarks on the C emulator and Python emulator to test performance.
 
@@ -24,9 +24,9 @@ MacBook Air (1.7 GHz Intel Core i5)
 
 The C implementation is roughly 360 times faster than the Python implementation and could emulate over 800 DCPU-16 processors at their 100 kHz clock rate.
 
-### Usage: Pretty Print
+### Pretty Print
 
-    python assembler.py programs/example.dasm
+    Usage: python assembler.py programs/example.dasm > pretty_output.dasm
 
 Assemble and output in pretty format. Just like Notch's example, except comments are not retained.
 
