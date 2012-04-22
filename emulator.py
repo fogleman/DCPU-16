@@ -1,5 +1,3 @@
-import time
-
 # Constants
 MAX_VALUE = 0xffff
 SIZE = 0x10000
@@ -8,10 +6,10 @@ SP = 0x10008
 PC = 0x10009
 O = 0x1000a
 LIT = 0x1000b
-REGISTERS = 'ABCXYZIJ'
-CYCLES_PER_SECOND = 100000
 
 # Lookups
+REGISTERS = 'ABCXYZIJ'
+
 BASIC_OPCODES = {
     0x1: 'SET',
     0x2: 'ADD',
@@ -124,16 +122,12 @@ class Emulator(object):
         for index, value in enumerate(program):
             self.ram[index] = value
     # Run Functions
-    def run(self):
-        while not self.halt:
-            self.step(True)
     def next_word(self, cycles=0):
         word = self.ram[self.pc]
         self.pc = (self.pc + 1) % SIZE
         self.cycle += cycles
         return word
-    def step(self, sleep):
-        last_cycle = self.cycle
+    def step(self):
         word = self.next_word()
         op = word & 0x000f
         a = (word & 0x03f0) >> 4
@@ -142,14 +136,10 @@ class Emulator(object):
             self.basic_instruction(op, a, b)
         else:
             self.non_basic_instruction(a, b)
-        if sleep:
-            cycles = self.cycle - last_cycle
-            seconds = float(cycles) / CYCLES_PER_SECOND
-            time.sleep(seconds)
     def n_cycles(self, cycles):
         cycle = self.cycle + cycles
         while self.cycle < cycle:
-            self.step(False)
+            self.step()
     def basic_instruction(self, op, a, b):
         a, _ta = self.operand(a, False)
         b, _tb = self.operand(b, True)

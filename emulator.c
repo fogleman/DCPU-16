@@ -308,9 +308,3 @@ void n_cycles(Emulator *emulator, unsigned int cycles) {
         step(emulator);
     }
 }
-
-void run(Emulator *emulator) {
-    while (!HALT) {
-        step(emulator);
-    }
-}
