@@ -1,11 +1,12 @@
 import assembler
-import emulator
+import cEmulator as emulator
 import sys
 import time
 import wx
 
 SCALE = 4
 BORDER = 10
+CYCLES_PER_SECOND = 100000
 
 class Canvas(wx.Panel):
     def __init__(self, parent, emu):
@@ -39,9 +40,8 @@ class Canvas(wx.Panel):
         self.Bind(wx.EVT_CHAR, self.on_char)
         wx.CallAfter(self.on_timer)
     def update(self, dt):
-        cycle = self.emu.cycle + int(dt * emulator.CYCLES_PER_SECOND)
-        while self.emu.cycle < cycle:
-            self.emu.step(False)
+        cycles = int(dt * CYCLES_PER_SECOND)
+        self.emu.n_cycles(cycles)
     def on_char(self, event):
         lookup = {
             wx.WXK_LEFT: 0x25,

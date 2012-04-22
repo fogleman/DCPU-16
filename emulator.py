@@ -4,8 +4,8 @@ import time
 MAX_VALUE = 0xffff
 SIZE = 0x10000
 REGISTER = 0x10000
-PC = 0x10008
-SP = 0x10009
+SP = 0x10008
+PC = 0x10009
 O = 0x1000a
 LIT = 0x1000b
 REGISTERS = 'ABCXYZIJ'
@@ -146,6 +146,10 @@ class Emulator(object):
             cycles = self.cycle - last_cycle
             seconds = float(cycles) / CYCLES_PER_SECOND
             time.sleep(seconds)
+    def n_cycles(self, cycles):
+        cycle = self.cycle + cycles
+        while self.cycle < cycle:
+            self.step(False)
     def basic_instruction(self, op, a, b):
         a, _ta = self.operand(a, False)
         b, _tb = self.operand(b, True)
