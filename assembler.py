@@ -1,3 +1,7 @@
+import ply.lex as lex
+import ply.yacc as yacc
+import sys
+
 # Lookups
 BASIC_OPCODES = {
     'SET': 0x1,
@@ -68,7 +72,13 @@ class Program(object):
         lines = []
         previous = None
         for instruction in self.instructions:
-            lines.append(instruction.pretty(previous))
+            line = instruction.pretty(previous)
+            data = instruction.assemble(self.lookup)
+            if data and not isinstance(instruction, Data):
+                pad = ' ' * (32 - len(line))
+                data = ' '.join('%04x' % x for x in data)
+                line = '%s%s; %s' % (line, pad, data)
+            lines.append(line)
             previous = instruction
         return '\n'.join(lines)
 
@@ -334,9 +344,6 @@ def p_error(t):
     raise Exception(t)
 
 # Parsing Functions
-import ply.lex as lex
-import ply.yacc as yacc
-
 def parse(text):
     lexer = lex.lex()
     parser = yacc.yacc(debug=False, write_tables=False)
@@ -356,12 +363,19 @@ def assemble_file(path):
         text = fp.read()
     return assemble(text)
 
+def pretty(text):
+    program = parse(text)
+    return program.pretty()
+
+def pretty_file(path):
+    with open(path) as fp:
+        text = fp.read()
+    return pretty(text)
+
 # Main
 if __name__ == '__main__':
-    import os
-    for name in os.listdir('programs'):
-        if '.dasm' not in name:
-            continue
-        program = parse_file(os.path.join('programs', name))
-        data = program.assemble()
-        print name, program.size
+    args = sys.argv[1:]
+    if len(args) == 1:
+        print pretty_file(args[0])
+    else:
+        print 'Usage: python assembler.py input.dasm'

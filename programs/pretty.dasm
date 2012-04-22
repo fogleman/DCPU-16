@@ -1,1211 +1,1326 @@
-; Pretty Print of minesweeper.asm
-    JSR intro
-    SET A, tile0
-    SET B, 0x0059
-    SET C, 0x8182
-    JSR storetiles
+    JSR intro                   ; 7c10 00e4
+    SET A, tile0                ; 7c01 07b7
+    SET B, 0x0059               ; 7c11 0059
+    SET C, 0x8182               ; 7c21 8182
+    JSR storetiles              ; 7c10 0969
 :restart
-    SET [gamestate], 0x0000
-    SET [gametimer], 0x0000
-    SET [game_started], 0x0000
-    SET [old_select_x], 0x000a
-    SET [old_select_y], 0x000a
-    JSR clear_board
-    SET A, boardtiles_l1
-    SET B, 0x0180
-    SET C, 0x8000
-    JSR drawtiles
-    SET A, minestext
-    SET B, 0x0002
-    SET C, 0x8122
-    SET Y, 0x8f00
-    JSR drawtext
-    JSR draw_timer
-    JSR change_selection
-    SET PC, gameloop
+    SET [gamestate], 0x0000     ; 81e1 01f5
+    SET [gametimer], 0x0000     ; 81e1 002d
+    SET [game_started], 0x0000  ; 81e1 04a7
+    SET [old_select_x], 0x000a  ; a9e1 04a0
+    SET [old_select_y], 0x000a  ; a9e1 04a1
+    JSR clear_board             ; 7c10 01cb
+    SET A, boardtiles_l1        ; 7c01 0617
+    SET B, 0x0180               ; 7c11 0180
+    SET C, 0x8000               ; 7c21 8000
+    JSR drawtiles               ; 7c10 05f0
+    SET A, minestext            ; 7c01 00e1
+    SET B, 0x0002               ; 8811
+    SET C, 0x8122               ; 7c21 8122
+    SET Y, 0x8f00               ; 7c41 8f00
+    JSR drawtext                ; 7c10 01e4
+    JSR draw_timer              ; 7c10 027d
+    JSR change_selection        ; 7c10 046f
+    SET PC, gameloop            ; 7dc1 021e
 :gametimer
-    DAT 0x0000
+    DAT 0x0000                  ; 0000
 :timer_second_value
-    DAT 0x023f
+    DAT 0x023f                  ; 023f
 :youwintext
-    DAT 0x004f, 0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055
+    DAT 0x004f, 0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055; 004f 0050 0051 0052 0053 0054 0055
 :youlosetext
-    DAT 0x004f, 0x0050, 0x0051, 0x0056, 0x0057, 0x0058, 0x0059
+    DAT 0x004f, 0x0050, 0x0051, 0x0056, 0x0057, 0x0058, 0x0059; 004f 0050 0051 0056 0057 0058 0059
 :logosmiley1
-    DAT 0x0000, 0xf014, 0xf015, 0xf016, 0xf017, 0x0000
+    DAT 0x0000, 0xf014, 0xf015, 0xf016, 0xf017, 0x0000; 0000 f014 f015 f016 f017 0000
 :logosmiley2
-    DAT 0xf033, 0xf034, 0xf035, 0xf036, 0xf037, 0xf038
+    DAT 0xf033, 0xf034, 0xf035, 0xf036, 0xf037, 0xf038; f033 f034 f035 f036 f037 f038
 :logosmiley3
-    DAT 0x0000, 0xf039, 0xf03a, 0xf03b, 0xf03c, 0x0000
+    DAT 0x0000, 0xf039, 0xf03a, 0xf03b, 0xf03c, 0x0000; 0000 f039 f03a f03b f03c 0000
 :logosmiley2g
-    DAT 0xf033, 0xf018, 0xf05c, 0xf07c, 0xf01c, 0xf038
+    DAT 0xf033, 0xf018, 0xf05c, 0xf07c, 0xf01c, 0xf038; f033 f018 f05c f07c f01c f038
 :blklogosmiley1
-    DAT 0xff00, 0x0f14, 0x0f15, 0x0f16, 0x0f17, 0xff00
+    DAT 0xff00, 0x0f14, 0x0f15, 0x0f16, 0x0f17, 0xff00; ff00 0f14 0f15 0f16 0f17 ff00
 :blklogosmiley2
-    DAT 0x0f33, 0x0f18, 0x0f5c, 0x0f7c, 0x0f1c, 0x0f38
+    DAT 0x0f33, 0x0f18, 0x0f5c, 0x0f7c, 0x0f1c, 0x0f38; 0f33 0f18 0f5c 0f7c 0f1c 0f38
 :blklogosmiley3
-    DAT 0xff00, 0x0f39, 0x0f3a, 0x0f3b, 0x0f3c, 0xff00
+    DAT 0xff00, 0x0f39, 0x0f3a, 0x0f3b, 0x0f3c, 0xff00; ff00 0f39 0f3a 0f3b 0f3c ff00
 :spectrum
-    DAT 0x0001, 0x0009, 0x0003, 0x000b, 0x0003, 0x0009
+    DAT 0x0001, 0x0009, 0x0003, 0x000b, 0x0003, 0x0009; 0001 0009 0003 000b 0003 0009
 :glasses1
-    DAT 0xf019, 0xf01a, 0xf01b, 0xf01c
+    DAT 0xf019, 0xf01a, 0xf01b, 0xf01c; f019 f01a f01b f01c
 :glasses2
-    DAT 0xf01d, 0xf01e, 0xf01f, 0xf03d
+    DAT 0xf01d, 0xf01e, 0xf01f, 0xf03d; f01d f01e f01f f03d
 :glasses3
-    DAT 0xf03f, 0xf03f, 0xf03f, 0xf03f
+    DAT 0xf03f, 0xf03f, 0xf03f, 0xf03f; f03f f03f f03f f03f
 :glasses4
-    DAT 0x0000, 0xf05f, 0xf07d, 0xf07e
+    DAT 0x0000, 0xf05f, 0xf07d, 0xf07e; 0000 f05f f07d f07e
 :glasblank
-    DAT 0x0000, 0x0000, 0x0000, 0x0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000
 :minewhitetop
-    DAT 0xf000, 0xf001, 0xf002, 0xf003, 0xf004, 0xf005, 0xf006, 0xf007, 0xf008, 0xf009, 0xf00a, 0xf00b, 0xf00c, 0xf00d, 0xf00e, 0xf00f, 0xf010, 0xf011, 0xf012
+    DAT 0xf000, 0xf001, 0xf002, 0xf003, 0xf004, 0xf005, 0xf006, 0xf007, 0xf008, 0xf009, 0xf00a, 0xf00b, 0xf00c, 0xf00d, 0xf00e, 0xf00f, 0xf010, 0xf011, 0xf012; f000 f001 f002 f003 f004 f005 f006 f007 f008 f009 f00a f00b f00c f00d f00e f00f f010 f011 f012
 :minewhitebtm
-    DAT 0xf020, 0xf021, 0xf022, 0xf023, 0xf024, 0xf025, 0xf026, 0xf027, 0xf028, 0xf029, 0xf02a, 0xf02b, 0xf02c, 0xf02d, 0xf02e, 0xf02f, 0xf030, 0xf031, 0xf032, 0xf032
+    DAT 0xf020, 0xf021, 0xf022, 0xf023, 0xf024, 0xf025, 0xf026, 0xf027, 0xf028, 0xf029, 0xf02a, 0xf02b, 0xf02c, 0xf02d, 0xf02e, 0xf02f, 0xf030, 0xf031, 0xf032, 0xf032; f020 f021 f022 f023 f024 f025 f026 f027 f028 f029 f02a f02b f02c f02d f02e f02f f030 f031 f032 f032
 :sweeperwhitetop
-    DAT 0xf040, 0xf041, 0xf042, 0xf043, 0xf044, 0xf045, 0xf046, 0xf047, 0xf048, 0xf049, 0xf04a, 0xf04b, 0xf04c, 0xf04d, 0xf04e, 0xf04f, 0xf050, 0xf051, 0xf052, 0xf053, 0xf054, 0xf055, 0xf056, 0xf057, 0xf058, 0xf059, 0xf05a, 0xf05b
+    DAT 0xf040, 0xf041, 0xf042, 0xf043, 0xf044, 0xf045, 0xf046, 0xf047, 0xf048, 0xf049, 0xf04a, 0xf04b, 0xf04c, 0xf04d, 0xf04e, 0xf04f, 0xf050, 0xf051, 0xf052, 0xf053, 0xf054, 0xf055, 0xf056, 0xf057, 0xf058, 0xf059, 0xf05a, 0xf05b; f040 f041 f042 f043 f044 f045 f046 f047 f048 f049 f04a f04b f04c f04d f04e f04f f050 f051 f052 f053 f054 f055 f056 f057 f058 f059 f05a f05b
 :sweeperwhitebtm
-    DAT 0xf060, 0xf061, 0xf062, 0xf063, 0xf064, 0xf065, 0xf066, 0xf067, 0xf068, 0xf069, 0xf06a, 0xf06b, 0xf06c, 0xf06d, 0xf06e, 0xf06f, 0xf070, 0xf071, 0xf072, 0xf073, 0xf074, 0xf075, 0xf076, 0xf077, 0xf078, 0xf079, 0xf07a, 0xf07b
+    DAT 0xf060, 0xf061, 0xf062, 0xf063, 0xf064, 0xf065, 0xf066, 0xf067, 0xf068, 0xf069, 0xf06a, 0xf06b, 0xf06c, 0xf06d, 0xf06e, 0xf06f, 0xf070, 0xf071, 0xf072, 0xf073, 0xf074, 0xf075, 0xf076, 0xf077, 0xf078, 0xf079, 0xf07a, 0xf07b; f060 f061 f062 f063 f064 f065 f066 f067 f068 f069 f06a f06b f06c f06d f06e f06f f070 f071 f072 f073 f074 f075 f076 f077 f078 f079 f07a f07b
 :mines
-    DAT 0x000a
+    DAT 0x000a                  ; 000a
 :minestext
-    DAT 0x004e, 0x0045, 0x004e
+    DAT 0x004e, 0x0045, 0x004e  ; 004e 0045 004e
 :intro
-    SET A, intro0
-    SET B, 0x0080
-    SET C, 0x8180
-    JSR storetiles
-    SET I, 0x0000
-    SET A, 0x8000
-    SET A, logosmiley1
-    SET B, 0x0005
-    SET C, 0x808d
-    JSR drawtiles
-    SET A, logosmiley2
-    SET B, 0x0005
-    SET C, 0x80ad
-    JSR drawtiles
-    SET A, logosmiley3
-    SET B, 0x0005
-    SET C, 0x80cd
-    JSR drawtiles
-    SET I, 0x0000
+    SET A, intro0               ; 7c01 0869
+    SET B, 0x0080               ; 7c11 0080
+    SET C, 0x8180               ; 7c21 8180
+    JSR storetiles              ; 7c10 0969
+    SET I, 0x0000               ; 8061
+    SET A, 0x8000               ; 7c01 8000
+    SET A, logosmiley1          ; 7c01 003d
+    SET B, 0x0005               ; 9411
+    SET C, 0x808d               ; 7c21 808d
+    JSR drawtiles               ; 7c10 05f0
+    SET A, logosmiley2          ; 7c01 0043
+    SET B, 0x0005               ; 9411
+    SET C, 0x80ad               ; 7c21 80ad
+    JSR drawtiles               ; 7c10 05f0
+    SET A, logosmiley3          ; 7c01 0049
+    SET B, 0x0005               ; 9411
+    SET C, 0x80cd               ; 7c21 80cd
+    JSR drawtiles               ; 7c10 05f0
+    SET I, 0x0000               ; 8061
 :glasses_fall_loop
-    SET J, 0x0000
+    SET J, 0x0000               ; 8071
 :slowdown_anim
-    ADD J, 0x0001
-    IFN J, 0x03e8
-        SET PC, slowdown_anim
-    SET B, 0x0003
-    SET X, I
-    MOD X, 0x0003
-    SET C, 0x800e
-    SET Z, I
-    DIV Z, 0x0003
-    MUL Z, 0x0020
-    ADD C, Z
-    IFE X, 0x0000
-        SET A, glasses1
-    IFE X, 0x0001
-        SET A, glasses2
-    IFE X, 0x0002
-        SET A, glasses3
-    JSR drawtiles
-    SET A, glasblank
-    SUB C, 0x0020
-    JSR drawtiles
-    IFE X, 0x0002
-    JSR glassesbottom
-    ADD I, 0x0001
-    IFN I, 0x0011
-        SET PC, glasses_fall_loop
-    SET A, logosmiley1
-    SET B, 0x0005
-    SET C, 0x808d
-    JSR drawtiles
-    SET A, logosmiley2g
-    SET B, 0x0005
-    SET C, 0x80ad
-    JSR drawtiles
-    SET A, logosmiley3
-    SET B, 0x0005
-    SET C, 0x80cd
-    JSR drawtiles
-    SET A, minewhitetop
-    SET B, 0x0012
-    SET C, 0x8046
-    JSR drawtiles
-    SET A, minewhitebtm
-    SET B, 0x0012
-    SET C, 0x8066
-    JSR drawtiles
-    SET A, sweeperwhitetop
-    SET B, 0x001b
-    SET C, 0x80e2
-    JSR drawtiles
-    SET A, sweeperwhitebtm
-    SET B, 0x001b
-    SET C, 0x8102
-    JSR drawtiles
-    SET J, 0x0000
+    ADD J, 0x0001               ; 8472
+    IFN J, 0x03e8               ; 7c7d 03e8
+        SET PC, slowdown_anim   ; 7dc1 0106
+    SET B, 0x0003               ; 8c11
+    SET X, I                    ; 1831
+    MOD X, 0x0003               ; 8c36
+    SET C, 0x800e               ; 7c21 800e
+    SET Z, I                    ; 1851
+    DIV Z, 0x0003               ; 8c55
+    MUL Z, 0x0020               ; 7c54 0020
+    ADD C, Z                    ; 1422
+    IFE X, 0x0000               ; 803c
+        SET A, glasses1         ; 7c01 006d
+    IFE X, 0x0001               ; 843c
+        SET A, glasses2         ; 7c01 0071
+    IFE X, 0x0002               ; 883c
+        SET A, glasses3         ; 7c01 0075
+    JSR drawtiles               ; 7c10 05f0
+    SET A, glasblank            ; 7c01 007d
+    SUB C, 0x0020               ; 7c23 0020
+    JSR drawtiles               ; 7c10 05f0
+    IFE X, 0x0002               ; 883c
+    JSR glassesbottom           ; 7c10 01c4
+    ADD I, 0x0001               ; 8462
+    IFN I, 0x0011               ; c46d
+        SET PC, glasses_fall_loop; 7dc1 0105
+    SET A, logosmiley1          ; 7c01 003d
+    SET B, 0x0005               ; 9411
+    SET C, 0x808d               ; 7c21 808d
+    JSR drawtiles               ; 7c10 05f0
+    SET A, logosmiley2g         ; 7c01 004f
+    SET B, 0x0005               ; 9411
+    SET C, 0x80ad               ; 7c21 80ad
+    JSR drawtiles               ; 7c10 05f0
+    SET A, logosmiley3          ; 7c01 0049
+    SET B, 0x0005               ; 9411
+    SET C, 0x80cd               ; 7c21 80cd
+    JSR drawtiles               ; 7c10 05f0
+    SET A, minewhitetop         ; 7c01 0081
+    SET B, 0x0012               ; c811
+    SET C, 0x8046               ; 7c21 8046
+    JSR drawtiles               ; 7c10 05f0
+    SET A, minewhitebtm         ; 7c01 0094
+    SET B, 0x0012               ; c811
+    SET C, 0x8066               ; 7c21 8066
+    JSR drawtiles               ; 7c10 05f0
+    SET A, sweeperwhitetop      ; 7c01 00a8
+    SET B, 0x001b               ; ec11
+    SET C, 0x80e2               ; 7c21 80e2
+    JSR drawtiles               ; 7c10 05f0
+    SET A, sweeperwhitebtm      ; 7c01 00c4
+    SET B, 0x001b               ; ec11
+    SET C, 0x8102               ; 7c21 8102
+    JSR drawtiles               ; 7c10 05f0
+    SET J, 0x0000               ; 8071
 :wait_logo
-    ADD J, 0x0001
-    IFN J, 0x03e8
-        SET PC, wait_logo
-    SET J, 0x0000
-    SET A, 0x8000
+    ADD J, 0x0001               ; 8472
+    IFN J, 0x03e8               ; 7c7d 03e8
+        SET PC, wait_logo       ; 7dc1 015f
+    SET J, 0x0000               ; 8071
+    SET A, 0x8000               ; 7c01 8000
 :white_screen
-    SET [A], 0xff00
-    ADD J, 0x0001
-    ADD A, 0x0001
-    IFN J, 0x0180
-        SET PC, white_screen
-    SET A, blklogosmiley1
-    SET B, 0x0005
-    SET C, 0x808d
-    JSR drawtiles
-    SET A, blklogosmiley2
-    SET B, 0x0005
-    SET C, 0x80ad
-    JSR drawtiles
-    SET A, blklogosmiley3
-    SET B, 0x0005
-    SET C, 0x80cd
-    JSR drawtiles
-    SET J, 0x0000
+    SET [A], 0xff00             ; 7c81 ff00
+    ADD J, 0x0001               ; 8472
+    ADD A, 0x0001               ; 8402
+    IFN J, 0x0180               ; 7c7d 0180
+        SET PC, white_screen    ; 7dc1 0167
+    SET A, blklogosmiley1       ; 7c01 0055
+    SET B, 0x0005               ; 9411
+    SET C, 0x808d               ; 7c21 808d
+    JSR drawtiles               ; 7c10 05f0
+    SET A, blklogosmiley2       ; 7c01 005b
+    SET B, 0x0005               ; 9411
+    SET C, 0x80ad               ; 7c21 80ad
+    JSR drawtiles               ; 7c10 05f0
+    SET A, blklogosmiley3       ; 7c01 0061
+    SET B, 0x0005               ; 9411
+    SET C, 0x80cd               ; 7c21 80cd
+    JSR drawtiles               ; 7c10 05f0
+    SET J, 0x0000               ; 8071
 :cycle_logo
-    ADD J, 0x0001
-    SET A, minewhitetop
-    SET B, 0x0012
-    SET C, 0x8046
-    JSR drawrainbow
-    SET A, minewhitebtm
-    SET B, 0x0012
-    SET C, 0x8066
-    JSR drawrainbow
-    SET A, sweeperwhitetop
-    SET B, 0x001b
-    SET C, 0x80e2
-    JSR drawrainbow
-    SET A, sweeperwhitebtm
-    SET B, 0x001b
-    SET C, 0x8102
-    JSR drawrainbow
-    IFN J, 0x0042
-        SET PC, cycle_logo
-    SET PC, POP
+    ADD J, 0x0001               ; 8472
+    SET A, minewhitetop         ; 7c01 0081
+    SET B, 0x0012               ; c811
+    SET C, 0x8046               ; 7c21 8046
+    JSR drawrainbow             ; 7c10 01a7
+    SET A, minewhitebtm         ; 7c01 0094
+    SET B, 0x0012               ; c811
+    SET C, 0x8066               ; 7c21 8066
+    JSR drawrainbow             ; 7c10 01a7
+    SET A, sweeperwhitetop      ; 7c01 00a8
+    SET B, 0x001b               ; ec11
+    SET C, 0x80e2               ; 7c21 80e2
+    JSR drawrainbow             ; 7c10 01a7
+    SET A, sweeperwhitebtm      ; 7c01 00c4
+    SET B, 0x001b               ; ec11
+    SET C, 0x8102               ; 7c21 8102
+    JSR drawrainbow             ; 7c10 01a7
+    IFN J, 0x0042               ; 7c7d 0042
+        SET PC, cycle_logo      ; 7dc1 0185
+    SET PC, POP                 ; 61c1
 :drawrainbow
-    SET PUSH, I
-    SET PUSH, C
-    SET I, 0x0000
-    SET X, J
-    MOD X, 0x0006
+    SET PUSH, I                 ; 19a1
+    SET PUSH, C                 ; 09a1
+    SET I, 0x0000               ; 8061
+    SET X, J                    ; 1c31
+    MOD X, 0x0006               ; 9836
 :drawrainbow_loop
-    SET [C], [A]
-    SHL [C], 0x0008
-    SHR [C], 0x0008
-    ADD [C], 0x0f00
-    SET Y, X
-    ADD Y, spectrum
-    SET Y, [Y]
-    SHL Y, 0x000c
-    BOR [C], Y
-    ADD C, 0x0001
-    ADD A, 0x0001
-    ADD I, 0x0001
-    ADD X, 0x0001
-    MOD X, 0x0006
-    IFG I, B
-        SET PC, drawrainbow_end
-    SET PC, drawrainbow_loop
+    SET [C], [A]                ; 20a1
+    SHL [C], 0x0008             ; a0a7
+    SHR [C], 0x0008             ; a0a8
+    ADD [C], 0x0f00             ; 7ca2 0f00
+    SET Y, X                    ; 0c41
+    ADD Y, spectrum             ; 7c42 0067
+    SET Y, [Y]                  ; 3041
+    SHL Y, 0x000c               ; b047
+    BOR [C], Y                  ; 10aa
+    ADD C, 0x0001               ; 8422
+    ADD A, 0x0001               ; 8402
+    ADD I, 0x0001               ; 8462
+    ADD X, 0x0001               ; 8432
+    MOD X, 0x0006               ; 9836
+    IFG I, B                    ; 046e
+        SET PC, drawrainbow_end ; 7dc1 01c1
+    SET PC, drawrainbow_loop    ; 7dc1 01ac
 :drawrainbow_end
-    SET C, POP
-    SET I, POP
-    SET PC, POP
+    SET C, POP                  ; 6021
+    SET I, POP                  ; 6061
+    SET PC, POP                 ; 61c1
 :glassesbottom
-    ADD C, 0x0040
-    SET A, glasses4
-    JSR drawtiles
-    SET PC, POP
+    ADD C, 0x0040               ; 7c22 0040
+    SET A, glasses4             ; 7c01 0079
+    JSR drawtiles               ; 7c10 05f0
+    SET PC, POP                 ; 61c1
 :clear_board
-    SET I, 0x0000
-    SET J, board
-    SET Y, flag
+    SET I, 0x0000               ; 8061
+    SET J, board                ; 7c71 04f9
+    SET Y, flag                 ; 7c41 04a8
 :clearboard_loop
-    SET [J], 0x0000
-    SET [Y], 0x0000
-    ADD J, 0x0001
-    ADD Y, 0x0001
-    ADD I, 0x0001
-    IFN I, 0x0051
-        SET PC, clearboard_loop
-    SET A, tiletypes_left
-    ADD A, 0x000a
-    SET [A], 0x8701
-    SET A, tiletypes_right
-    ADD A, 0x000a
-    SET [A], 0x8702
-    SET PC, POP
+    SET [J], 0x0000             ; 80f1
+    SET [Y], 0x0000             ; 80c1
+    ADD J, 0x0001               ; 8472
+    ADD Y, 0x0001               ; 8442
+    ADD I, 0x0001               ; 8462
+    IFN I, 0x0051               ; 7c6d 0051
+        SET PC, clearboard_loop ; 7dc1 01d0
+    SET A, tiletypes_left       ; 7c01 0350
+    ADD A, 0x000a               ; a802
+    SET [A], 0x8701             ; 7c81 8701
+    SET A, tiletypes_right      ; 7c01 035c
+    ADD A, 0x000a               ; a802
+    SET [A], 0x8702             ; 7c81 8702
+    SET PC, POP                 ; 61c1
 :drawtext
-    SET PUSH, I
-    SET I, 0x0000
-    SET PUSH, X
+    SET PUSH, I                 ; 19a1
+    SET I, 0x0000               ; 8061
+    SET PUSH, X                 ; 0da1
 :drawtext_loop
-    SET X, [A]
-    BOR X, Y
-    SET [C], X
-    ADD C, 0x0001
-    ADD A, 0x0001
-    ADD I, 0x0001
-    IFG I, B
-        SET PC, drawtext_end
-    SET PC, drawtext_loop
+    SET X, [A]                  ; 2031
+    BOR X, Y                    ; 103a
+    SET [C], X                  ; 0ca1
+    ADD C, 0x0001               ; 8422
+    ADD A, 0x0001               ; 8402
+    ADD I, 0x0001               ; 8462
+    IFG I, B                    ; 046e
+        SET PC, drawtext_end    ; 7dc1 01f2
+    SET PC, drawtext_loop       ; 7dc1 01e7
 :drawtext_end
-    SET X, POP
-    SET I, POP
-    SET PC, POP
+    SET X, POP                  ; 6031
+    SET I, POP                  ; 6061
+    SET PC, POP                 ; 61c1
 :gamestate
-    DAT 0x0000
+    DAT 0x0000                  ; 0000
 :endgame
-    IFE [gamestate], 0x0001
-        SET A, youwintext
-    IFE [gamestate], 0x0002
-        SET A, youlosetext
-    SET B, 0x0006
-    SET C, 0x816c
-    IFE [gamestate], 0x0001
-        SET Y, 0x9700
-    IFE [gamestate], 0x0002
-        SET Y, 0x4700
-    JSR drawtext
+    IFE [gamestate], 0x0001     ; 85ec 01f5
+        SET A, youwintext       ; 7c01 002f
+    IFE [gamestate], 0x0002     ; 89ec 01f5
+        SET A, youlosetext      ; 7c01 0036
+    SET B, 0x0006               ; 9811
+    SET C, 0x816c               ; 7c21 816c
+    IFE [gamestate], 0x0001     ; 85ec 01f5
+        SET Y, 0x9700           ; 7c41 9700
+    IFE [gamestate], 0x0002     ; 89ec 01f5
+        SET Y, 0x4700           ; 7c41 4700
+    JSR drawtext                ; 7c10 01e4
 :endgame_loop
-    SET C, 0x9000
-    SET B, 0x0000
+    SET C, 0x9000               ; 7c21 9000
+    SET B, 0x0000               ; 8011
 :buffloop2
-    IFN [C], 0x0000
-        SET B, [C]
-    SET [C], 0x0000
-    ADD C, 0x0001
-    IFN C, 0x9010
-        SET PC, buffloop2
-    IFE B, 0x000a
-        SET PC, restart
-    SET [C], 0x0000
-    SET C, 0x9000
-    SET PC, endgame_loop
+    IFN [C], 0x0000             ; 80ad
+        SET B, [C]              ; 2811
+    SET [C], 0x0000             ; 80a1
+    ADD C, 0x0001               ; 8422
+    IFN C, 0x9010               ; 7c2d 9010
+        SET PC, buffloop2       ; 7dc1 020e
+    IFE B, 0x000a               ; a81c
+        SET PC, restart         ; 7dc1 000a
+    SET [C], 0x0000             ; 80a1
+    SET C, 0x9000               ; 7c21 9000
+    SET PC, endgame_loop        ; 7dc1 020b
 :gameloop
-    IFN [gamestate], 0x0000
-        SET PC, endgame
-    ADD [timer], 0x0001
-    IFE [game_started], 0x0000
-        SET PC, skip_timer
-    SET A, [timer]
-    MOD A, [timer_second_value]
-    IFN A, 0x0000
-        SET PC, skip_timer
-    ADD [gametimer], 0x0001
-    IFG [gametimer], 0x03e7
-        SET [gametimer], 0x03e7
-    JSR draw_timer
+    IFN [gamestate], 0x0000     ; 81ed 01f5
+        SET PC, endgame         ; 7dc1 01f6
+    ADD [timer], 0x0001         ; 85e2 04a6
+    IFE [game_started], 0x0000  ; 81ec 04a7
+        SET PC, skip_timer      ; 7dc1 0239
+    SET A, [timer]              ; 7801 04a6
+    MOD A, [timer_second_value] ; 7806 002e
+    IFN A, 0x0000               ; 800d
+        SET PC, skip_timer      ; 7dc1 0239
+    ADD [gametimer], 0x0001     ; 85e2 002d
+    IFG [gametimer], 0x03e7     ; 7dee 002d 03e7
+        SET [gametimer], 0x03e7 ; 7de1 002d 03e7
+    JSR draw_timer              ; 7c10 027d
 :skip_timer
-    SET C, 0x9000
-    SET B, 0x0000
+    SET C, 0x9000               ; 7c21 9000
+    SET B, 0x0000               ; 8011
 :buffloop
-    IFN [C], 0x0000
-        SET B, [C]
-    SET [C], 0x0000
-    ADD C, 0x0001
-    IFN C, 0x9010
-        SET PC, buffloop
-    SET A, 0x0000
-    IFE B, 0x0025
-        SET A, 0x0002
-    IFE B, 0x0026
-        SET A, 0x0004
-    IFE B, 0x0027
-        SET A, 0x0001
-    IFE B, 0x0028
-        SET A, 0x0003
-    IFE B, 0x000a
-    JSR action
-    IFE B, 0x0066
-    JSR flagspace
-    IFN A, 0x0000
-    JSR select_move
-    SET [C], 0x0000
-    SET PC, gameloop
+    IFN [C], 0x0000             ; 80ad
+        SET B, [C]              ; 2811
+    SET [C], 0x0000             ; 80a1
+    ADD C, 0x0001               ; 8422
+    IFN C, 0x9010               ; 7c2d 9010
+        SET PC, buffloop        ; 7dc1 023c
+    SET A, 0x0000               ; 8001
+    IFE B, 0x0025               ; 7c1c 0025
+        SET A, 0x0002           ; 8801
+    IFE B, 0x0026               ; 7c1c 0026
+        SET A, 0x0004           ; 9001
+    IFE B, 0x0027               ; 7c1c 0027
+        SET A, 0x0001           ; 8401
+    IFE B, 0x0028               ; 7c1c 0028
+        SET A, 0x0003           ; 8c01
+    IFE B, 0x000a               ; a81c
+    JSR action                  ; 7c10 02b8
+    IFE B, 0x0066               ; 7c1c 0066
+    JSR flagspace               ; 7c10 02a9
+    IFN A, 0x0000               ; 800d
+    JSR select_move             ; 7c10 025e
+    SET [C], 0x0000             ; 80a1
+    SET PC, gameloop            ; 7dc1 021e
 :select_move
-    IFE A, 0x0001
-        ADD [select_x], 0x0001
-    IFE A, 0x0002
-        SUB [select_x], 0x0001
-    IFE A, 0x0003
-        ADD [select_y], 0x0001
-    IFE A, 0x0004
-        SUB [select_y], 0x0001
-    IFG [select_x], 0x000a
-        SET [select_x], 0x0000
-    IFG [select_y], 0x000a
-        SET [select_y], 0x0000
-    IFG [select_x], 0x0008
-        SET [select_x], 0x0008
-    IFG [select_y], 0x0008
-        SET [select_y], 0x0008
-    JSR change_selection
-    SET PC, POP
+    IFE A, 0x0001               ; 840c
+        ADD [select_x], 0x0001  ; 85e2 04a4
+    IFE A, 0x0002               ; 880c
+        SUB [select_x], 0x0001  ; 85e3 04a4
+    IFE A, 0x0003               ; 8c0c
+        ADD [select_y], 0x0001  ; 85e2 04a5
+    IFE A, 0x0004               ; 900c
+        SUB [select_y], 0x0001  ; 85e3 04a5
+    IFG [select_x], 0x000a      ; a9ee 04a4
+        SET [select_x], 0x0000  ; 81e1 04a4
+    IFG [select_y], 0x000a      ; a9ee 04a5
+        SET [select_y], 0x0000  ; 81e1 04a5
+    IFG [select_x], 0x0008      ; a1ee 04a4
+        SET [select_x], 0x0008  ; a1e1 04a4
+    IFG [select_y], 0x0008      ; a1ee 04a5
+        SET [select_y], 0x0008  ; a1e1 04a5
+    JSR change_selection        ; 7c10 046f
+    SET PC, POP                 ; 61c1
 :draw_timer
-    SET PUSH, A
-    SET PUSH, B
-    SET PUSH, C
-    SET A, 0x813b
-    SET C, [gametimer]
-    DIV C, 0x0064
-    MOD C, 0x000a
-    SET B, 0x8f44
-    ADD B, C
-    IFE C, 0x0000
-        SET B, 0x8f4e
-    SET [A], B
-    ADD A, 0x0001
-    SET C, [gametimer]
-    DIV C, 0x000a
-    MOD C, 0x000a
-    SET B, 0x8f44
-    ADD B, C
-    IFE C, 0x0000
-        SET B, 0x8f4e
-    SET [A], B
-    ADD A, 0x0001
-    SET C, [gametimer]
-    MOD C, 0x000a
-    SET B, 0x8f44
-    ADD B, C
-    IFE C, 0x0000
-        SET B, 0x8f4e
-    SET [A], B
-    SET C, POP
-    SET B, POP
-    SET A, POP
-    SET PC, POP
+    SET PUSH, A                 ; 01a1
+    SET PUSH, B                 ; 05a1
+    SET PUSH, C                 ; 09a1
+    SET A, 0x813b               ; 7c01 813b
+    SET C, [gametimer]          ; 7821 002d
+    DIV C, 0x0064               ; 7c25 0064
+    MOD C, 0x000a               ; a826
+    SET B, 0x8f44               ; 7c11 8f44
+    ADD B, C                    ; 0812
+    IFE C, 0x0000               ; 802c
+        SET B, 0x8f4e           ; 7c11 8f4e
+    SET [A], B                  ; 0481
+    ADD A, 0x0001               ; 8402
+    SET C, [gametimer]          ; 7821 002d
+    DIV C, 0x000a               ; a825
+    MOD C, 0x000a               ; a826
+    SET B, 0x8f44               ; 7c11 8f44
+    ADD B, C                    ; 0812
+    IFE C, 0x0000               ; 802c
+        SET B, 0x8f4e           ; 7c11 8f4e
+    SET [A], B                  ; 0481
+    ADD A, 0x0001               ; 8402
+    SET C, [gametimer]          ; 7821 002d
+    MOD C, 0x000a               ; a826
+    SET B, 0x8f44               ; 7c11 8f44
+    ADD B, C                    ; 0812
+    IFE C, 0x0000               ; 802c
+        SET B, 0x8f4e           ; 7c11 8f4e
+    SET [A], B                  ; 0481
+    SET C, POP                  ; 6021
+    SET B, POP                  ; 6011
+    SET A, POP                  ; 6001
+    SET PC, POP                 ; 61c1
 :flagspace
-    SET PUSH, A
-    SET A, [select_x]
-    SET B, [select_y]
-    MUL B, 0x0009
-    ADD A, B
-    ADD A, flag
-    ADD [A], 0x0001
-    MOD [A], 0x0002
-    JSR redraw_board
-    SET A, POP
-    SET PC, POP
+    SET PUSH, A                 ; 01a1
+    SET A, [select_x]           ; 7801 04a4
+    SET B, [select_y]           ; 7811 04a5
+    MUL B, 0x0009               ; a414
+    ADD A, B                    ; 0402
+    ADD A, flag                 ; 7c02 04a8
+    ADD [A], 0x0001             ; 8482
+    MOD [A], 0x0002             ; 8886
+    JSR redraw_board            ; 7c10 0347
+    SET A, POP                  ; 6001
+    SET PC, POP                 ; 61c1
 :action
-    IFE [game_started], 0x0000
-    JSR generate_board
-    SET [game_started], 0x0001
-    SET PUSH, A
-    SET PUSH, C
-    SET A, [select_x]
-    SET B, [select_y]
-    SET X, A
-    SET Y, B
-    MUL B, 0x0009
-    ADD A, B
-    SET Z, A
-    ADD Z, flag
-    ADD A, board
-    IFE [Z], 0x0001
-        SET PC, end_action
-    IFE [A], 0x0000
-        SET PC, mine_seek
-    IFE [A], 0x000a
-    JSR lose
+    IFE [game_started], 0x0000  ; 81ec 04a7
+    JSR generate_board          ; 7c10 042d
+    SET [game_started], 0x0001  ; 85e1 04a7
+    SET PUSH, A                 ; 01a1
+    SET PUSH, C                 ; 09a1
+    SET A, [select_x]           ; 7801 04a4
+    SET B, [select_y]           ; 7811 04a5
+    SET X, A                    ; 0031
+    SET Y, B                    ; 0441
+    MUL B, 0x0009               ; a414
+    ADD A, B                    ; 0402
+    SET Z, A                    ; 0051
+    ADD Z, flag                 ; 7c52 04a8
+    ADD A, board                ; 7c02 04f9
+    IFE [Z], 0x0001             ; 84dc
+        SET PC, end_action      ; 7dc1 02d6
+    IFE [A], 0x0000             ; 808c
+        SET PC, mine_seek       ; 7dc1 02d9
+    IFE [A], 0x000a             ; a88c
+    JSR lose                    ; 7c10 0410
 :end_action
-    SET C, POP
-    SET A, POP
-    SET PC, POP
+    SET C, POP                  ; 6021
+    SET A, POP                  ; 6001
+    SET PC, POP                 ; 61c1
 :mine_seek
-    SET Z, 0x0001
-    SET I, 0x0000
-    SET J, surrounding_work
-    IFG [A], 0x0000
-        ADD I, 0x0001
-    IFG 0x000a, [A]
-        ADD I, 0x0001
-    IFG I, 0x0001
-        SET PC, POP
-    SET PUSH, A
-    SET PUSH, B
-    SET PUSH, C
-    SET A, surprised_top
-    SET B, 0x0003
-    SET C, 0x800e
-    JSR drawtiles
-    SET A, surprised_btm
-    SET B, 0x0003
-    SET C, 0x802e
-    JSR drawtiles
-    SET C, POP
-    SET B, POP
-    SET A, POP
-    SET I, 0x0000
-    JSR check_surroundings
-    IFE I, 0x0000
-        SET PC, skip_surrounding_loop
+    SET Z, 0x0001               ; 8451
+    SET I, 0x0000               ; 8061
+    SET J, surrounding_work     ; 7c71 054a
+    IFG [A], 0x0000             ; 808e
+        ADD I, 0x0001           ; 8462
+    IFG 0x000a, [A]             ; 22ae
+        ADD I, 0x0001           ; 8462
+    IFG I, 0x0001               ; 846e
+        SET PC, POP             ; 61c1
+    SET PUSH, A                 ; 01a1
+    SET PUSH, B                 ; 05a1
+    SET PUSH, C                 ; 09a1
+    SET A, surprised_top        ; 7c01 0607
+    SET B, 0x0003               ; 8c11
+    SET C, 0x800e               ; 7c21 800e
+    JSR drawtiles               ; 7c10 05f0
+    SET A, surprised_btm        ; 7c01 060b
+    SET B, 0x0003               ; 8c11
+    SET C, 0x802e               ; 7c21 802e
+    JSR drawtiles               ; 7c10 05f0
+    SET C, POP                  ; 6021
+    SET B, POP                  ; 6011
+    SET A, POP                  ; 6001
+    SET I, 0x0000               ; 8061
+    JSR check_surroundings      ; 7c10 03ab
+    IFE I, 0x0000               ; 806c
+        SET PC, skip_surrounding_loop; 7dc1 0319
 :mine_seek_loop
-    JSR move_surrounding_table
-    SET J, surrounding_work
-    SET I, 0x0000
+    JSR move_surrounding_table  ; 7c10 033b
+    SET J, surrounding_work     ; 7c71 054a
+    SET I, 0x0000               ; 8061
 :surrounding_process_loop
-    IFE [J], 0x0000
-        SET PC, skip_surrounding
-    SET Y, J
-    SUB Y, surrounding_work
-    SET A, Y
-    ADD A, board
-    DIV Y, 0x0009
-    SET X, J
-    SUB X, surrounding_work
-    MOD X, 0x0009
-    JSR check_surroundings
+    IFE [J], 0x0000             ; 80fc
+        SET PC, skip_surrounding; 7dc1 0312
+    SET Y, J                    ; 1c41
+    SUB Y, surrounding_work     ; 7c43 054a
+    SET A, Y                    ; 1001
+    ADD A, board                ; 7c02 04f9
+    DIV Y, 0x0009               ; a445
+    SET X, J                    ; 1c31
+    SUB X, surrounding_work     ; 7c33 054a
+    MOD X, 0x0009               ; a436
+    JSR check_surroundings      ; 7c10 03ab
 :skip_surrounding
-    ADD J, 0x0001
-    IFN [J], 0x0002
-        SET PC, surrounding_process_loop
-    IFN I, 0x0000
-        SET PC, mine_seek_loop
+    ADD J, 0x0001               ; 8472
+    IFN [J], 0x0002             ; 88fd
+        SET PC, surrounding_process_loop; 7dc1 0302
+    IFN I, 0x0000               ; 806d
+        SET PC, mine_seek_loop  ; 7dc1 02fd
 :skip_surrounding_loop
-    JSR redraw_board
-    SET A, norm_top
-    SET B, 0x0003
-    SET C, 0x800e
-    JSR drawtiles
-    SET A, norm_btm
-    SET B, 0x0003
-    SET C, 0x802e
-    JSR drawtiles
-    JSR wincheck
-    SET PC, end_action
+    JSR redraw_board            ; 7c10 0347
+    SET A, norm_top             ; 7c01 05ff
+    SET B, 0x0003               ; 8c11
+    SET C, 0x800e               ; 7c21 800e
+    JSR drawtiles               ; 7c10 05f0
+    SET A, norm_btm             ; 7c01 0603
+    SET B, 0x0003               ; 8c11
+    SET C, 0x802e               ; 7c21 802e
+    JSR drawtiles               ; 7c10 05f0
+    JSR wincheck                ; 7c10 032d
+    SET PC, end_action          ; 7dc1 02d6
 :wincheck
-    SET A, board
-    SET I, 0x0000
+    SET A, board                ; 7c01 04f9
+    SET I, 0x0000               ; 8061
 :wincheckloop
-    IFE [A], 0x0000
-        SET PC, POP
-    ADD I, 0x0001
-    ADD A, 0x0001
-    IFN I, 0x0051
-        SET PC, wincheckloop
-    SET [gamestate], 0x0001
-    SET PC, POP
+    IFE [A], 0x0000             ; 808c
+        SET PC, POP             ; 61c1
+    ADD I, 0x0001               ; 8462
+    ADD A, 0x0001               ; 8402
+    IFN I, 0x0051               ; 7c6d 0051
+        SET PC, wincheckloop    ; 7dc1 0330
+    SET [gamestate], 0x0001     ; 85e1 01f5
+    SET PC, POP                 ; 61c1
 :move_surrounding_table
-    SET A, surrounding_next
-    SET B, surrounding_work
+    SET A, surrounding_next     ; 7c01 059c
+    SET B, surrounding_work     ; 7c11 054a
 :move_s_table_loop
-    SET [B], [A]
-    SET [A], 0x0000
-    ADD A, 0x0001
-    ADD B, 0x0001
-    IFN [A], 0x0002
-        SET PC, move_s_table_loop
-    SET PC, POP
+    SET [B], [A]                ; 2091
+    SET [A], 0x0000             ; 8081
+    ADD A, 0x0001               ; 8402
+    ADD B, 0x0001               ; 8412
+    IFN [A], 0x0002             ; 888d
+        SET PC, move_s_table_loop; 7dc1 033f
+    SET PC, POP                 ; 61c1
 :redraw_board
-    SET X, 0x0000
-    SET Y, 0x0000
-    SET I, 0x0000
-    SET A, board
-    SET Z, flag
-    SET PC, redraw_loop
+    SET X, 0x0000               ; 8031
+    SET Y, 0x0000               ; 8041
+    SET I, 0x0000               ; 8061
+    SET A, board                ; 7c01 04f9
+    SET Z, flag                 ; 7c51 04a8
+    SET PC, redraw_loop         ; 7dc1 0368
 :tiletypes_left
-    DAT 0x8701, 0x7f1e, 0x7f21, 0x7f23, 0x7f25, 0x7f27, 0x7f29, 0x7f2b, 0x7f2d, 0x7f2f, 0x8701, 0x3b31
+    DAT 0x8701, 0x7f1e, 0x7f21, 0x7f23, 0x7f25, 0x7f27, 0x7f29, 0x7f2b, 0x7f2d, 0x7f2f, 0x8701, 0x3b31; 8701 7f1e 7f21 7f23 7f25 7f27 7f29 7f2b 7f2d 7f2f 8701 3b31
 :tiletypes_right
-    DAT 0x8702, 0x7f1f, 0x7f22, 0x7f24, 0x7f26, 0x7f28, 0x7f2a, 0x7f2c, 0x7f2e, 0x7f30, 0x8702, 0x3b32
+    DAT 0x8702, 0x7f1f, 0x7f22, 0x7f24, 0x7f26, 0x7f28, 0x7f2a, 0x7f2c, 0x7f2e, 0x7f30, 0x8702, 0x3b32; 8702 7f1f 7f22 7f24 7f26 7f28 7f2a 7f2c 7f2e 7f30 8702 3b32
 :redraw_loop
-    SET B, X
-    SET C, Y
-    MUL B, 0x0002
-    ADD B, 0x0007
-    ADD C, 0x0002
-    MUL C, 0x0020
-    ADD B, C
-    ADD B, 0x8000
-    SET C, [A]
-    IFN [Z], 0x0001
-        SET PC, ingame_continue
-    SET J, tiletypes_left
-    ADD J, [A]
-    IFE [J], 0x8701
-        SET C, 0x000b
+    SET B, X                    ; 0c11
+    SET C, Y                    ; 1021
+    MUL B, 0x0002               ; 8814
+    ADD B, 0x0007               ; 9c12
+    ADD C, 0x0002               ; 8822
+    MUL C, 0x0020               ; 7c24 0020
+    ADD B, C                    ; 0812
+    ADD B, 0x8000               ; 7c12 8000
+    SET C, [A]                  ; 2021
+    IFN [Z], 0x0001             ; 84dd
+        SET PC, ingame_continue ; 7dc1 037c
+    SET J, tiletypes_left       ; 7c71 0350
+    ADD J, [A]                  ; 2072
+    IFE [J], 0x8701             ; 7cfc 8701
+        SET C, 0x000b           ; ac21
 :ingame_continue
-    SET J, tiletypes_left
-    ADD J, C
-    SET [B], [J]
-    ADD B, 0x0001
-    SET J, tiletypes_right
-    ADD J, C
-    SET [B], [J]
-    ADD I, 0x0001
-    ADD X, 0x0001
-    ADD A, 0x0001
-    ADD Z, 0x0001
-    IFG X, 0x0008
-        ADD Y, 0x0001
-    IFG X, 0x0008
-        SET X, 0x0000
-    IFG 0x0051, I
-        SET PC, redraw_loop
-    JSR redefine_selection
-    JSR change_selection
-    ADD [moves], 0x0001
-    SET PC, POP
+    SET J, tiletypes_left       ; 7c71 0350
+    ADD J, C                    ; 0872
+    SET [B], [J]                ; 3c91
+    ADD B, 0x0001               ; 8412
+    SET J, tiletypes_right      ; 7c71 035c
+    ADD J, C                    ; 0872
+    SET [B], [J]                ; 3c91
+    ADD I, 0x0001               ; 8462
+    ADD X, 0x0001               ; 8432
+    ADD A, 0x0001               ; 8402
+    ADD Z, 0x0001               ; 8452
+    IFG X, 0x0008               ; a03e
+        ADD Y, 0x0001           ; 8442
+    IFG X, 0x0008               ; a03e
+        SET X, 0x0000           ; 8031
+    IFG 0x0051, I               ; 19fe 0051
+        SET PC, redraw_loop     ; 7dc1 0368
+    JSR redefine_selection      ; 7c10 0399
+    JSR change_selection        ; 7c10 046f
+    ADD [moves], 0x0001         ; 85e2 0398
+    SET PC, POP                 ; 61c1
 :moves
-    DAT 0x0000
+    DAT 0x0000                  ; 0000
 :redefine_selection
-    SET B, [select_x]
-    SET C, [select_y]
-    MUL B, 0x0002
-    ADD B, 0x0007
-    ADD C, 0x0002
-    MUL C, 0x0020
-    ADD B, C
-    ADD B, 0x8000
-    SET [old_select_tile1], [B]
-    ADD B, 0x0001
-    SET [old_select_tile2], [B]
-    SET PC, POP
+    SET B, [select_x]           ; 7811 04a4
+    SET C, [select_y]           ; 7821 04a5
+    MUL B, 0x0002               ; 8814
+    ADD B, 0x0007               ; 9c12
+    ADD C, 0x0002               ; 8822
+    MUL C, 0x0020               ; 7c24 0020
+    ADD B, C                    ; 0812
+    ADD B, 0x8000               ; 7c12 8000
+    SET [old_select_tile1], [B] ; 25e1 04a2
+    ADD B, 0x0001               ; 8412
+    SET [old_select_tile2], [B] ; 25e1 04a3
+    SET PC, POP                 ; 61c1
 :check_surroundings
-    SET Z, 0x0001
-    ADD X, 0x0001
-    ADD A, 0x0001
-    JSR checkblock
-    SUB Y, 0x0001
-    SUB A, 0x0009
-    JSR checkblock
-    SUB X, 0x0001
-    SUB A, 0x0001
-    JSR checkblock
-    SUB X, 0x0001
-    SUB A, 0x0001
-    JSR checkblock
-    ADD Y, 0x0001
-    ADD A, 0x0009
-    JSR checkblock
-    ADD Y, 0x0001
-    ADD A, 0x0009
-    JSR checkblock
-    ADD X, 0x0001
-    ADD A, 0x0001
-    JSR checkblock
-    ADD X, 0x0001
-    ADD A, 0x0001
-    JSR checkblock
-    SUB X, 0x0001
-    SUB Y, 0x0001
-    SUB A, 0x000a
-    SET [A], Z
-    IFG 0x0002, Z
-    JSR countsurroundings
-    SET PC, POP
+    SET Z, 0x0001               ; 8451
+    ADD X, 0x0001               ; 8432
+    ADD A, 0x0001               ; 8402
+    JSR checkblock              ; 7c10 0409
+    SUB Y, 0x0001               ; 8443
+    SUB A, 0x0009               ; a403
+    JSR checkblock              ; 7c10 0409
+    SUB X, 0x0001               ; 8433
+    SUB A, 0x0001               ; 8403
+    JSR checkblock              ; 7c10 0409
+    SUB X, 0x0001               ; 8433
+    SUB A, 0x0001               ; 8403
+    JSR checkblock              ; 7c10 0409
+    ADD Y, 0x0001               ; 8442
+    ADD A, 0x0009               ; a402
+    JSR checkblock              ; 7c10 0409
+    ADD Y, 0x0001               ; 8442
+    ADD A, 0x0009               ; a402
+    JSR checkblock              ; 7c10 0409
+    ADD X, 0x0001               ; 8432
+    ADD A, 0x0001               ; 8402
+    JSR checkblock              ; 7c10 0409
+    ADD X, 0x0001               ; 8432
+    ADD A, 0x0001               ; 8402
+    JSR checkblock              ; 7c10 0409
+    SUB X, 0x0001               ; 8433
+    SUB Y, 0x0001               ; 8443
+    SUB A, 0x000a               ; a803
+    SET [A], Z                  ; 1481
+    IFG 0x0002, Z               ; 162e
+    JSR countsurroundings       ; 7c10 03d4
+    SET PC, POP                 ; 61c1
 :countsurroundings
-    ADD X, 0x0001
-    ADD A, 0x0001
-    IFE [A], 0x0000
-    JSR add_to_surroundings
-    SUB Y, 0x0001
-    SUB A, 0x0009
-    IFE [A], 0x0000
-    JSR add_to_surroundings
-    SUB X, 0x0001
-    SUB A, 0x0001
-    IFE [A], 0x0000
-    JSR add_to_surroundings
-    SUB X, 0x0001
-    SUB A, 0x0001
-    IFE [A], 0x0000
-    JSR add_to_surroundings
-    ADD Y, 0x0001
-    ADD A, 0x0009
-    IFE [A], 0x0000
-    JSR add_to_surroundings
-    ADD Y, 0x0001
-    ADD A, 0x0009
-    IFE [A], 0x0000
-    JSR add_to_surroundings
-    ADD X, 0x0001
-    ADD A, 0x0001
-    IFE [A], 0x0000
-    JSR add_to_surroundings
-    ADD X, 0x0001
-    ADD A, 0x0001
-    IFE [A], 0x0000
-    JSR add_to_surroundings
-    SET PC, POP
+    ADD X, 0x0001               ; 8432
+    ADD A, 0x0001               ; 8402
+    IFE [A], 0x0000             ; 808c
+    JSR add_to_surroundings     ; 7c10 03fd
+    SUB Y, 0x0001               ; 8443
+    SUB A, 0x0009               ; a403
+    IFE [A], 0x0000             ; 808c
+    JSR add_to_surroundings     ; 7c10 03fd
+    SUB X, 0x0001               ; 8433
+    SUB A, 0x0001               ; 8403
+    IFE [A], 0x0000             ; 808c
+    JSR add_to_surroundings     ; 7c10 03fd
+    SUB X, 0x0001               ; 8433
+    SUB A, 0x0001               ; 8403
+    IFE [A], 0x0000             ; 808c
+    JSR add_to_surroundings     ; 7c10 03fd
+    ADD Y, 0x0001               ; 8442
+    ADD A, 0x0009               ; a402
+    IFE [A], 0x0000             ; 808c
+    JSR add_to_surroundings     ; 7c10 03fd
+    ADD Y, 0x0001               ; 8442
+    ADD A, 0x0009               ; a402
+    IFE [A], 0x0000             ; 808c
+    JSR add_to_surroundings     ; 7c10 03fd
+    ADD X, 0x0001               ; 8432
+    ADD A, 0x0001               ; 8402
+    IFE [A], 0x0000             ; 808c
+    JSR add_to_surroundings     ; 7c10 03fd
+    ADD X, 0x0001               ; 8432
+    ADD A, 0x0001               ; 8402
+    IFE [A], 0x0000             ; 808c
+    JSR add_to_surroundings     ; 7c10 03fd
+    SET PC, POP                 ; 61c1
 :add_to_surroundings
-    ADD I, 0x0001
-    IFG X, 0x0008
-        SET PC, POP
-    IFG Y, 0x0008
-        SET PC, POP
-    SET B, A
-    SUB B, board
-    ADD B, surrounding_next
-    SET [B], 0x0001
-    SET PC, POP
+    ADD I, 0x0001               ; 8462
+    IFG X, 0x0008               ; a03e
+        SET PC, POP             ; 61c1
+    IFG Y, 0x0008               ; a04e
+        SET PC, POP             ; 61c1
+    SET B, A                    ; 0011
+    SUB B, board                ; 7c13 04f9
+    ADD B, surrounding_next     ; 7c12 059c
+    SET [B], 0x0001             ; 8491
+    SET PC, POP                 ; 61c1
 :checkblock
-    IFG X, 0x0008
-        SET PC, POP
-    IFG Y, 0x0008
-        SET PC, POP
-    IFE [A], 0x000a
-        ADD Z, 0x0001
-    SET PC, POP
+    IFG X, 0x0008               ; a03e
+        SET PC, POP             ; 61c1
+    IFG Y, 0x0008               ; a04e
+        SET PC, POP             ; 61c1
+    IFE [A], 0x000a             ; a88c
+        ADD Z, 0x0001           ; 8452
+    SET PC, POP                 ; 61c1
 :lose
-    SET A, wtf_top
-    SET B, 0x0003
-    SET C, 0x800e
-    JSR drawtiles
-    SET A, wtf_btm
-    SET B, 0x0003
-    SET C, 0x802e
-    JSR drawtiles
-    SET A, tiletypes_left
-    ADD A, 0x000a
-    SET [A], 0x4c33
-    SET A, tiletypes_right
-    ADD A, 0x000a
-    SET [A], 0x4c34
-    JSR redraw_board
-    SET [gamestate], 0x0002
-    SET PC, POP
+    SET A, wtf_top              ; 7c01 060f
+    SET B, 0x0003               ; 8c11
+    SET C, 0x800e               ; 7c21 800e
+    JSR drawtiles               ; 7c10 05f0
+    SET A, wtf_btm              ; 7c01 0613
+    SET B, 0x0003               ; 8c11
+    SET C, 0x802e               ; 7c21 802e
+    JSR drawtiles               ; 7c10 05f0
+    SET A, tiletypes_left       ; 7c01 0350
+    ADD A, 0x000a               ; a802
+    SET [A], 0x4c33             ; 7c81 4c33
+    SET A, tiletypes_right      ; 7c01 035c
+    ADD A, 0x000a               ; a802
+    SET [A], 0x4c34             ; 7c81 4c34
+    JSR redraw_board            ; 7c10 0347
+    SET [gamestate], 0x0002     ; 89e1 01f5
+    SET PC, POP                 ; 61c1
 :generate_board
-    SET PUSH, A
-    SET PUSH, B
-    SET PUSH, C
-    SET PUSH, X
-    SET PUSH, I
-    SET I, 0x0000
+    SET PUSH, A                 ; 01a1
+    SET PUSH, B                 ; 05a1
+    SET PUSH, C                 ; 09a1
+    SET PUSH, X                 ; 0da1
+    SET PUSH, I                 ; 19a1
+    SET I, 0x0000               ; 8061
 :g_board_loop
-    ADD [timer], 0x0001
-    SET A, [timer]
-    MUL A, A
-    MOD A, 0x0009
-    SET B, [timer]
-    ADD B, 0x013d
-    MUL B, B
-    MOD B, 0x0009
-    SET C, A
-    SUB C, [select_x]
-    ADD C, 0x000a
-    SET X, 0x0000
-    IFG C, 0x0008
-        ADD X, 0x0001
-    IFG 0x000c, C
-        ADD X, 0x0001
-    SET C, B
-    SUB C, [select_y]
-    ADD C, 0x000a
-    IFG C, 0x0008
-        ADD X, 0x0001
-    IFG 0x000c, C
-        ADD X, 0x0001
-    IFE X, 0x0004
-        SET PC, g_board_loop
-    MUL B, 0x0009
-    ADD A, B
-    SET C, board
-    ADD C, A
-    IFE [C], 0x000a
-        SET PC, g_board_loop
-    SET [C], 0x000a
-    ADD I, 0x0001
-    IFG [mines], I
-        SET PC, g_board_loop
-    SET [timer], 0x0000
-    SET I, POP
-    SET X, POP
-    SET C, POP
-    SET B, POP
-    SET A, POP
-    SET PC, POP
+    ADD [timer], 0x0001         ; 85e2 04a6
+    SET A, [timer]              ; 7801 04a6
+    MUL A, A                    ; 0004
+    MOD A, 0x0009               ; a406
+    SET B, [timer]              ; 7811 04a6
+    ADD B, 0x013d               ; 7c12 013d
+    MUL B, B                    ; 0414
+    MOD B, 0x0009               ; a416
+    SET C, A                    ; 0021
+    SUB C, [select_x]           ; 7823 04a4
+    ADD C, 0x000a               ; a822
+    SET X, 0x0000               ; 8031
+    IFG C, 0x0008               ; a02e
+        ADD X, 0x0001           ; 8432
+    IFG 0x000c, C               ; 0ace
+        ADD X, 0x0001           ; 8432
+    SET C, B                    ; 0421
+    SUB C, [select_y]           ; 7823 04a5
+    ADD C, 0x000a               ; a822
+    IFG C, 0x0008               ; a02e
+        ADD X, 0x0001           ; 8432
+    IFG 0x000c, C               ; 0ace
+        ADD X, 0x0001           ; 8432
+    IFE X, 0x0004               ; 903c
+        SET PC, g_board_loop    ; 7dc1 0433
+    MUL B, 0x0009               ; a414
+    ADD A, B                    ; 0402
+    SET C, board                ; 7c21 04f9
+    ADD C, A                    ; 0022
+    IFE [C], 0x000a             ; a8ac
+        SET PC, g_board_loop    ; 7dc1 0433
+    SET [C], 0x000a             ; a8a1
+    ADD I, 0x0001               ; 8462
+    IFG [mines], I              ; 19ee 00e0
+        SET PC, g_board_loop    ; 7dc1 0433
+    SET [timer], 0x0000         ; 81e1 04a6
+    SET I, POP                  ; 6061
+    SET X, POP                  ; 6031
+    SET C, POP                  ; 6021
+    SET B, POP                  ; 6011
+    SET A, POP                  ; 6001
+    SET PC, POP                 ; 61c1
 :old_select_operation
-    SET [A], [old_select_tile1]
-    ADD A, 0x0001
-    SET [A], [old_select_tile2]
-    SET PC, POP
+    SET [A], [old_select_tile1] ; 7881 04a2
+    ADD A, 0x0001               ; 8402
+    SET [A], [old_select_tile2] ; 7881 04a3
+    SET PC, POP                 ; 61c1
 :change_selection
-    SET PUSH, A
-    SET PUSH, B
-    SET A, [old_select_x]
-    SET B, [old_select_y]
-    JSR get_selection
-    IFN [old_select_x], 0x000a
-    JSR old_select_operation
-    SET A, [select_x]
-    SET B, [select_y]
-    JSR get_selection
-    SET [old_select_tile1], [A]
-    SHL [A], 0x0004
-    SHR [A], 0x0004
-    BOR [A], 0x2a00
-    ADD A, 0x0001
-    SET [old_select_tile2], [A]
-    SHL [A], 0x0004
-    SHR [A], 0x0004
-    BOR [A], 0x2a00
-    SET [old_select_x], [select_x]
-    SET [old_select_y], [select_y]
-    SET B, POP
-    SET A, POP
-    SET PC, POP
+    SET PUSH, A                 ; 01a1
+    SET PUSH, B                 ; 05a1
+    SET A, [old_select_x]       ; 7801 04a0
+    SET B, [old_select_y]       ; 7811 04a1
+    JSR get_selection           ; 7c10 0497
+    IFN [old_select_x], 0x000a  ; a9ed 04a0
+    JSR old_select_operation    ; 7c10 0469
+    SET A, [select_x]           ; 7801 04a4
+    SET B, [select_y]           ; 7811 04a5
+    JSR get_selection           ; 7c10 0497
+    SET [old_select_tile1], [A] ; 21e1 04a2
+    SHL [A], 0x0004             ; 9087
+    SHR [A], 0x0004             ; 9088
+    BOR [A], 0x2a00             ; 7c8a 2a00
+    ADD A, 0x0001               ; 8402
+    SET [old_select_tile2], [A] ; 21e1 04a3
+    SHL [A], 0x0004             ; 9087
+    SHR [A], 0x0004             ; 9088
+    BOR [A], 0x2a00             ; 7c8a 2a00
+    SET [old_select_x], [select_x]; 79e1 04a0 04a4
+    SET [old_select_y], [select_y]; 79e1 04a1 04a5
+    SET B, POP                  ; 6011
+    SET A, POP                  ; 6001
+    SET PC, POP                 ; 61c1
 :get_selection
-    ADD B, 0x0002
-    MUL A, 0x0002
-    ADD A, 0x0007
-    MUL B, 0x0020
-    ADD A, B
-    ADD A, 0x8000
-    SET PC, POP
+    ADD B, 0x0002               ; 8812
+    MUL A, 0x0002               ; 8804
+    ADD A, 0x0007               ; 9c02
+    MUL B, 0x0020               ; 7c14 0020
+    ADD A, B                    ; 0402
+    ADD A, 0x8000               ; 7c02 8000
+    SET PC, POP                 ; 61c1
 :old_select_x
-    DAT 0x000a
+    DAT 0x000a                  ; 000a
 :old_select_y
-    DAT 0x000a
+    DAT 0x000a                  ; 000a
 :old_select_tile1
-    DAT 0x000a
+    DAT 0x000a                  ; 000a
 :old_select_tile2
-    DAT 0x000a
+    DAT 0x000a                  ; 000a
 :select_x
-    DAT 0x0004
+    DAT 0x0004                  ; 0004
 :select_y
-    DAT 0x0004
+    DAT 0x0004                  ; 0004
 :timer
-    DAT 0x0000
+    DAT 0x0000                  ; 0000
 :game_started
-    DAT 0x0000
+    DAT 0x0000                  ; 0000
 :flag
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
 :board
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
 :surrounding_work
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0002
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0002; 0000 0000 0000 0000 0000 0000 0000 0000 0000 0002
 :surrounding_next
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000
-    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0002
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000; 0000 0000 0000 0000 0000 0000 0000 0000 0000
+    DAT 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0002; 0000 0000 0000 0000 0000 0000 0000 0000 0000 0002
 :end
-    SET PC, end
+    SET PC, end                 ; 7dc1 05ee
 :drawtiles
-    SET PUSH, I
-    SET PUSH, C
-    SET I, 0x0000
+    SET PUSH, I                 ; 19a1
+    SET PUSH, C                 ; 09a1
+    SET I, 0x0000               ; 8061
 :drawtiles_loop
-    SET [C], [A]
-    ADD C, 0x0001
-    ADD A, 0x0001
-    ADD I, 0x0001
-    IFG I, B
-        SET PC, drawtiles_end
-    SET PC, drawtiles_loop
+    SET [C], [A]                ; 20a1
+    ADD C, 0x0001               ; 8422
+    ADD A, 0x0001               ; 8402
+    ADD I, 0x0001               ; 8462
+    IFG I, B                    ; 046e
+        SET PC, drawtiles_end   ; 7dc1 05fc
+    SET PC, drawtiles_loop      ; 7dc1 05f3
 :drawtiles_end
-    SET C, POP
-    SET I, POP
-    SET PC, POP
+    SET C, POP                  ; 6021
+    SET I, POP                  ; 6061
+    SET PC, POP                 ; 61c1
 :norm_top
-    DAT 0x6f03, 0x6f04, 0x6f05, 0x6f06
+    DAT 0x6f03, 0x6f04, 0x6f05, 0x6f06; 6f03 6f04 6f05 6f06
 :norm_btm
-    DAT 0x6f07, 0x6f08, 0x6f09, 0x6f0a
+    DAT 0x6f07, 0x6f08, 0x6f09, 0x6f0a; 6f07 6f08 6f09 6f0a
 :surprised_top
-    DAT 0x6f35, 0x6f36, 0x6f37, 0x6f38
+    DAT 0x6f35, 0x6f36, 0x6f37, 0x6f38; 6f35 6f36 6f37 6f38
 :surprised_btm
-    DAT 0x6f39, 0x6f3a, 0x6f3b, 0x6f3c
+    DAT 0x6f39, 0x6f3a, 0x6f3b, 0x6f3c; 6f39 6f3a 6f3b 6f3c
 :wtf_top
-    DAT 0x6f3d, 0x6f3e, 0x6f3f, 0x6f40
+    DAT 0x6f3d, 0x6f3e, 0x6f3f, 0x6f40; 6f3d 6f3e 6f3f 6f40
 :wtf_btm
-    DAT 0x6f41, 0x6f42, 0x6f43, 0x6f44
+    DAT 0x6f41, 0x6f42, 0x6f43, 0x6f44; 6f41 6f42 6f43 6f44
 :boardtiles_l1
-    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x6f03, 0x6f04, 0x6f05, 0x6f06, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x6f03, 0x6f04, 0x6f05, 0x6f06, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720; 8720 8720 8720 8720 8720 8720 8720 8720 8720 8720 8720 8720 8720 8720 6f03 6f04 6f05 6f06 8720 8720 8720 8720 8720 8720 8720 8720 8720 8720 8720 8720 8720 8720
 :boardtiles_l2
-    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070b, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x6f07, 0x6f08, 0x6f09, 0x6f0a, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x070c, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070b, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x6f07, 0x6f08, 0x6f09, 0x6f0a, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x0711, 0x070c, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720; 8720 8720 8720 8720 8720 8720 070b 0711 0711 0711 0711 0711 0711 0711 6f07 6f08 6f09 6f0a 0711 0711 0711 0711 0711 0711 0711 070c 8720 8720 8720 8720 8720 8720
 :boardtiles_l3
-    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720; 8720 8720 8720 8720 8720 8720 070f 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 0710 8720 8720 8720 8720 8720 8720
 :boardtiles_l4
-    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720; 8720 8720 8720 8720 8720 8720 070f 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 0710 8720 8720 8720 8720 8720 8720
 :boardtiles_l5
-    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720; 8720 8720 8720 8720 8720 8720 070f 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 0710 8720 8720 8720 8720 8720 8720
 :boardtiles_l6
-    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720; 8720 8720 8720 8720 8720 8720 070f 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 0710 8720 8720 8720 8720 8720 8720
 :boardtiles_l7
-    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720; 8720 8720 8720 8720 8720 8720 070f 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 0710 8720 8720 8720 8720 8720 8720
 :boardtiles_l8
-    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720; 8720 8720 8720 8720 8720 8720 070f 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 0710 8720 8720 8720 8720 8720 8720
 :boardtiles_l9
-    DAT 0x8720, 0x8713, 0x8714, 0x8715, 0x8716, 0x8717, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8718, 0x8719, 0x871a, 0x871b, 0x871c, 0x8720
+    DAT 0x8720, 0x8713, 0x8714, 0x8715, 0x8716, 0x8717, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x8718, 0x8719, 0x871a, 0x871b, 0x871c, 0x8720; 8720 8713 8714 8715 8716 8717 070f 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 0710 8718 8719 871a 871b 871c 8720
 :boardtiles_20
-    DAT 0x8720, 0x871d, 0x8f20, 0x8f20, 0x8f20, 0x8710, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x871d, 0x8f20, 0x8f20, 0x8f20, 0x8710, 0x8720
+    DAT 0x8720, 0x871d, 0x8f20, 0x8f20, 0x8f20, 0x8710, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x871d, 0x8f20, 0x8f20, 0x8f20, 0x8710, 0x8720; 8720 871d 8f20 8f20 8f20 8710 070f 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 0710 871d 8f20 8f20 8f20 8710 8720
 :boardtiles_21
-    DAT 0x8720, 0x870d, 0x8712, 0x8712, 0x8712, 0x870e, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x870d, 0x8712, 0x8712, 0x8712, 0x870e, 0x8720
+    DAT 0x8720, 0x870d, 0x8712, 0x8712, 0x8712, 0x870e, 0x070f, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x8701, 0x8702, 0x0710, 0x870d, 0x8712, 0x8712, 0x8712, 0x870e, 0x8720; 8720 870d 8712 8712 8712 870e 070f 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 8701 8702 0710 870d 8712 8712 8712 870e 8720
 :boardtiles_22
-    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070d, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x070e, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070d, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x070e, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720; 8720 8720 8720 8720 8720 8720 070d 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 070e 8720 8720 8720 8720 8720 8720
 :boardtiles_22
-    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070d, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x070e, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720
+    DAT 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x070d, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x0712, 0x070e, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720, 0x8720; 8720 8720 8720 8720 8720 8720 070d 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 0712 070e 8720 8720 8720 8720 8720 8720
 :tile0
-    DAT 0xff83, 0x45a9
+    DAT 0xff83, 0x45a9          ; ff83 45a9
 :tile1
-    DAT 0x51b9, 0x7dff
+    DAT 0x51b9, 0x7dff          ; 51b9 7dff
 :tile2
-    DAT 0xff01, 0x01c1
+    DAT 0xff01, 0x01c1          ; ff01 01c1
 :tile3
-    DAT 0x7151, 0xc9c9
+    DAT 0x7151, 0xc9c9          ; 7151 c9c9
 :tile4
-    DAT 0x49c9, 0xd171
+    DAT 0x49c9, 0xd171          ; 49c9 d171
 :tile5
-    DAT 0xc101, 0x01ff
+    DAT 0xc101, 0x01ff          ; c101 01ff
 :tile6
-    DAT 0xff80, 0x8083
+    DAT 0xff80, 0x8083          ; ff80 8083
 :tile7
-    DAT 0x8c89, 0x9292
+    DAT 0x8c89, 0x9292          ; 8c89 9292
 :tile8
-    DAT 0x9290, 0x888c
+    DAT 0x9290, 0x888c          ; 9290 888c
 :tile9
-    DAT 0x8380, 0x80ff
+    DAT 0x8380, 0x80ff          ; 8380 80ff
 :tile10
-    DAT 0x0000, 0x0080
+    DAT 0x0000, 0x0080          ; 0000 0080
 :tile11
-    DAT 0x8000, 0x0000
+    DAT 0x8000, 0x0000          ; 8000 0000
 :tile12
-    DAT 0x0000, 0x0001
+    DAT 0x0000, 0x0001          ; 0000 0001
 :tile13
-    DAT 0x0100, 0x0000
+    DAT 0x0100, 0x0000          ; 0100 0000
 :tile14
-    DAT 0x0000, 0x55ff
+    DAT 0x0000, 0x55ff          ; 0000 55ff
 :tile15
-    DAT 0xff00, 0x0000
+    DAT 0xff00, 0x0000          ; ff00 0000
 :tile16
-    DAT 0xc080, 0xc080
+    DAT 0xc080, 0xc080          ; c080 c080
 :tile17
-    DAT 0x0101, 0x0101
+    DAT 0x0101, 0x0101          ; 0101 0101
 :tile18
-    DAT 0x003c, 0x0888
+    DAT 0x003c, 0x0888          ; 003c 0888
 :tile19
-    DAT 0xbc80, 0xbc80
+    DAT 0xbc80, 0xbc80          ; bc80 bc80
 :tile20
-    DAT 0xbc88, 0x90bc
+    DAT 0xbc88, 0x90bc          ; bc88 90bc
 :tile21
-    DAT 0x80bc, 0xaca4
+    DAT 0x80bc, 0xaca4          ; 80bc aca4
 :tile22
-    DAT 0x8028, 0x2414
+    DAT 0x8028, 0x2414          ; 8028 2414
 :tile23
-    DAT 0x0000, 0x0084
+    DAT 0x0000, 0x0084          ; 0000 0084
 :tile24
-    DAT 0xbc84, 0x80bc
+    DAT 0xbc84, 0x80bc          ; bc84 80bc
 :tile25
-    DAT 0x80bc, 0x8888
+    DAT 0x80bc, 0x8888          ; 80bc 8888
 :tile26
-    DAT 0xbc80, 0xbcac
+    DAT 0xbc80, 0xbcac          ; bc80 bcac
 :tile27
-    DAT 0xa400, 0x0000
+    DAT 0xa400, 0x0000          ; a400 0000
 :tile28
-    DAT 0x0000, 0x00ff
+    DAT 0x0000, 0x00ff          ; 0000 00ff
 :tile29
-    DAT 0xff01, 0x0101
+    DAT 0xff01, 0x0101          ; ff01 0101
 :tile30
-    DAT 0x0101, 0x0101
+    DAT 0x0101, 0x0101          ; 0101 0101
 :tile31
-    DAT 0x0000, 0x0000
+    DAT 0x0000, 0x0000          ; 0000 0000
 :tile32
-    DAT 0xff01, 0x0149
+    DAT 0xff01, 0x0149          ; ff01 0149
 :tile33
-    DAT 0x7d41, 0x0101
+    DAT 0x7d41, 0x0101          ; 7d41 0101
 :tile34
-    DAT 0xff01, 0x0149
+    DAT 0xff01, 0x0149          ; ff01 0149
 :tile35
-    DAT 0x6559, 0x0101
+    DAT 0x6559, 0x0101          ; 6559 0101
 :tile36
-    DAT 0xff01, 0x0145
+    DAT 0xff01, 0x0145          ; ff01 0145
 :tile37
-    DAT 0x5539, 0x0101
+    DAT 0x5539, 0x0101          ; 5539 0101
 :tile38
-    DAT 0xff01, 0x011d
+    DAT 0xff01, 0x011d          ; ff01 011d
 :tile39
-    DAT 0x117d, 0x0101
+    DAT 0x117d, 0x0101          ; 117d 0101
 :tile40
-    DAT 0xff01, 0x015d
+    DAT 0xff01, 0x015d          ; ff01 015d
 :tile41
-    DAT 0x5525, 0x0101
+    DAT 0x5525, 0x0101          ; 5525 0101
 :tile42
-    DAT 0xff01, 0x0139
+    DAT 0xff01, 0x0139          ; ff01 0139
 :tile43
-    DAT 0x5525, 0x0101
+    DAT 0x5525, 0x0101          ; 5525 0101
 :tile44
-    DAT 0xff01, 0x0145
+    DAT 0xff01, 0x0145          ; ff01 0145
 :tile45
-    DAT 0x350d, 0x0101
+    DAT 0x350d, 0x0101          ; 350d 0101
 :tile46
-    DAT 0xff01, 0x0129
+    DAT 0xff01, 0x0129          ; ff01 0129
 :tile47
-    DAT 0x5529, 0x0101
+    DAT 0x5529, 0x0101          ; 5529 0101
 :tile48
-    DAT 0xff83, 0x010d
+    DAT 0xff83, 0x010d          ; ff83 010d
 :tile49
-    DAT 0x0d7d, 0x0183
+    DAT 0x0d7d, 0x0183          ; 0d7d 0183
 :tile50
-    DAT 0xff01, 0x5539
+    DAT 0xff01, 0x5539          ; ff01 5539
 :tile51
-    DAT 0x6d39, 0x5501
+    DAT 0x6d39, 0x5501          ; 6d39 5501
 :tile52
-    DAT 0xff01, 0x01e1
+    DAT 0xff01, 0x01e1          ; ff01 01e1
 :tile53
-    DAT 0x3131, 0xa969
+    DAT 0x3131, 0xa969          ; 3131 a969
 :tile54
-    DAT 0x69a9, 0x7171
+    DAT 0x69a9, 0x7171          ; 69a9 7171
 :tile55
-    DAT 0xa101, 0x01ff
+    DAT 0xa101, 0x01ff          ; a101 01ff
 :tile56
-    DAT 0xff80, 0x8083
+    DAT 0xff80, 0x8083          ; ff80 8083
 :tile57
-    DAT 0x8c88, 0x9096
+    DAT 0x8c88, 0x9096          ; 8c88 9096
 :tile58
-    DAT 0x9690, 0x888c
+    DAT 0x9690, 0x888c          ; 9690 888c
 :tile59
-    DAT 0x8380, 0x80ff
+    DAT 0x8380, 0x80ff          ; 8380 80ff
 :tile60
-    DAT 0xff01, 0x01c1
+    DAT 0xff01, 0x01c1          ; ff01 01c1
 :tile61
-    DAT 0x3151, 0xc949
+    DAT 0x3151, 0xc949          ; 3151 c949
 :tile62
-    DAT 0x2999, 0x1131
+    DAT 0x2999, 0x1131          ; 2999 1131
 :tile63
-    DAT 0xc101, 0x01ff
+    DAT 0xc101, 0x01ff          ; c101 01ff
 :tile64
-    DAT 0xff80, 0x8083
+    DAT 0xff80, 0x8083          ; ff80 8083
 :tile65
-    DAT 0xcc88, 0xd0de
+    DAT 0xcc88, 0xd0de          ; cc88 d0de
 :tile66
-    DAT 0x9ed0, 0xc8cc
+    DAT 0x9ed0, 0xc8cc          ; 9ed0 c8cc
 :tile67
-    DAT 0x8380, 0x80ff
+    DAT 0x8380, 0x80ff          ; 8380 80ff
 :tile68
-    DAT 0x0048, 0x7c40
+    DAT 0x0048, 0x7c40          ; 0048 7c40
 :tile69
-    DAT 0x0048, 0x6458
+    DAT 0x0048, 0x6458          ; 0048 6458
 :tile70
-    DAT 0x0044, 0x5438
+    DAT 0x0044, 0x5438          ; 0044 5438
 :tile71
-    DAT 0x001c, 0x107c
+    DAT 0x001c, 0x107c          ; 001c 107c
 :tile72
-    DAT 0x005c, 0x5424
+    DAT 0x005c, 0x5424          ; 005c 5424
 :tile73
-    DAT 0x0038, 0x5424
+    DAT 0x0038, 0x5424          ; 0038 5424
 :tile74
-    DAT 0x0044, 0x340c
+    DAT 0x0044, 0x340c          ; 0044 340c
 :tile75
-    DAT 0x0028, 0x5428
+    DAT 0x0028, 0x5428          ; 0028 5428
 :tile76
-    DAT 0x0048, 0x5438
+    DAT 0x0048, 0x5438          ; 0048 5438
 :tile77
-    DAT 0x0038, 0x4438
+    DAT 0x0038, 0x4438          ; 0038 4438
 :tile78
-    DAT 0x0018, 0xe018
+    DAT 0x0018, 0xe018          ; 0018 e018
 :tile79
-    DAT 0x0060, 0x9060
+    DAT 0x0060, 0x9060          ; 0060 9060
 :tile80
-    DAT 0x0070, 0x80f0
+    DAT 0x0070, 0x80f0          ; 0070 80f0
 :tile81
-    DAT 0x0000, 0x00f8
+    DAT 0x0000, 0x00f8          ; 0000 00f8
 :tile82
-    DAT 0x8040, 0x80f8
+    DAT 0x8040, 0x80f8          ; 8040 80f8
 :tile83
-    DAT 0x00e8, 0x00f0
+    DAT 0x00e8, 0x00f0          ; 00e8 00f0
 :tile84
-    DAT 0x20e0, 0x0000
+    DAT 0x20e0, 0x0000          ; 20e0 0000
 :tile85
-    DAT 0x00f8, 0x8080
+    DAT 0x00f8, 0x8080          ; 00f8 8080
 :tile86
-    DAT 0x0060, 0x9060
+    DAT 0x0060, 0x9060          ; 0060 9060
 :tile87
-    DAT 0x00b0, 0x90d0
+    DAT 0x00b0, 0x90d0          ; 00b0 90d0
 :tile88
-    DAT 0x00f0, 0x90b0
+    DAT 0x00f0, 0x90b0          ; 00f0 90b0
 :intro0
-    DAT 0x0000, 0x0101
+    DAT 0x0000, 0x0101          ; 0000 0101
 :intro1
-    DAT 0xc3eb, 0xebeb
+    DAT 0xc3eb, 0xebeb          ; c3eb ebeb
 :intro2
-    DAT 0xebea, 0xe8e0
+    DAT 0xebea, 0xe8e0          ; ebea e8e0
 :intro3
-    DAT 0xc000, 0x80e0
+    DAT 0xc000, 0x80e0          ; c000 80e0
 :intro4
-    DAT 0xe0e8, 0xeaeb
+    DAT 0xe0e8, 0xeaeb          ; e0e8 eaeb
 :intro5
-    DAT 0xebeb, 0x0b01
+    DAT 0xebeb, 0x0b01          ; ebeb 0b01
 :intro6
-    DAT 0x0101, 0x0000
+    DAT 0x0101, 0x0000          ; 0101 0000
 :intro7
-    DAT 0x0001, 0x01e1
+    DAT 0x0001, 0x01e1          ; 0001 01e1
 :intro8
-    DAT 0xebeb, 0xebeb
+    DAT 0xebeb, 0xebeb          ; ebeb ebeb
 :intro9
-    DAT 0xeb0b, 0x0101
+    DAT 0xeb0b, 0x0101          ; eb0b 0101
 :intro10
-    DAT 0x0100, 0x0101
+    DAT 0x0100, 0x0101          ; 0100 0101
 :intro11
-    DAT 0xc1eb, 0xebeb
+    DAT 0xc1eb, 0xebeb          ; c1eb ebeb
 :intro12
-    DAT 0xebea, 0xe8eb
+    DAT 0xebea, 0xe8eb          ; ebea e8eb
 :intro13
-    DAT 0xe3eb, 0x2b03
+    DAT 0xe3eb, 0x2b03          ; e3eb 2b03
 :intro14
-    DAT 0x0101, 0x0000
+    DAT 0x0101, 0x0000          ; 0101 0000
 :intro15
-    DAT 0x0101, 0xc1eb
+    DAT 0x0101, 0xc1eb          ; 0101 c1eb
 :intro16
-    DAT 0xebeb, 0xebeb
+    DAT 0xebeb, 0xebeb          ; ebeb ebeb
 :intro17
-    DAT 0xeb43, 0xc1c1
+    DAT 0xeb43, 0xc1c1          ; eb43 c1c1
 :intro18
-    DAT 0x0303, 0x0b00
+    DAT 0x0303, 0x0b00          ; 0303 0b00
 :intro19
-    DAT 0x0000, 0x0000
+    DAT 0x0000, 0x0000          ; 0000 0000
 :intro20
-    DAT 0xf0f0, 0x3030
+    DAT 0xf0f0, 0x3030          ; f0f0 3030
 :intro21
-    DAT 0x0c0c, 0x0c0c
+    DAT 0x0c0c, 0x0c0c          ; 0c0c 0c0c
 :intro22
-    DAT 0x0c0c, 0x0c0c
+    DAT 0x0c0c, 0x0c0c          ; 0c0c 0c0c
 :intro23
-    DAT 0x3030, 0xf0f0
+    DAT 0x3030, 0xf0f0          ; 3030 f0f0
 :intro24
-    DAT 0x0303, 0x3333
+    DAT 0x0303, 0x3333          ; 0303 3333
 :intro25
-    DAT 0x0303, 0x0303
+    DAT 0x0303, 0x0303          ; 0303 0303
 :intro26
-    DAT 0x0f0f, 0x0f0f
+    DAT 0x0f0f, 0x0f0f          ; 0f0f 0f0f
 :intro27
-    DAT 0x0303, 0x0f0f
+    DAT 0x0303, 0x0f0f          ; 0303 0f0f
 :intro28
-    DAT 0x0f0f, 0x0303
+    DAT 0x0f0f, 0x0303          ; 0f0f 0303
 :intro29
-    DAT 0x1818, 0x1818
+    DAT 0x1818, 0x1818          ; 1818 1818
 :intro30
-    DAT 0x7878, 0x7878
+    DAT 0x7878, 0x7878          ; 7878 7878
 :intro31
-    DAT 0x1818, 0x7878
+    DAT 0x1818, 0x7878          ; 1818 7878
 :intro32
-    DAT 0x4040, 0x6078
+    DAT 0x4040, 0x6078          ; 4040 6078
 :intro33
-    DAT 0x7f61, 0x434f
+    DAT 0x7f61, 0x434f          ; 7f61 434f
 :intro34
-    DAT 0x1f7f, 0x3f1f
+    DAT 0x1f7f, 0x3f1f          ; 1f7f 3f1f
 :intro35
-    DAT 0x4f47, 0x417f
+    DAT 0x4f47, 0x417f          ; 4f47 417f
 :intro36
-    DAT 0x7f7f, 0x7f7f
+    DAT 0x7f7f, 0x7f7f          ; 7f7f 7f7f
 :intro37
-    DAT 0x7f6f, 0x4040
+    DAT 0x7f6f, 0x4040          ; 7f6f 4040
 :intro38
-    DAT 0x0000, 0x0040
+    DAT 0x0000, 0x0040          ; 0000 0040
 :intro39
-    DAT 0x4040, 0x787f
+    DAT 0x4040, 0x787f          ; 4040 787f
 :intro40
-    DAT 0x7f7f, 0x7f7f
+    DAT 0x7f7f, 0x7f7f          ; 7f7f 7f7f
 :intro41
-    DAT 0x4740, 0x4040
+    DAT 0x4740, 0x4040          ; 4740 4040
 :intro42
-    DAT 0x0040, 0x6070
+    DAT 0x0040, 0x6070          ; 0040 6070
 :intro43
-    DAT 0x7f71, 0x6347
+    DAT 0x7f71, 0x6347          ; 7f71 6347
 :intro44
-    DAT 0x0f1f, 0x3f7f
+    DAT 0x0f1f, 0x3f7f          ; 0f1f 3f7f
 :intro45
-    DAT 0x7f0f, 0x0000
+    DAT 0x7f0f, 0x0000          ; 7f0f 0000
 :intro46
-    DAT 0x0000, 0x4040
+    DAT 0x0000, 0x4040          ; 0000 4040
 :intro47
-    DAT 0x4060, 0x7f7f
+    DAT 0x4060, 0x7f7f          ; 4060 7f7f
 :intro48
-    DAT 0x7f7f, 0x7f7f
+    DAT 0x7f7f, 0x7f7f          ; 7f7f 7f7f
 :intro49
-    DAT 0x4340, 0x6073
+    DAT 0x4340, 0x6073          ; 4340 6073
 :intro50
-    DAT 0x703c, 0x0600
+    DAT 0x703c, 0x0600          ; 703c 0600
 :intro51
-    DAT 0x0000, 0xffff
+    DAT 0x0000, 0xffff          ; 0000 ffff
 :intro52
-    DAT 0x0000, 0x3030
+    DAT 0x0000, 0x3030          ; 0000 3030
 :intro53
-    DAT 0xc3c3, 0xc0c0
+    DAT 0xc3c3, 0xc0c0          ; c3c3 c0c0
 :intro54
-    DAT 0xc0c0, 0x0303
+    DAT 0xc0c0, 0x0303          ; c0c0 0303
 :intro55
-    DAT 0x0000, 0x0000
+    DAT 0x0000, 0x0000          ; 0000 0000
 :intro56
-    DAT 0xffff, 0x0000
+    DAT 0xffff, 0x0000          ; ffff 0000
 :intro57
-    DAT 0x0f0f, 0x0c0c
+    DAT 0x0f0f, 0x0c0c          ; 0f0f 0c0c
 :intro58
-    DAT 0x3030, 0x3030
+    DAT 0x3030, 0x3030          ; 3030 3030
 :intro59
-    DAT 0x3030, 0x3030
+    DAT 0x3030, 0x3030          ; 3030 3030
 :intro60
-    DAT 0x0c0c, 0x0f0f
+    DAT 0x0c0c, 0x0f0f          ; 0c0c 0f0f
 :intro61
-    DAT 0x7878, 0x1818
+    DAT 0x7878, 0x1818          ; 7878 1818
 :intro62
-    DAT 0xc0c0, 0xc0c0
+    DAT 0xc0c0, 0xc0c0          ; c0c0 c0c0
 :intro63
-    DAT 0xc0c0, 0xc0c0
+    DAT 0xc0c0, 0xc0c0          ; c0c0 c0c0
 :intro64
-    DAT 0xc0d0, 0xd4d4
+    DAT 0xc0d0, 0xd4d4          ; c0d0 d4d4
 :intro65
-    DAT 0xd2d2, 0xc2c6
+    DAT 0xd2d2, 0xc2c6          ; d2d2 c2c6
 :intro66
-    DAT 0xc6d6, 0x0601
+    DAT 0xc6d6, 0x0601          ; c6d6 0601
 :intro67
-    DAT 0x0000, 0x0216
+    DAT 0x0000, 0x0216          ; 0000 0216
 :intro68
-    DAT 0xd6d6, 0xd6d6
+    DAT 0xd6d6, 0xd6d6          ; d6d6 d6d6
 :intro69
-    DAT 0xd6d2, 0x12d0
+    DAT 0xd6d2, 0x12d0          ; d6d2 12d0
 :intro70
-    DAT 0xd0d0, 0xd4d4
+    DAT 0xd0d0, 0xd4d4          ; d0d0 d4d4
 :intro71
-    DAT 0xd486, 0x0284
+    DAT 0xd486, 0x0284          ; d486 0284
 :intro72
-    DAT 0x4416, 0x0602
+    DAT 0x4416, 0x0602          ; 4416 0602
 :intro73
-    DAT 0x0002, 0x02d6
+    DAT 0x0002, 0x02d6          ; 0002 02d6
 :intro74
-    DAT 0xd6d6, 0xd6d6
+    DAT 0xd6d6, 0xd6d6          ; d6d6 d6d6
 :intro75
-    DAT 0xd686, 0x8282
+    DAT 0xd686, 0x8282          ; d686 8282
 :intro76
-    DAT 0x0616, 0x0000
-:in
+    DAT 0x0616, 0x0000          ; 0616 0000
+:intro77
+    DAT 0x0002, 0x02d6          ; 0002 02d6
+:intro78
+    DAT 0xd6d6, 0xd6d6          ; d6d6 d6d6
+:intro79
+    DAT 0xd686, 0x8282          ; d686 8282
+:intro80
+    DAT 0x0616, 0x0000          ; 0616 0000
+:intro81
+    DAT 0x0002, 0x02d6          ; 0002 02d6
+:intro82
+    DAT 0xd6d6, 0xd6d6          ; d6d6 d6d6
+:intro83
+    DAT 0xd602, 0x02d6          ; d602 02d6
+:intro84
+    DAT 0xd400, 0x0002          ; d400 0002
+:intro85
+    DAT 0x02d6, 0xd6d6          ; 02d6 d6d6
+:intro86
+    DAT 0xd6d6, 0xd686          ; d6d6 d686
+:intro87
+    DAT 0x8282, 0x0616          ; 8282 0616
+:intro88
+    DAT 0x0000, 0x0000          ; 0000 0000
+:intro89
+    DAT 0x0202, 0xd6d6          ; 0202 d6d6
+:intro90
+    DAT 0xd6d6, 0xd6d6          ; d6d6 d6d6
+:intro91
+    DAT 0x0606, 0x8454          ; 0606 8454
+:intro92
+    DAT 0xcfcf, 0xcfcf          ; cfcf cfcf
+:intro93
+    DAT 0xc0c0, 0xc0c0          ; c0c0 c0c0
+:intro94
+    DAT 0xc0c0, 0xc0c0          ; c0c0 c0c0
+:intro95
+    DAT 0x0303, 0x0303          ; 0303 0303
+:intro96
+    DAT 0xfb67, 0xcf8f          ; fb67 cf8f
+:intro97
+    DAT 0x9f9f, 0x9f7f          ; 9f9f 9f7f
+:intro98
+    DAT 0x7f1f, 0x0700          ; 7f1f 0700
+:intro99
+    DAT 0x0000, 0x0000          ; 0000 0000
+:intro100
+    DAT 0x0f7f, 0xffff          ; 0f7f ffff
+:intro101
+    DAT 0x3f1f, 0x0e03          ; 3f1f 0e03
+:intro102
+    DAT 0x0f3f, 0xff7f          ; 0f3f ff7f
+:intro103
+    DAT 0x3f0f, 0x0601          ; 3f0f 0601
+:intro104
+    DAT 0x0000, 0x0080          ; 0000 0080
+:intro105
+    DAT 0x8080, 0xf0ff          ; 8080 f0ff
+:intro106
+    DAT 0xffff, 0xffff          ; ffff ffff
+:intro107
+    DAT 0x87c0, 0xc3e7          ; 87c0 c3e7
+:intro108
+    DAT 0xf00c, 0x0080          ; f00c 0080
+:intro109
+    DAT 0x8080, 0xf0ff          ; 8080 f0ff
+:intro110
+    DAT 0xffff, 0xffff          ; ffff ffff
+:intro111
+    DAT 0x87c0, 0xc3e7          ; 87c0 c3e7
+:intro112
+    DAT 0xf00c, 0x0080          ; f00c 0080
+:intro113
+    DAT 0x80c0, 0xfeff          ; 80c0 feff
+:intro114
+    DAT 0xffff, 0xffff          ; ffff ffff
+:intro115
+    DAT 0x8282, 0x0301          ; 8282 0301
+:intro116
+    DAT 0x0080, 0x8080          ; 0080 8080
+:intro117
+    DAT 0xf0ff, 0xffff          ; f0ff ffff
+:intro118
+    DAT 0xffff, 0x87c0          ; ffff 87c0
+:intro119
+    DAT 0xc3e7, 0xf00c          ; c3e7 f00c
+:intro120
+    DAT 0x0000, 0x8080          ; 0000 8080
+:intro121
+    DAT 0xc0fe, 0xffff          ; c0fe ffff
+:intro122
+    DAT 0xffff, 0xbf81          ; ffff bf81
+:intro123
+    DAT 0x83ff, 0xfffe          ; 83ff fffe
+:intro124
+    DAT 0xc3c3, 0x0f0f          ; c3c3 0f0f
+:intro125
+    DAT 0x0000, 0x0303          ; 0000 0303
+:intro126
+    DAT 0x0303, 0x0000          ; 0303 0000
+:intro127
+    DAT 0x0000, 0x0000          ; 0000 0000
+:storetiles
+    SET PUSH, I                 ; 19a1
+    MUL B, 0x0002               ; 8814
+    SET I, 0x0000               ; 8061
+:storetiles_loop
+    SET [C], [A]                ; 20a1
+    ADD A, 0x0001               ; 8402
+    ADD I, 0x0001               ; 8462
+    ADD C, 0x0001               ; 8422
+    IFE I, B                    ; 046c
+        SET PC, storetiles_end  ; 7dc1 0975
+    SET PC, storetiles_loop     ; 7dc1 096c
+:storetiles_end
+    SET I, POP                  ; 6061
+    SET PC, POP                 ; 61c1
