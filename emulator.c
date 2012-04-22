@@ -109,59 +109,95 @@ unsigned int operand(Emulator *emulator, unsigned short x,
     unsigned int dereference) {
     unsigned int result;
     unsigned int literal = 0;
-    if (x < 0x08) {
-        result = REG_ADDR + x;
+    
+    switch (x) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+           result = REG_ADDR + x;
+           break;
+           
+        case 8:
+        case 9:
+        case 10:
+        case 11:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+            result = REG(x - 0x08);
+            break;
+
+        case 16:
+        case 17:
+        case 18:
+        case 19:
+        case 20:
+        case 21:
+        case 22:
+        case 23:
+            result = REG(x - 0x10) + RAM(PC++);
+            if (!SKIP) {
+               CYCLES(1);
+            }
+            break;
+            
+        case 24:
+            result = SP;
+            if (!SKIP) {
+                SP++;
+            }
+            break;
+
+        case 25:
+            result = SP;
+            break;
+        
+        case 26:
+            if (!SKIP) {
+                SP--;
+            }
+            result = SP;
+            break;
+    
+        case 27:
+            result = SP_ADDR;
+            break;
+            
+        case 28:
+            result = PC_ADDR;
+            break;
+
+        case 29:
+            result = OV_ADDR;
+            break;
+
+        case 30:
+            result = RAM(PC++);
+            if (!SKIP) {
+                CYCLES(1);
+            }
+            break;
+   
+        case 31:
+            literal = 1;
+            result = RAM(PC++);
+            if (!SKIP) {
+                CYCLES(1);
+            }
+            break;
+            
+        default:
+            literal = 1;
+            result = x - 0x20;
+            break;
     }
-    else if (x >= 0x08 && x <= 0x0f) {
-        result = REG(x - 0x08);
-    }
-    else if (x >= 0x10 && x <= 0x17) {
-        result = REG(x - 0x10) + RAM(PC++);
-        if (!SKIP) {
-            CYCLES(1);
-        }
-    }
-    else if (x == 0x18) {
-        result = SP;
-        if (!SKIP) {
-            SP++;
-        }
-    }
-    else if (x == 0x19) {
-        result = SP;
-    }
-    else if (x == 0x1a) {
-        if (!SKIP) {
-            SP--;
-        }
-        result = SP;
-    }
-    else if (x == 0x1b) {
-        result = SP_ADDR;
-    }
-    else if (x == 0x1c) {
-        result = PC_ADDR;
-    }
-    else if (x == 0x1d) {
-        result = OV_ADDR;
-    }
-    else if (x == 0x1e) {
-        result = RAM(PC++);
-        if (!SKIP) {
-            CYCLES(1);
-        }
-    }
-    else if (x == 0x1f) {
-        literal = 1;
-        result = RAM(PC++);
-        if (!SKIP) {
-            CYCLES(1);
-        }
-    }
-    else {
-        literal = 1;
-        result = x - 0x20;
-    }
+    
     if (literal && !dereference) {
         LT = result;
         result = LT_ADDR;
