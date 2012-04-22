@@ -1,37 +1,18 @@
 ## Python scripts for DCPU-16 emulation
 
-- Assembler
-- Emulator (Two implementations: C and Python)
-- 32x12 Character, 128x96 Pixel Display
-
-### Video
-
-- http://www.youtube.com/watch?v=qIyYhIZ0VqI
-
-### Screenshot
-
-![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/screenshot.png)
-
-### Dependencies
-- **Python 2.5+**: http://www.python.org/
-- **PLY**: http://www.dabeaz.com/ply/
-- **wxPython**: http://www.wxpython.org/
-
-### Usage
-
-Run a program with the visualizer.
+### Usage: Visualizer
 
     python display.py programs/minesweeper.dasm
 
-Assemble and output in pretty format.
+Run the specified program with the visualizer. See video here: http://www.youtube.com/watch?v=qIyYhIZ0VqI
 
-    python assembler.py programs/example.dasm
+![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/screenshot.png)
 
-Run benchmarks on the C emulator and Python emulator to test performance.
+### Usage: Benchmarks
 
     python benchmark.py
 
-### Benchmark Results
+Run benchmarks on the C emulator and Python emulator to test performance.
 
 MacBook Air (1.7 GHz Intel Core i5)
 
@@ -43,9 +24,11 @@ MacBook Air (1.7 GHz Intel Core i5)
 
 The C implementation is roughly 360 times faster than the Python implementation and could emulate over 800 DCPU-16 processors at their 100 kHz clock rate.
 
-### Pretty Print Output
+### Usage: Pretty Print
 
-Just like Notch's example, except comments are not retained.
+    python assembler.py programs/example.dasm
+
+Assemble and output in pretty format. Just like Notch's example, except comments are not retained.
 
         SET A, 0x0030               ; 7c01 0030
         SET [0x1000], 0x0020        ; 7de1 1000 0020
@@ -67,3 +50,8 @@ Just like Notch's example, except comments are not retained.
         SET PC, POP                 ; 61c1
     :crash
         SET PC, crash               ; 7dc1 001a
+
+### Dependencies
+- **Python 2.5+**: http://www.python.org/
+- **PLY**: http://www.dabeaz.com/ply/
+- **wxPython**: http://www.wxpython.org/
