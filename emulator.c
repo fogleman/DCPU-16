@@ -289,7 +289,6 @@ void non_basic_instruction(Emulator *emulator, unsigned short opcode,
 }
 
 void step(Emulator *emulator) {
-    unsigned short pc = PC;
     unsigned short word = RAM(PC++);
     unsigned short op = word & 0x000f;
     unsigned short a = (word & 0x03f0) >> 4;
