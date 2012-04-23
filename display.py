@@ -159,8 +159,10 @@ class Frame(wx.Frame):
         super(Frame, self).__init__(None)
         self.emu = emu
         self.last_time = time.time()
-        sizer = self.create_controls(self)
-        self.SetSizerAndFit(sizer)
+        panel = wx.Panel(self)
+        sizer = self.create_controls(panel)
+        panel.SetSizerAndFit(sizer)
+        self.Fit()
         self.SetTitle('DCPU-16 Emulator')
         wx.CallAfter(self.on_timer)
     def update(self, dt):
