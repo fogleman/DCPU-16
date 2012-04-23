@@ -112,22 +112,26 @@ class Canvas(wx.Panel):
         dc.SetBackground(brush)
         dc.Clear()
         dc.Blit(dx, dy, bw, bh, mdc, 0, 0)
-    def get_character(self, address):
+    def get_character(self, address, show_blink=True):
         value = self.emu.ram[address]
-        character = value & 0xff
+        character = value & 0x7f
+        blink = bool(value & 0x80)
         color = (value >> 8) & 0xff
         back = color & 0x0f
         fore = (color >> 4) & 0x0f
         a = self.emu.ram[0x8180 + character * 2]
         b = self.emu.ram[0x8181 + character * 2]
         bitmap = a << 16 | b
+        if blink and not show_blink:
+            fore = back
         return bitmap, back, fore
     def draw_screen(self, dc):
         dc.SetPen(wx.TRANSPARENT_PEN)
         address = 0x8000
+        show_blink = bool(int(time.time() * 2) % 2)
         for j in xrange(12):
             for i in xrange(32):
-                bitmap, back, fore = self.get_character(address)
+                bitmap, back, fore = self.get_character(address, show_blink)
                 key = (back, fore, bitmap)
                 if self.cache.get((i, j)) != key:
                     self.cache[(i, j)] = key
