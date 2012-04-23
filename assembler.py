@@ -91,7 +91,7 @@ class Data(object):
     def assemble(self, lookup):
         return [lookup.get(x, x) for x in self.data]
     def pretty(self, previous):
-        data = ', '.join('"%s"' % x if isinstance(x, str) else '0x%04x' % x
+        data = ', '.join('"%s"' % x if isinstance(x, str) else pretty_value(x)
             for x in self.data)
         return '    DAT %s' % data
 
@@ -163,7 +163,7 @@ class Operand(object):
         x = self.value
         word = self.word
         if isinstance(word, int):
-            word = '0x%04x' % word
+            word = pretty_value(word)
         elif isinstance(word, str):
             word = word.lower()
         if x in REV_REGISTERS:
@@ -179,7 +179,7 @@ class Operand(object):
         elif x == 0x1f:
             return '%s' % word
         elif x >= 0x20:
-            return '0x%04x' % (x - 0x20)
+            return pretty_value(x - 0x20)
 
 # Lexer Rules
 reserved = (
@@ -371,6 +371,9 @@ def pretty_file(path):
     with open(path) as fp:
         text = fp.read()
     return pretty(text)
+
+def pretty_value(x):
+    return '%d' % x if x <= 0xff else '0x%04x' % x
 
 # Main
 if __name__ == '__main__':
