@@ -6,7 +6,7 @@
 
 Run the specified program with the visualizer. See video here: http://www.youtube.com/watch?v=BohQ9i3nqm4
 
-![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/screenshot.png)
+![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/windows.png)
 
 ### Benchmarks
 
