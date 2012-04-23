@@ -1,10 +1,14 @@
 ## Python scripts for DCPU-16 emulation
 
+### Windows Installer
+
+http://www.michaelfogleman.com/static/dcpu16-setup.exe
+
 ### Visualizer
 
-    Usage: python display.py programs/minesweeper.dasm
+    Usage: python main.py [input.dasm]
 
-Run the specified program with the visualizer. See video here: http://www.youtube.com/watch?v=BohQ9i3nqm4
+See video here: http://www.youtube.com/watch?v=BohQ9i3nqm4
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/windows.png)
 
