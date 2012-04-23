@@ -81,6 +81,13 @@ class Program(object):
             lines.append(line)
             previous = instruction
         return '\n'.join(lines)
+    def disassembly(self):
+        result = []
+        for instruction in self.instructions:
+            if isinstance(instruction, Label):
+                continue
+            result.append(instruction)
+        return result
 
 class Data(object):
     def __init__(self, data):

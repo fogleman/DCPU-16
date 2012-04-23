@@ -13,7 +13,7 @@ except Exception:
 emulator = cEmulator or emulator
 
 # Constants
-SCALE = 4
+SCALE = 3
 WIDTH = 128
 HEIGHT = 96
 BORDER = 10
@@ -27,6 +27,13 @@ def menu_item(window, menu, label, func, kind=wx.ITEM_NORMAL):
     menu.AppendItem(item)
     return item
 
+def make_font(face, size, bold=False, italic=False, underline=False):
+    family = wx.FONTFAMILY_DEFAULT
+    style = wx.FONTSTYLE_ITALIC if italic else wx.FONTSTYLE_NORMAL
+    weight = wx.FONTWEIGHT_BOLD if bold else wx.FONTWEIGHT_NORMAL
+    font = wx.Font(size, family, style, weight, underline, face)
+    return font
+
 # Controls
 class RamList(wx.ListCtrl):
     INDEX_ADDR = 0
@@ -36,13 +43,14 @@ class RamList(wx.ListCtrl):
         style = wx.LC_REPORT | wx.LC_VIRTUAL | wx.LC_SINGLE_SEL
         super(RamList, self).__init__(parent, -1, style=style)
         self.emu = emu
-        self.InsertColumn(RamList.INDEX_ADDR, 'Index')
+        self.InsertColumn(RamList.INDEX_ADDR, 'Addr')
         self.InsertColumn(RamList.INDEX_HEX, 'Hex')
         self.InsertColumn(RamList.INDEX_DEC, 'Dec')
-        self.SetColumnWidth(RamList.INDEX_ADDR, 64)
-        self.SetColumnWidth(RamList.INDEX_HEX, 64)
-        self.SetColumnWidth(RamList.INDEX_DEC, 64)
-        self.SetItemCount(0x1000c)
+        self.SetColumnWidth(RamList.INDEX_ADDR, 55)
+        self.SetColumnWidth(RamList.INDEX_HEX, 55)
+        self.SetColumnWidth(RamList.INDEX_DEC, 55)
+        self.SetItemCount(0x10000)
+        self.SetFont(make_font('Courier New', 9))
     def OnGetItemText(self, index, column):
         if column == RamList.INDEX_ADDR:
             return '%04x' % index
@@ -50,6 +58,39 @@ class RamList(wx.ListCtrl):
             return '%04x' % self.emu.ram[index]
         if column == RamList.INDEX_DEC:
             return '%d' % self.emu.ram[index]
+        return ''
+
+class ProgramList(wx.ListCtrl):
+    INDEX_ADDR = 0
+    INDEX_CODE = 1
+    def __init__(self, parent):
+        style = wx.LC_REPORT | wx.LC_VIRTUAL | wx.LC_SINGLE_SEL
+        super(ProgramList, self).__init__(parent, -1, style=style)
+        self.instructions = []
+        self.lookup = {}
+        self.InsertColumn(ProgramList.INDEX_ADDR, 'Addr')
+        self.InsertColumn(ProgramList.INDEX_CODE, 'Code')
+        self.SetColumnWidth(ProgramList.INDEX_ADDR, 55)
+        self.SetColumnWidth(ProgramList.INDEX_CODE, 155)
+        self.SetFont(make_font('Courier New', 9))
+    def update(self, instructions):
+        self.instructions = instructions
+        self.lookup = {}
+        for index, instruction in enumerate(instructions):
+            self.lookup[instruction.offset] = index
+        self.SetItemCount(len(instructions))
+    def focus(self, offset):
+        if offset not in self.lookup:
+            return
+        index = self.lookup[offset]
+        self.Select(index)
+        self.EnsureVisible(index)
+    def OnGetItemText(self, index, column):
+        instruction = self.instructions[index]
+        if column == ProgramList.INDEX_ADDR:
+            return '%04x' % instruction.offset
+        if column == ProgramList.INDEX_CODE:
+            return instruction.pretty(None).strip()
         return ''
 
 class Canvas(wx.Panel):
@@ -173,6 +214,7 @@ class Frame(wx.Frame):
         self.running = False
         self.step_power = 0
         self.create_menu()
+        self.create_statusbar()
         panel = wx.Panel(self)
         sizer = self.create_controls(panel)
         panel.SetSizerAndFit(sizer)
@@ -202,12 +244,28 @@ class Frame(wx.Frame):
                 item.Check()
         menubar.Append(menu, '&Run')
         self.SetMenuBar(menubar)
+    def create_statusbar(self):
+        sizes = [0, 100, 140, -1]
+        styles = [wx.SB_NORMAL] * len(sizes)
+        styles[0] = wx.SB_FLAT
+        bar = self.CreateStatusBar()
+        bar.SetFieldsCount(len(sizes))
+        bar.SetStatusWidths(sizes)
+        bar.SetStatusStyles(styles)
+        self.update_statusbar()
+    def update_statusbar(self):
+        bar = self.GetStatusBar()
+        running = 'Running' if self.running else 'Not Running'
+        bar.SetStatusText(running, 1)
+        cycle = 'Cycle: %d' % self.emu.cycle
+        bar.SetStatusText(cycle, 2)
     def on_reset(self, event):
         self.emu.reset()
     def open_file(self, path):
         try:
-            program = assembler.assemble_file(path)
-            self.emu.load(program)
+            program = assembler.parse_file(path)
+            self.emu.load(program.assemble())
+            self.program_list.update(program.disassembly())
             self.refresh_debug_info()
         except Exception as e:
             self.emu.reset()
@@ -226,6 +284,7 @@ class Frame(wx.Frame):
         self.Close()
     def on_start(self, event):
         self.running = True
+        self.refresh_debug_info()
     def on_stop(self, event):
         self.running = False
         self.refresh_debug_info()
@@ -243,7 +302,11 @@ class Frame(wx.Frame):
         self.canvas.Refresh()
         self.canvas.Update()
     def refresh_debug_info(self):
+        self.update_statusbar()
+        self.program_list.focus(self.emu.ram[0x10009])
         self.ram_list.RefreshItems(0, self.ram_list.GetItemCount() - 1)
+        for address, widget in self.registers.iteritems():
+            widget.SetValue('%04x' % self.emu.ram[address])
     def on_timer(self):
         now = time.time()
         dt = now - self.last_time
@@ -257,13 +320,60 @@ class Frame(wx.Frame):
         sizer.Add(body, 1, wx.EXPAND | wx.ALL, 10)
         return sizer
     def create_body(self, parent):
-        self.canvas = Canvas(parent, self.emu)
+        self.program_list = ProgramList(parent)
+        self.program_list.SetInitialSize((245, -1))
+        center = self.create_center(parent)
         self.ram_list = RamList(parent, self.emu)
-        self.ram_list.SetInitialSize((220, -1))
+        self.ram_list.SetInitialSize((200, -1))
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(self.canvas, 1, wx.EXPAND)
+        sizer.Add(self.program_list, 0, wx.EXPAND)
+        sizer.AddSpacer(10)
+        sizer.Add(center, 1, wx.EXPAND)
         sizer.AddSpacer(10)
         sizer.Add(self.ram_list, 0, wx.EXPAND)
+        return sizer
+    def create_center(self, parent):
+        self.canvas = Canvas(parent, self.emu)
+        registers = self.create_registers(parent)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.canvas, 1, wx.EXPAND)
+        sizer.AddSpacer(10)
+        sizer.Add(registers, 0, wx.EXPAND)
+        return sizer
+    def create_registers(self, parent):
+        self.registers = {}
+        sizer = wx.FlexGridSizer(4, 6, 5, 5)
+        for col in range(6):
+            sizer.AddGrowableCol(col, 1)
+        data1 = [
+            ('A', 0),
+            ('B', 1),
+            ('C', 2),
+            ('X', 3),
+            ('Y', 4),
+            ('Z', 5),
+        ]
+        data2 = [
+            ('SP', 8),
+            ('PC', 9),
+            ('O', 10),
+            ('LT', 11),
+            ('I', 6),
+            ('J', 7),
+        ]
+        groups = [data1, data2]
+        for data in groups:
+            for name, offset in data:
+                text = wx.StaticText(parent, -1, name)
+                sizer.Add(text, flag=wx.ALIGN_CENTER)
+            for name, offset in data:
+                address = 0x10000 + offset
+                style = wx.TE_CENTER | wx.TE_READONLY
+                size = (0, -1)
+                text = wx.TextCtrl(parent, -1, '0000', size=size, style=style)
+                text.SetFont(make_font('Courier New', 9))
+                sizer.Add(text, 1, wx.EXPAND)
+                self.registers[address] = text
         return sizer
 
 # Main
