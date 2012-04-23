@@ -40,6 +40,12 @@ def make_font(face, size, bold=False, italic=False, underline=False):
     font = wx.Font(size, family, style, weight, underline, face)
     return font
 
+def set_icon(window):
+    bundle = wx.IconBundle()
+    bundle.AddIcon(wx.IconFromBitmap(icons.icon16.GetBitmap()))
+    bundle.AddIcon(wx.IconFromBitmap(icons.icon32.GetBitmap()))
+    window.SetIcons(bundle)
+
 # Controls
 class RamList(wx.ListCtrl):
     INDEX_ADDR = 0
@@ -220,12 +226,15 @@ class Frame(wx.Frame):
         self.last_refresh = time.time()
         self.running = False
         self.step_power = 0
+        self.show_debug = True
+        self.debug_controls = []
+        set_icon(self)
         self.create_menu()
         self.create_toolbar()
         self.create_statusbar()
-        panel = wx.Panel(self)
-        sizer = self.create_controls(panel)
-        panel.SetSizerAndFit(sizer)
+        self.panel = wx.Panel(self)
+        sizer = self.create_controls(self.panel)
+        self.panel.SetSizerAndFit(sizer)
         self.Fit()
         self.SetTitle('DCPU-16 Emulator')
         wx.CallAfter(self.on_timer)
@@ -251,6 +260,12 @@ class Frame(wx.Frame):
             if power == 0:
                 item.Check()
         menubar.Append(menu, '&Run')
+        # View
+        menu = wx.Menu()
+        item = menu_item(self, menu, 'Show Debug Controls',
+            self.on_toggle_debug, wx.ITEM_CHECK)
+        item.Check()
+        menubar.Append(menu, '&View')
         self.SetMenuBar(menubar)
     def create_toolbar(self):
         style = wx.HORIZONTAL | wx.TB_FLAT | wx.TB_NODIVIDER
@@ -280,6 +295,10 @@ class Frame(wx.Frame):
         bar.SetStatusText(running, 1)
         cycle = 'Cycle: %d' % self.emu.cycle
         bar.SetStatusText(cycle, 2)
+    def show_debug_controls(self, show):
+        for item in self.debug_controls:
+            item.Show(show)
+        self.panel.Layout()
     def on_reset(self, event):
         self.running = False
         self.emu.reset()
@@ -318,6 +337,9 @@ class Frame(wx.Frame):
         self.refresh_debug_info()
     def on_step_power(self, event, power):
         self.step_power = power
+    def on_toggle_debug(self, event):
+        self.show_debug = not self.show_debug
+        self.show_debug_controls(self.show_debug)
     def update(self, dt):
         if self.running:
             cycles = int(dt * CYCLES_PER_SECOND)
@@ -353,23 +375,25 @@ class Frame(wx.Frame):
         self.ram_list = RamList(parent, self.emu)
         self.ram_list.SetInitialSize((200, -1))
         sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(self.program_list, 0, wx.EXPAND)
-        sizer.AddSpacer(10)
+        c1 = sizer.Add(self.program_list, 0, wx.EXPAND)
+        c2 = sizer.AddSpacer(10)
         sizer.Add(center, 1, wx.EXPAND)
-        sizer.AddSpacer(10)
-        sizer.Add(self.ram_list, 0, wx.EXPAND)
+        c3 = sizer.AddSpacer(10)
+        c4 = sizer.Add(self.ram_list, 0, wx.EXPAND)
+        self.debug_controls.extend([c1, c2, c3, c4])
         return sizer
     def create_center(self, parent):
         self.canvas = Canvas(parent, self.emu)
         registers = self.create_registers(parent)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas, 1, wx.EXPAND)
-        sizer.AddSpacer(10)
-        sizer.Add(registers, 0, wx.EXPAND)
+        c1 = sizer.AddSpacer(10)
+        c2 = sizer.Add(registers, 0, wx.EXPAND)
+        self.debug_controls.extend([c1, c2])
         return sizer
     def create_registers(self, parent):
         self.registers = {}
-        sizer = wx.FlexGridSizer(4, 6, 5, 5)
+        self.register_sizer = sizer = wx.FlexGridSizer(4, 6, 5, 5)
         for col in range(6):
             sizer.AddGrowableCol(col, 1)
         data1 = [
