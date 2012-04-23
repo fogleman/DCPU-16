@@ -108,22 +108,26 @@ class Canvas(wx.Panel):
         mdc = wx.MemoryDC(bitmap)
         self.draw_screen(mdc)
         dc = wx.AutoBufferedPaintDC(self)
-        dc.SetBackground(wx.BLACK_BRUSH) # TODO: use correct background color
+        brush = self.brushes[self.get_character(0x8280)[1]]
+        dc.SetBackground(brush)
         dc.Clear()
         dc.Blit(dx, dy, bw, bh, mdc, 0, 0)
+    def get_character(self, address):
+        value = self.emu.ram[address]
+        character = value & 0xff
+        color = (value >> 8) & 0xff
+        back = color & 0x0f
+        fore = (color >> 4) & 0x0f
+        a = self.emu.ram[0x8180 + character * 2]
+        b = self.emu.ram[0x8181 + character * 2]
+        bitmap = a << 16 | b
+        return bitmap, back, fore
     def draw_screen(self, dc):
         dc.SetPen(wx.TRANSPARENT_PEN)
         address = 0x8000
         for j in xrange(12):
             for i in xrange(32):
-                value = self.emu.ram[address]
-                character = value & 0xff
-                color = (value >> 8) & 0xff
-                back = color & 0x0f
-                fore = (color >> 4) & 0x0f
-                a = self.emu.ram[0x8180 + character * 2]
-                b = self.emu.ram[0x8181 + character * 2]
-                bitmap = a << 16 | b
+                bitmap, back, fore = self.get_character(address)
                 key = (back, fore, bitmap)
                 if self.cache.get((i, j)) != key:
                     self.cache[(i, j)] = key
