@@ -1,6 +1,7 @@
 import assembler
 import emulator
 import functools
+import icons
 import time
 import wx
 
@@ -25,6 +26,11 @@ def menu_item(window, menu, label, func, kind=wx.ITEM_NORMAL):
     item = wx.MenuItem(menu, -1, label, '', kind)
     window.Bind(wx.EVT_MENU, func, id=item.GetId())
     menu.AppendItem(item)
+    return item
+
+def tool_item(window, toolbar, label, func, icon):
+    item = toolbar.AddSimpleTool(-1, icon.GetBitmap(), label)
+    window.Bind(wx.EVT_TOOL, func, id=item.GetId())
     return item
 
 def make_font(face, size, bold=False, italic=False, underline=False):
@@ -125,7 +131,7 @@ class Canvas(wx.Panel):
         self.Bind(wx.EVT_CHAR, self.on_char)
         self.SetInitialSize((
             WIDTH * SCALE + BORDER * 4,
-            HEIGHT * SCALE + BORDER * 4))
+            HEIGHT * SCALE + BORDER * 4 + 24))
     def on_char(self, event):
         lookup = {
             wx.WXK_LEFT: 0x25,
@@ -215,6 +221,7 @@ class Frame(wx.Frame):
         self.running = False
         self.step_power = 0
         self.create_menu()
+        self.create_toolbar()
         self.create_statusbar()
         panel = wx.Panel(self)
         sizer = self.create_controls(panel)
@@ -245,6 +252,19 @@ class Frame(wx.Frame):
                 item.Check()
         menubar.Append(menu, '&Run')
         self.SetMenuBar(menubar)
+    def create_toolbar(self):
+        style = wx.HORIZONTAL | wx.TB_FLAT | wx.TB_NODIVIDER
+        toolbar = wx.ToolBar(self, style=style)
+        toolbar.SetToolBitmapSize((18, 18))
+        tool_item(self, toolbar, 'Reset', self.on_reset, icons.page)
+        tool_item(self, toolbar, 'Open', self.on_open, icons.folder_page)
+        toolbar.AddSeparator()
+        tool_item(self, toolbar, 'Start', self.on_start, icons.control_play)
+        tool_item(self, toolbar, 'Stop', self.on_stop, icons.control_stop)
+        tool_item(self, toolbar, 'Step', self.on_step, icons.control_end)
+        toolbar.Realize()
+        toolbar.Fit()
+        self.SetToolBar(toolbar)
     def create_statusbar(self):
         sizes = [0, 100, 140, -1]
         styles = [wx.SB_NORMAL] * len(sizes)
@@ -261,7 +281,10 @@ class Frame(wx.Frame):
         cycle = 'Cycle: %d' % self.emu.cycle
         bar.SetStatusText(cycle, 2)
     def on_reset(self, event):
+        self.running = False
         self.emu.reset()
+        self.program_list.update([])
+        self.refresh_debug_info()
     def open_file(self, path):
         try:
             program = assembler.parse_file(path)
