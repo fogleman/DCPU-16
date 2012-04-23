@@ -4,7 +4,7 @@
 
     Usage: python display.py programs/minesweeper.dasm
 
-Run the specified program with the visualizer. See video here: http://www.youtube.com/watch?v=qIyYhIZ0VqI
+Run the specified program with the visualizer. See video here: http://www.youtube.com/watch?v=BohQ9i3nqm4
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/screenshot.png)
 
