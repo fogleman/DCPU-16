@@ -1,9 +1,9 @@
 import assembler
 import emulator
-import sys
 import time
 import wx
 
+# Select C or Python Emulator
 try:
     import cEmulator
 except Exception:
@@ -11,12 +11,21 @@ except Exception:
 
 emulator = cEmulator or emulator
 
+# Constants
 SCALE = 4
 WIDTH = 128
 HEIGHT = 96
 BORDER = 10
 CYCLES_PER_SECOND = 100000
 
+# Helper Functions
+def menu_item(window, menu, label, func):
+    item = wx.MenuItem(menu, -1, label)
+    window.Bind(wx.EVT_MENU, func, id=item.GetId())
+    menu.AppendItem(item)
+    return item
+
+# Controls
 class RamList(wx.ListCtrl):
     INDEX_ADDR = 0
     INDEX_HEX = 1
@@ -159,23 +168,59 @@ class Frame(wx.Frame):
         super(Frame, self).__init__(None)
         self.emu = emu
         self.last_time = time.time()
+        self.running = False
+        self.create_menu()
         panel = wx.Panel(self)
         sizer = self.create_controls(panel)
         panel.SetSizerAndFit(sizer)
         self.Fit()
         self.SetTitle('DCPU-16 Emulator')
         wx.CallAfter(self.on_timer)
+    def create_menu(self):
+        menubar = wx.MenuBar()
+        # File
+        menu = wx.Menu()
+        menu_item(self, menu, 'Reset\tCtrl+N', self.on_reset)
+        menu_item(self, menu, 'Open...\tCtrl+O', self.on_open)
+        menubar.Append(menu, '&File')
+        # Run
+        menu = wx.Menu()
+        menu_item(self, menu, 'Start\tF5', self.on_start)
+        menu_item(self, menu, 'Stop', self.on_stop)
+        menu_item(self, menu, 'Step', self.on_step)
+        menubar.Append(menu, '&Run')
+        self.SetMenuBar(menubar)
+    def on_reset(self, event):
+        self.emu.reset()
+    def on_open(self, event):
+        dialog = wx.FileDialog(self, 'Open', wildcard='*.dasm;*.dasm16',
+            style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
+        if dialog.ShowModal() == wx.ID_OK:
+            path = dialog.GetPath()
+            # TODO: error dialog
+            program = assembler.assemble_file(path)
+            self.emu.load(program)
+        dialog.Destroy()
+    def on_start(self, event):
+        self.running = True
+    def on_stop(self, event):
+        self.running = False
+    def on_step(self, event):
+        self.emu.step()
     def update(self, dt):
-        cycles = int(dt * CYCLES_PER_SECOND)
-        self.emu.n_cycles(cycles)
+        if self.running:
+            cycles = int(dt * CYCLES_PER_SECOND)
+            self.emu.n_cycles(cycles)
+    def refresh(self):
+        #self.ram_list.RefreshItems(0, self.ram_list.GetItemCount() - 1)
+        self.canvas.Refresh()
+        self.canvas.Update()
     def on_timer(self):
         now = time.time()
         dt = now - self.last_time
         self.last_time = now
         self.update(dt)
-        #self.ram_list.RefreshItems(0, self.ram_list.GetItemCount() - 1)
-        self.canvas.Refresh()
-        self.canvas.Update()
+        self.refresh()
         wx.CallLater(10, self.on_timer)
     def create_controls(self, parent):
         body = self.create_body(parent)
@@ -192,18 +237,13 @@ class Frame(wx.Frame):
         #sizer.Add(self.ram_list, 0, wx.EXPAND)
         return sizer
 
-def main(emu):
+# Main
+def main():
     app = wx.App(None)
-    frame = Frame(emu)
+    frame = Frame(emulator.Emulator())
     frame.Center()
     frame.Show()
     app.MainLoop()
 
 if __name__ == '__main__':
-    args = sys.argv[1:]
-    if len(args) == 1:
-        emu = emulator.Emulator()
-        emu.load(assembler.assemble_file(args[0]))
-        main(emu)
-    else:
-        print 'Usage: python display.py input.dasm'
+    main()

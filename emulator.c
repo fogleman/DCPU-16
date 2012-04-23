@@ -99,7 +99,6 @@ void reset(Emulator *emulator) {
 }
 
 void load(Emulator *emulator, unsigned short *program, unsigned int length) {
-    reset(emulator);
     for (unsigned int i = 0; i < length; i++) {
         RAM(i) = program[i];
     }

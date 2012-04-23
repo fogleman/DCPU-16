@@ -17,8 +17,11 @@ class Emulator(object):
         self.emulator = cEmulator()
         self.emulator.ram = (c_ushort * EXT_SIZE)()
         self.ram = self.emulator.ram
+        self.reset()
+    def reset(self):
         dll.reset(byref(self.emulator))
     def load(self, program):
+        self.reset()
         length = len(program)
         data = (c_ushort * length)()
         for index, value in enumerate(program):
