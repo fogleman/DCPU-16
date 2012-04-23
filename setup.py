@@ -14,6 +14,7 @@ def run_py2exe():
             "bundle_files": 1,
             "excludes": ['Tkconstants', 'Tkinter', 'tcl'],
             "dll_excludes": ['msvcp90.dll'],
+            "includes": ['parsetab'],
         }},
         windows = [{
             "script": "main.py",
@@ -43,6 +44,8 @@ def copy_directory(src):
 def main():
     run_py2exe()
     copy_directory('Microsoft.VC90.CRT')
+    copy_directory('programs')
+    copy_file('_emulator.dll')
 
 MANIFEST = '''
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1"

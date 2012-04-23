@@ -346,7 +346,7 @@ def p_error(t):
 # Parsing Functions
 def parse(text):
     lexer = lex.lex()
-    parser = yacc.yacc(debug=False, write_tables=False)
+    parser = yacc.yacc(debug=False)
     return parser.parse(text.upper(), lexer=lexer)
 
 def parse_file(path):
