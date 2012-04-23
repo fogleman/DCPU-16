@@ -18,6 +18,7 @@ WIDTH = 128
 HEIGHT = 96
 BORDER = 10
 CYCLES_PER_SECOND = 100000
+BLINK_RATE = 50000
 
 # Helper Functions
 def menu_item(window, menu, label, func, kind=wx.ITEM_NORMAL):
@@ -138,7 +139,7 @@ class Canvas(wx.Panel):
     def draw_screen(self, dc):
         dc.SetPen(wx.TRANSPARENT_PEN)
         address = 0x8000
-        show_blink = bool(int(time.time() * 2) % 2)
+        show_blink = bool((self.emu.cycle / BLINK_RATE) % 2)
         for j in xrange(12):
             for i in xrange(32):
                 bitmap, back, fore = self.get_character(address, show_blink)

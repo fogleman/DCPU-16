@@ -18,6 +18,9 @@ class Emulator(object):
         self.emulator.ram = (c_ushort * EXT_SIZE)()
         self.ram = self.emulator.ram
         self.reset()
+    @property
+    def cycle(self):
+        return self.emulator.cycle
     def reset(self):
         dll.reset(byref(self.emulator))
     def load(self, program):
