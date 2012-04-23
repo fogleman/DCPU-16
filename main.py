@@ -35,6 +35,8 @@ def tool_item(window, toolbar, label, func, icon):
     return item
 
 def make_font(face, size, bold=False, italic=False, underline=False):
+    if sys.platform == 'darwin':
+        size = int(size * 1.5)
     family = wx.FONTFAMILY_DEFAULT
     style = wx.FONTSTYLE_ITALIC if italic else wx.FONTSTYLE_NORMAL
     weight = wx.FONTWEIGHT_BOLD if bold else wx.FONTWEIGHT_NORMAL
@@ -273,7 +275,7 @@ class Frame(wx.Frame):
         self.SetMenuBar(menubar)
     def create_toolbar(self):
         style = wx.HORIZONTAL | wx.TB_FLAT | wx.TB_NODIVIDER
-        toolbar = wx.ToolBar(self, style=style)
+        toolbar = self.CreateToolBar(style)
         toolbar.SetToolBitmapSize((18, 18))
         tool_item(self, toolbar, 'Reset', self.on_reset, icons.page)
         tool_item(self, toolbar, 'Open', self.on_open, icons.folder_page)
@@ -283,7 +285,6 @@ class Frame(wx.Frame):
         tool_item(self, toolbar, 'Step', self.on_step, icons.control_end)
         toolbar.Realize()
         toolbar.Fit()
-        self.SetToolBar(toolbar)
     def create_statusbar(self):
         sizes = [0, 100, 140, -1]
         styles = [wx.SB_NORMAL] * len(sizes)
