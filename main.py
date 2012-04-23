@@ -2,6 +2,7 @@ import assembler
 import emulator
 import functools
 import icons
+import sys
 import time
 import wx
 
@@ -238,6 +239,9 @@ class Frame(wx.Frame):
         self.Fit()
         self.SetTitle('DCPU-16 Emulator')
         wx.CallAfter(self.on_timer)
+        args = sys.argv[1:]
+        if len(args) == 1:
+            self.open_file(args[0])
     def create_menu(self):
         menubar = wx.MenuBar()
         # File
