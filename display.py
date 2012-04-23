@@ -28,9 +28,9 @@ class RamList(wx.ListCtrl):
         self.InsertColumn(RamList.INDEX_ADDR, 'Index')
         self.InsertColumn(RamList.INDEX_HEX, 'Hex')
         self.InsertColumn(RamList.INDEX_DEC, 'Dec')
-        self.SetColumnWidth(RamList.INDEX_ADDR, 96)
-        self.SetColumnWidth(RamList.INDEX_HEX, 96)
-        self.SetColumnWidth(RamList.INDEX_DEC, 96)
+        self.SetColumnWidth(RamList.INDEX_ADDR, 64)
+        self.SetColumnWidth(RamList.INDEX_HEX, 64)
+        self.SetColumnWidth(RamList.INDEX_DEC, 64)
         self.SetItemCount(0x1000c)
     def OnGetItemText(self, index, column):
         if column == RamList.INDEX_ADDR:
@@ -185,7 +185,7 @@ class Frame(wx.Frame):
     def create_body(self, parent):
         self.canvas = Canvas(parent, self.emu)
         #self.ram_list = RamList(parent, self.emu)
-        #self.ram_list.SetInitialSize((300, -1))
+        #self.ram_list.SetInitialSize((220, -1))
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.canvas, 1, wx.EXPAND)
         #sizer.AddSpacer(10)
