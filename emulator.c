@@ -300,6 +300,12 @@ void step(Emulator *emulator) {
     }
 }
 
+void n_steps(Emulator *emulator, unsigned int steps) {
+    for (unsigned int i = 0; i < steps; i++) {
+        step(emulator);
+    }
+}
+
 void n_cycles(Emulator *emulator, unsigned int cycles) {
     unsigned int cycle = CYCLE + cycles;
     while (CYCLE < cycle) {

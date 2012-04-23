@@ -27,7 +27,9 @@ class Emulator(object):
         for index, value in enumerate(program):
             data[index] = value
         dll.load(byref(self.emulator), data, length)
-    def n_cycles(self, cycles):
-        dll.n_cycles(byref(self.emulator), cycles)
     def step(self):
         dll.step(byref(self.emulator))
+    def n_steps(self, steps):
+        dll.n_steps(byref(self.emulator), steps)
+    def n_cycles(self, cycles):
+        dll.n_cycles(byref(self.emulator), cycles)

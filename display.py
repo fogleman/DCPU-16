@@ -1,5 +1,6 @@
 import assembler
 import emulator
+import functools
 import time
 import wx
 
@@ -19,8 +20,8 @@ BORDER = 10
 CYCLES_PER_SECOND = 100000
 
 # Helper Functions
-def menu_item(window, menu, label, func):
-    item = wx.MenuItem(menu, -1, label)
+def menu_item(window, menu, label, func, kind=wx.ITEM_NORMAL):
+    item = wx.MenuItem(menu, -1, label, '', kind)
     window.Bind(wx.EVT_MENU, func, id=item.GetId())
     menu.AppendItem(item)
     return item
@@ -169,6 +170,7 @@ class Frame(wx.Frame):
         self.emu = emu
         self.last_time = time.time()
         self.running = False
+        self.step_power = 0
         self.create_menu()
         panel = wx.Panel(self)
         sizer = self.create_controls(panel)
@@ -182,31 +184,53 @@ class Frame(wx.Frame):
         menu = wx.Menu()
         menu_item(self, menu, 'Reset\tCtrl+N', self.on_reset)
         menu_item(self, menu, 'Open...\tCtrl+O', self.on_open)
+        menu.AppendSeparator()
+        menu_item(self, menu, 'Exit\tAlt+F4', self.on_exit)
         menubar.Append(menu, '&File')
         # Run
         menu = wx.Menu()
         menu_item(self, menu, 'Start\tF5', self.on_start)
-        menu_item(self, menu, 'Stop', self.on_stop)
-        menu_item(self, menu, 'Step', self.on_step)
+        menu_item(self, menu, 'Stop\tF6', self.on_stop)
+        menu_item(self, menu, 'Step\tF7', self.on_step)
+        menu.AppendSeparator()
+        for power in range(6):
+            func = functools.partial(self.on_step_power, power=power)
+            item = menu_item(self, menu, '10^%d Steps' % power, func,
+                wx.ITEM_RADIO)
+            if power == 0:
+                item.Check()
         menubar.Append(menu, '&Run')
         self.SetMenuBar(menubar)
     def on_reset(self, event):
         self.emu.reset()
-    def on_open(self, event):
-        dialog = wx.FileDialog(self, 'Open', wildcard='*.dasm;*.dasm16',
-            style=wx.FD_OPEN|wx.FD_FILE_MUST_EXIST)
-        if dialog.ShowModal() == wx.ID_OK:
-            path = dialog.GetPath()
-            # TODO: error dialog
+    def open_file(self, path):
+        try:
             program = assembler.assemble_file(path)
             self.emu.load(program)
+        except Exception as e:
+            self.emu.reset()
+            dialog = wx.MessageDialog(self, str(e), 'Error',
+                wx.ICON_ERROR | wx.OK)
+            dialog.ShowModal()
+            dialog.Destroy()
+    def on_open(self, event):
+        dialog = wx.FileDialog(self, 'Open',
+            style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        if dialog.ShowModal() == wx.ID_OK:
+            path = dialog.GetPath()
+            self.open_file(path)
         dialog.Destroy()
+    def on_exit(self, event):
+        self.Close()
     def on_start(self, event):
         self.running = True
     def on_stop(self, event):
         self.running = False
     def on_step(self, event):
-        self.emu.step()
+        steps = 10 ** self.step_power
+        self.emu.n_steps(steps)
+    def on_step_power(self, event, power):
+        self.step_power = power
     def update(self, dt):
         if self.running:
             cycles = int(dt * CYCLES_PER_SECOND)

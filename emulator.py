@@ -136,6 +136,9 @@ class Emulator(object):
             self.basic_instruction(op, a, b)
         else:
             self.non_basic_instruction(a, b)
+    def n_steps(self, steps):
+        for _ in xrange(steps):
+            self.step()
     def n_cycles(self, cycles):
         cycle = self.cycle + cycles
         while self.cycle < cycle:
