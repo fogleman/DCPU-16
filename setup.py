@@ -10,11 +10,10 @@ def run_py2exe():
     distutils.core.setup(
         options = {"py2exe":{
             "compressed": True,
-            "optimize": 2,
+            "optimize": 1,
             "bundle_files": 1,
             "excludes": ['Tkconstants', 'Tkinter', 'tcl'],
             "dll_excludes": ['msvcp90.dll'],
-            "includes": ['parsetab'],
         }},
         windows = [{
             "script": "main.py",
