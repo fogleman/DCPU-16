@@ -12,12 +12,39 @@ except Exception:
 emulator = cEmulator or emulator
 
 SCALE = 4
+WIDTH = 128
+HEIGHT = 96
 BORDER = 10
 CYCLES_PER_SECOND = 100000
 
+class RamList(wx.ListCtrl):
+    INDEX_ADDR = 0
+    INDEX_HEX = 1
+    INDEX_DEC = 2
+    def __init__(self, parent, emu):
+        style = wx.LC_REPORT | wx.LC_VIRTUAL | wx.LC_SINGLE_SEL
+        super(RamList, self).__init__(parent, -1, style=style)
+        self.emu = emu
+        self.InsertColumn(RamList.INDEX_ADDR, 'Index')
+        self.InsertColumn(RamList.INDEX_HEX, 'Hex')
+        self.InsertColumn(RamList.INDEX_DEC, 'Dec')
+        self.SetColumnWidth(RamList.INDEX_ADDR, 96)
+        self.SetColumnWidth(RamList.INDEX_HEX, 96)
+        self.SetColumnWidth(RamList.INDEX_DEC, 96)
+        self.SetItemCount(0x1000c)
+    def OnGetItemText(self, index, column):
+        if column == RamList.INDEX_ADDR:
+            return '%04x' % index
+        if column == RamList.INDEX_HEX:
+            return '%04x' % self.emu.ram[index]
+        if column == RamList.INDEX_DEC:
+            return '%d' % self.emu.ram[index]
+        return ''
+
 class Canvas(wx.Panel):
     def __init__(self, parent, emu):
-        super(Canvas, self).__init__(parent, style=wx.WANTS_CHARS)
+        style = wx.WANTS_CHARS | wx.BORDER_DOUBLE
+        super(Canvas, self).__init__(parent, style=style)
         self.emu = emu
         self.brushes = {
             0x0: wx.Brush(wx.Colour(0x00, 0x00, 0x00)),
@@ -37,18 +64,16 @@ class Canvas(wx.Panel):
             0xe: wx.Brush(wx.Colour(0xff, 0xff, 0x55)),
             0xf: wx.Brush(wx.Colour(0xff, 0xff, 0xff)),
         }
-        self.bitmap = wx.EmptyBitmap(1, 1)
+        self.scale = 0
         self.cache = {}
-        self.scale = SCALE
-        self.last_time = time.time()
+        self.bitmap = wx.EmptyBitmap(1, 1)
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.Bind(wx.EVT_PAINT, self.on_paint)
         self.Bind(wx.EVT_CHAR, self.on_char)
-        wx.CallAfter(self.on_timer)
-    def update(self, dt):
-        cycles = int(dt * CYCLES_PER_SECOND)
-        self.emu.n_cycles(cycles)
+        self.SetInitialSize((
+            WIDTH * SCALE + BORDER * 4,
+            HEIGHT * SCALE + BORDER * 4))
     def on_char(self, event):
         lookup = {
             wx.WXK_LEFT: 0x25,
@@ -63,29 +88,29 @@ class Canvas(wx.Panel):
                 self.emu.ram[address] = code
                 self.emu.ram[0x9010] = address
                 break
-    def on_timer(self):
-        now = time.time()
-        dt = now - self.last_time
-        self.last_time = now
-        self.update(dt)
-        self.Refresh()
-        self.Update()
-        wx.CallLater(10, self.on_timer)
     def on_size(self, event):
         event.Skip()
-        w, h = self.GetClientSize()
-        self.bitmap = wx.EmptyBitmap(w, h)
-        dc = wx.MemoryDC(self.bitmap)
-        dc.SetBackground(wx.BLACK_BRUSH)
-        dc.Clear()
-        self.cache = {}
         self.Refresh()
+        cw, ch = self.GetClientSize()
+        scale = min((cw - BORDER * 2) / WIDTH, (ch - BORDER * 2) / HEIGHT) or 1
+        if scale != self.scale:
+            self.scale = scale
+            self.cache = {}
+            self.bitmap = wx.EmptyBitmap(WIDTH * scale, HEIGHT * scale)
+            dc = wx.MemoryDC(self.bitmap)
+            dc.SetBackground(wx.BLACK_BRUSH)
+            dc.Clear()
     def on_paint(self, event):
         bitmap = self.bitmap
+        cw, ch = self.GetClientSize()
+        bw, bh = bitmap.GetWidth(), bitmap.GetHeight()
+        dx, dy = (cw - bw) / 2, (ch - bh) / 2
         mdc = wx.MemoryDC(bitmap)
         self.draw_screen(mdc)
         dc = wx.AutoBufferedPaintDC(self)
-        dc.Blit(0, 0, bitmap.GetWidth(), bitmap.GetHeight(), mdc, 0, 0)
+        dc.SetBackground(wx.BLACK_BRUSH) # TODO: use correct background color
+        dc.Clear()
+        dc.Blit(dx, dy, bw, bh, mdc, 0, 0)
     def draw_screen(self, dc):
         dc.SetPen(wx.TRANSPARENT_PEN)
         address = 0x8000
@@ -102,8 +127,8 @@ class Canvas(wx.Panel):
                 key = (back, fore, bitmap)
                 if self.cache.get((i, j)) != key:
                     self.cache[(i, j)] = key
-                    x = i * 4 * self.scale + BORDER
-                    y = j * 8 * self.scale + BORDER
+                    x = i * 4 * self.scale
+                    y = j * 8 * self.scale
                     self.draw_character(dc, x, y, back, fore, bitmap)
                 address += 1
     def draw_character(self, dc, x, y, back, fore, bitmap):
@@ -121,13 +146,45 @@ class Canvas(wx.Panel):
                 dc.DrawRectangle(x + dx, y + dy, self.scale, self.scale)
                 mask <<= 1
 
+class Frame(wx.Frame):
+    def __init__(self, emu):
+        super(Frame, self).__init__(None)
+        self.emu = emu
+        self.last_time = time.time()
+        sizer = self.create_controls(self)
+        self.SetSizerAndFit(sizer)
+        self.SetTitle('DCPU-16 Emulator')
+        wx.CallAfter(self.on_timer)
+    def update(self, dt):
+        cycles = int(dt * CYCLES_PER_SECOND)
+        self.emu.n_cycles(cycles)
+    def on_timer(self):
+        now = time.time()
+        dt = now - self.last_time
+        self.last_time = now
+        self.update(dt)
+        #self.ram_list.RefreshItems(0, self.ram_list.GetItemCount() - 1)
+        self.canvas.Refresh()
+        self.canvas.Update()
+        wx.CallLater(10, self.on_timer)
+    def create_controls(self, parent):
+        body = self.create_body(parent)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(body, 1, wx.EXPAND | wx.ALL, 10)
+        return sizer
+    def create_body(self, parent):
+        self.canvas = Canvas(parent, self.emu)
+        #self.ram_list = RamList(parent, self.emu)
+        #self.ram_list.SetInitialSize((300, -1))
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self.canvas, 1, wx.EXPAND)
+        #sizer.AddSpacer(10)
+        #sizer.Add(self.ram_list, 0, wx.EXPAND)
+        return sizer
+
 def main(emu):
     app = wx.App(None)
-    style = wx.DEFAULT_FRAME_STYLE & ~wx.RESIZE_BORDER & ~wx.MAXIMIZE_BOX
-    frame = wx.Frame(None, style=style)
-    Canvas(frame, emu)
-    frame.SetTitle('DCPU-16 Emulator')
-    frame.SetClientSize((128 * SCALE + BORDER * 2, 96 * SCALE + BORDER * 2))
+    frame = Frame(emu)
     frame.Center()
     frame.Show()
     app.MainLoop()
