@@ -89,7 +89,7 @@ class Data(object):
         self.offset = None
         self.conditional = False
     def assemble(self, lookup):
-        return self.data
+        return [lookup.get(x, x) for x in self.data]
     def pretty(self, previous):
         data = ', '.join('"%s"' % x if isinstance(x, str) else '0x%04x' % x
             for x in self.data)
