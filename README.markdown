@@ -8,8 +8,6 @@ http://www.michaelfogleman.com/static/dcpu16-setup.exe
 
     Usage: python main.py [input.dasm]
 
-See video here: http://www.youtube.com/watch?v=BohQ9i3nqm4
-
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/debug.png)
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/no_debug.png)
