@@ -266,7 +266,7 @@ class Frame(wx.Frame):
         try:
             program = assembler.parse_file(path)
             self.emu.load(program.assemble())
-            self.program_list.update(program.disassembly())
+            self.program_list.update(program.instructions)
             self.refresh_debug_info()
         except Exception as e:
             self.emu.reset()
