@@ -211,6 +211,7 @@ class Frame(wx.Frame):
         super(Frame, self).__init__(None)
         self.emu = emu
         self.last_time = time.time()
+        self.last_refresh = time.time()
         self.running = False
         self.step_power = 0
         self.create_menu()
@@ -301,7 +302,10 @@ class Frame(wx.Frame):
     def refresh(self):
         self.canvas.Refresh()
         self.canvas.Update()
+        if self.running and time.time() - self.last_refresh > 1:
+            self.refresh_debug_info()
     def refresh_debug_info(self):
+        self.last_refresh = time.time()
         self.update_statusbar()
         self.program_list.focus(self.emu.ram[0x10009])
         self.ram_list.RefreshItems(0, self.ram_list.GetItemCount() - 1)
