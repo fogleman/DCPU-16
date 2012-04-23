@@ -208,6 +208,7 @@ class Frame(wx.Frame):
         try:
             program = assembler.assemble_file(path)
             self.emu.load(program)
+            self.refresh_debug_info()
         except Exception as e:
             self.emu.reset()
             dialog = wx.MessageDialog(self, str(e), 'Error',
@@ -227,9 +228,11 @@ class Frame(wx.Frame):
         self.running = True
     def on_stop(self, event):
         self.running = False
+        self.refresh_debug_info()
     def on_step(self, event):
         steps = 10 ** self.step_power
         self.emu.n_steps(steps)
+        self.refresh_debug_info()
     def on_step_power(self, event, power):
         self.step_power = power
     def update(self, dt):
@@ -237,9 +240,10 @@ class Frame(wx.Frame):
             cycles = int(dt * CYCLES_PER_SECOND)
             self.emu.n_cycles(cycles)
     def refresh(self):
-        #self.ram_list.RefreshItems(0, self.ram_list.GetItemCount() - 1)
         self.canvas.Refresh()
         self.canvas.Update()
+    def refresh_debug_info(self):
+        self.ram_list.RefreshItems(0, self.ram_list.GetItemCount() - 1)
     def on_timer(self):
         now = time.time()
         dt = now - self.last_time
@@ -254,12 +258,12 @@ class Frame(wx.Frame):
         return sizer
     def create_body(self, parent):
         self.canvas = Canvas(parent, self.emu)
-        #self.ram_list = RamList(parent, self.emu)
-        #self.ram_list.SetInitialSize((220, -1))
+        self.ram_list = RamList(parent, self.emu)
+        self.ram_list.SetInitialSize((220, -1))
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         sizer.Add(self.canvas, 1, wx.EXPAND)
-        #sizer.AddSpacer(10)
-        #sizer.Add(self.ram_list, 0, wx.EXPAND)
+        sizer.AddSpacer(10)
+        sizer.Add(self.ram_list, 0, wx.EXPAND)
         return sizer
 
 # Main
