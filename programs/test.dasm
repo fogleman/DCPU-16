@@ -1,0 +1,27 @@
+; blank out character 0
+    SET [0x8180] 0
+    SET [0x8181] 0
+
+; make whole screen white on blue
+    SET SP 0x8000
+:loop1
+    SET POP 0xf180
+    ADD A 1
+    IFG 0x8180 SP
+        SET PC loop1
+
+; add text from data
+    SET SP 0x8000
+    ADD SP 33
+    SET A data
+:loop2
+    BOR POP [A]
+    ADD A 1
+    IFG 0x8180 SP
+        SET PC loop2
+
+:end
+    SET PC end
+
+:data
+    DAT "LIKE A BOSS"
