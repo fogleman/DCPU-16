@@ -250,7 +250,7 @@ class Frame(wx.Frame):
         menubar = wx.MenuBar()
         # File
         menu = wx.Menu()
-        menu_item(self, menu, 'Reset\tCtrl+N', self.on_reset)
+        menu_item(self, menu, 'New\tCtrl+N', self.on_new)
         menu_item(self, menu, 'Open...\tCtrl+O', self.on_open)
         menu.AppendSeparator()
         menu_item(self, menu, 'Save Binary...', self.on_save_binary)
@@ -289,7 +289,7 @@ class Frame(wx.Frame):
         style = wx.HORIZONTAL | wx.TB_FLAT | wx.TB_NODIVIDER
         toolbar = self.CreateToolBar(style)
         toolbar.SetToolBitmapSize((18, 18))
-        tool_item(self, toolbar, 'Reset', self.on_reset, icons.page)
+        tool_item(self, toolbar, 'New', self.on_new, icons.page)
         tool_item(self, toolbar, 'Open', self.on_open, icons.folder_page)
         toolbar.AddSeparator()
         tool_item(self, toolbar, 'Assemble', self.on_assemble, icons.basket_put)
@@ -319,23 +319,25 @@ class Frame(wx.Frame):
         for item in self.debug_controls:
             item.Show(show)
         self.panel.Layout()
-    def on_reset(self, event):
+    def reset(self):
         self.running = False
         self.program = None
-        self.editor.SetValue('')
         self.emu.reset()
         self.program_list.update([])
         self.refresh_debug_info()
+    def on_new(self, event):
+        self.reset()
+        self.editor.SetValue('')
     def open_file(self, path):
         try:
-            self.on_reset(None)
+            self.reset()
             self.program = assembler.open_file(path)
             self.emu.load(self.program.assemble())
             self.program_list.update(self.program.instructions)
             self.editor.SetValue(self.program.text)
             self.refresh_debug_info()
         except Exception as e:
-            self.on_reset(None)
+            self.reset()
             dialog = wx.MessageDialog(self, str(e), 'Error',
                 wx.ICON_ERROR | wx.OK)
             dialog.ShowModal()
@@ -367,18 +369,22 @@ class Frame(wx.Frame):
         dialog.Destroy()
     def on_exit(self, event):
         self.Close()
-    def on_assemble(self, event):
+    def assemble(self):
         text = self.editor.GetValue()
         try:
+            self.reset()
             self.program = assembler.parse(text)
             self.emu.load(self.program.assemble())
             self.program_list.update(self.program.instructions)
             self.refresh_debug_info()
         except Exception as e:
+            self.reset()
             dialog = wx.MessageDialog(self, str(e), 'Error',
                 wx.ICON_ERROR | wx.OK)
             dialog.ShowModal()
             dialog.Destroy()
+    def on_assemble(self, event):
+        self.assemble()
     def on_start(self, event):
         self.running = True
         self.refresh_debug_info()
