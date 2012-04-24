@@ -382,7 +382,7 @@ def disassemble(words):
         return words.pop() if words else 0
     instructions = []
     use_next_word = set(range(0x10, 0x18) + [0x1e, 0x1f])
-    words = reversed(words)
+    words = list(reversed(words))
     while words:
         word = next_word()
         op = word & 0x000f
