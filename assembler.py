@@ -160,24 +160,7 @@ class Operand(object):
     def assemble(self, lookup):
         return [] if self.word is None else [lookup.get(self.word, self.word)]
     def pretty(self):
-        x = self.value
-        word = self.word
-        if isinstance(word, int):
-            word = pretty_value(word)
-        if x in REV_REGISTERS:
-            return REV_REGISTERS[x]
-        elif x - 0x08 in REV_REGISTERS:
-            return '[%s]' % REV_REGISTERS[x - 0x08]
-        elif x - 0x10 in REV_REGISTERS:
-            return '[%s + %s]' % (REV_REGISTERS[x - 0x10], word)
-        elif x in REV_SPECIAL:
-            return REV_SPECIAL[x]
-        elif x == 0x1e:
-            return '[%s]' % word
-        elif x == 0x1f:
-            return '%s' % word
-        elif x >= 0x20:
-            return pretty_value(x - 0x20)
+        return pretty_operand(self.value, self.word)
 
 # Lexer Rules
 reserved = (
@@ -374,6 +357,50 @@ def pretty_file(path):
 
 def pretty_value(x):
     return '%d' % x if x <= 0xff else '0x%04x' % x
+
+def pretty_operand(x, word):
+    if isinstance(word, int):
+        word = pretty_value(word)
+    if x in REV_REGISTERS:
+        return REV_REGISTERS[x]
+    elif x - 0x08 in REV_REGISTERS:
+        return '[%s]' % REV_REGISTERS[x - 0x08]
+    elif x - 0x10 in REV_REGISTERS:
+        return '[%s + %s]' % (REV_REGISTERS[x - 0x10], word)
+    elif x in REV_SPECIAL:
+        return REV_SPECIAL[x]
+    elif x == 0x1e:
+        return '[%s]' % word
+    elif x == 0x1f:
+        return '%s' % word
+    elif x >= 0x20:
+        return pretty_value(x - 0x20)
+
+# Disassembler Functions
+def disassemble(words):
+    def next_word():
+        return words.pop() if words else 0
+    instructions = []
+    use_next_word = set(range(0x10, 0x18) + [0x1e, 0x1f])
+    words = reversed(words)
+    while words:
+        word = next_word()
+        op = word & 0x000f
+        a = (word & 0x03f0) >> 4
+        b = (word & 0xfc00) >> 10
+        if op != 0 and op in REV_BASIC_OPCODES:
+            a = Operand(a, next_word() if a in use_next_word else None)
+            b = Operand(b, next_word() if b in use_next_word else None)
+            instruction = BasicInstruction(op, a, b)
+            instructions.append(instruction)
+        elif op == 0 and a in REV_NON_BASIC_OPCODES:
+            b = Operand(b, next_word() if b in use_next_word else None)
+            instruction = NonBasicInstruction(a, b)
+            instructions.append(instruction)
+        else:
+            instruction = Data([word])
+            instructions.append(instruction)
+    return Program(instructions)
 
 # Main
 if __name__ == '__main__':
