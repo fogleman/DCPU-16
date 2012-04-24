@@ -242,6 +242,7 @@ class Frame(wx.Frame):
         self.program = None
         self.running = False
         self.step_power = 0
+        self.refresh_rate = 1
         self.cycles_per_second = CYCLES_PER_SECOND
         self.show_debug = True
         self.debug_controls = []
@@ -299,6 +300,17 @@ class Frame(wx.Frame):
         item = menu_item(self, menu, 'Show Debug Controls\tF12',
             self.on_toggle_debug, wx.ITEM_CHECK)
         item.Check()
+        menu.AppendSeparator()
+        data = [
+            (-1, 'No Refresh'),
+            (0, 'Live Refresh'),
+            (1, 'One Second Refresh'),
+        ]
+        for rate, name in data:
+            func = functools.partial(self.on_refresh_rate, rate=rate)
+            item = menu_item(self, menu, name, func, wx.ITEM_RADIO)
+            if rate == self.refresh_rate:
+                item.Check()
         menubar.Append(menu, '&View')
         self.SetMenuBar(menubar)
     def create_toolbar(self):
@@ -428,6 +440,8 @@ class Frame(wx.Frame):
     def on_toggle_debug(self, event):
         self.show_debug = not self.show_debug
         self.show_debug_controls(self.show_debug)
+    def on_refresh_rate(self, event, rate):
+        self.refresh_rate = rate
     def on_page_changed(self, event):
         event.Skip()
         index = event.GetEventObject().GetSelection()
@@ -442,8 +456,9 @@ class Frame(wx.Frame):
     def refresh(self):
         self.canvas.Refresh()
         self.canvas.Update()
-        if self.running and time.time() - self.last_refresh > 1:
-            self.refresh_debug_info()
+        if self.running and self.refresh_rate >= 0:
+            if time.time() - self.last_refresh > self.refresh_rate:
+                self.refresh_debug_info()
     def refresh_debug_info(self):
         self.last_refresh = time.time()
         self.update_statusbar()
