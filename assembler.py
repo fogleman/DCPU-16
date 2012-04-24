@@ -327,6 +327,13 @@ def p_error(t):
     raise Exception(t)
 
 # Parsing Functions
+def open_file(path):
+    extensions = ['.dasm', '.dasm16']
+    if any(ext in path for ext in extensions):
+        return parse_file(path)
+    else:
+        return disassemble_file(path)
+
 def parse(text):
     lexer = lex.lex()
     parser = yacc.yacc(debug=False, write_tables=False)
@@ -401,6 +408,12 @@ def disassemble(words):
             instruction = Data([word])
             instructions.append(instruction)
     return Program(instructions)
+
+def disassemble_file(path):
+    with open(path, 'rb') as fp:
+        data = fp.read()
+    words = [(ord(a) << 8) | ord(b) for a, b in zip(data[::2], data[1::2])]
+    return disassemble(words)
 
 # Main
 if __name__ == '__main__':

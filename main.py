@@ -313,7 +313,7 @@ class Frame(wx.Frame):
         self.refresh_debug_info()
     def open_file(self, path):
         try:
-            program = assembler.parse_file(path)
+            program = assembler.open_file(path)
             self.emu.load(program.assemble())
             self.program_list.update(program.instructions)
             self.refresh_debug_info()
