@@ -230,6 +230,7 @@ class Frame(wx.Frame):
         self.program = None
         self.running = False
         self.step_power = 0
+        self.cycles_per_second = CYCLES_PER_SECOND
         self.show_debug = True
         self.debug_controls = []
         set_icon(self)
@@ -265,6 +266,13 @@ class Frame(wx.Frame):
         for power in range(6):
             func = functools.partial(self.on_step_power, power=power)
             item = menu_item(self, menu, '10^%d Steps' % power, func,
+                wx.ITEM_RADIO)
+            if power == 0:
+                item.Check()
+        menu.AppendSeparator()
+        for power in range(-2, 6):
+            func = functools.partial(self.on_clock_rate, power=power)
+            item = menu_item(self, menu, '%gx Clock Rate' % (2 ** power), func,
                 wx.ITEM_RADIO)
             if power == 0:
                 item.Check()
@@ -367,12 +375,14 @@ class Frame(wx.Frame):
         self.refresh_debug_info()
     def on_step_power(self, event, power):
         self.step_power = power
+    def on_clock_rate(self, event, power):
+        self.cycles_per_second = CYCLES_PER_SECOND * (2 ** power)
     def on_toggle_debug(self, event):
         self.show_debug = not self.show_debug
         self.show_debug_controls(self.show_debug)
     def update(self, dt):
         if self.running:
-            cycles = int(dt * CYCLES_PER_SECOND)
+            cycles = int(dt * self.cycles_per_second)
             self.emu.n_cycles(cycles)
     def refresh(self):
         self.canvas.Refresh()
@@ -423,7 +433,7 @@ class Frame(wx.Frame):
         return sizer
     def create_registers(self, parent):
         self.registers = {}
-        self.register_sizer = sizer = wx.FlexGridSizer(4, 6, 5, 5)
+        sizer = wx.FlexGridSizer(4, 6, 5, 5)
         for col in range(6):
             sizer.AddGrowableCol(col, 1)
         data1 = [
