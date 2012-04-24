@@ -402,6 +402,13 @@ class Frame(wx.Frame):
     def on_toggle_debug(self, event):
         self.show_debug = not self.show_debug
         self.show_debug_controls(self.show_debug)
+    def on_page_changed(self, event):
+        event.Skip()
+        index = event.GetEventObject().GetSelection()
+        if index == 0:
+            wx.CallAfter(self.editor.SetFocus)
+        else:
+            wx.CallAfter(self.canvas.SetFocus)
     def update(self, dt):
         if self.running:
             cycles = int(dt * self.cycles_per_second)
@@ -455,12 +462,11 @@ class Frame(wx.Frame):
         return sizer
     def create_notebook(self, parent):
         notebook = wx.Notebook(parent)
+        notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.on_page_changed)
         editor = self.create_editor(notebook)
         canvas = self.create_canvas(notebook)
-        #glyphs = self.create_glyphs(notebook)
         notebook.AddPage(editor, 'Editor')
         notebook.AddPage(canvas, 'Display')
-        #notebook.AddPage(glyphs, 'Glyphs')
         return notebook
     def create_editor(self, parent):
         panel = wx.Panel(parent)
@@ -476,9 +482,6 @@ class Frame(wx.Frame):
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.canvas, 1, wx.EXPAND | wx.ALL, 5)
         panel.SetSizer(sizer)
-        return panel
-    def create_glyphs(self, parent):
-        panel = wx.Panel(parent)
         return panel
     def create_registers(self, parent):
         self.registers = {}
