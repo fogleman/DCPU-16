@@ -252,7 +252,8 @@ class Frame(wx.Frame):
         menu = wx.Menu()
         menu_item(self, menu, 'New\tCtrl+N', self.on_new)
         menu_item(self, menu, 'Open...\tCtrl+O', self.on_open)
-        menu_item(self, menu, 'Save Binary...', self.on_save_binary)
+        menu_item(self, menu, 'Save As...\tCtrl+S', self.on_save_as)
+        menu_item(self, menu, 'Save Binary...\tCtrl+D', self.on_save_binary)
         menu.AppendSeparator()
         menu_item(self, menu, 'Exit\tAlt+F4', self.on_exit)
         menubar.Append(menu, '&File')
@@ -279,7 +280,7 @@ class Frame(wx.Frame):
         menubar.Append(menu, '&Run')
         # View
         menu = wx.Menu()
-        item = menu_item(self, menu, 'Show Debug Controls',
+        item = menu_item(self, menu, 'Show Debug Controls\tF12',
             self.on_toggle_debug, wx.ITEM_CHECK)
         item.Check()
         menubar.Append(menu, '&View')
@@ -347,6 +348,14 @@ class Frame(wx.Frame):
         if dialog.ShowModal() == wx.ID_OK:
             path = dialog.GetPath()
             self.open_file(path)
+        dialog.Destroy()
+    def on_save_as(self, event):
+        dialog = wx.FileDialog(self, 'Save As', wildcard='*.dasm',
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        if dialog.ShowModal() == wx.ID_OK:
+            path = dialog.GetPath()
+            with open(path, 'w') as fp:
+                fp.write(self.editor.GetValue())
         dialog.Destroy()
     def save_binary(self, path):
         words = self.program.assemble()
@@ -469,7 +478,8 @@ class Frame(wx.Frame):
         return notebook
     def create_editor(self, parent):
         panel = wx.Panel(parent)
-        self.editor = wx.TextCtrl(panel, style=wx.TE_MULTILINE)
+        style = wx.TE_MULTILINE | wx.TE_PROCESS_TAB | wx.TE_DONTWRAP
+        self.editor = wx.TextCtrl(panel, style=style)
         self.editor.SetFont(make_font('Courier New', 9))
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.editor, 1, wx.EXPAND | wx.ALL, 5)
