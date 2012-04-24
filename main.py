@@ -227,6 +227,7 @@ class Frame(wx.Frame):
         self.emu = emu
         self.last_time = time.time()
         self.last_refresh = time.time()
+        self.program = None
         self.running = False
         self.step_power = 0
         self.show_debug = True
@@ -250,6 +251,8 @@ class Frame(wx.Frame):
         menu = wx.Menu()
         menu_item(self, menu, 'Reset\tCtrl+N', self.on_reset)
         menu_item(self, menu, 'Open...\tCtrl+O', self.on_open)
+        menu.AppendSeparator()
+        menu_item(self, menu, 'Save Binary...', self.on_save_binary)
         menu.AppendSeparator()
         menu_item(self, menu, 'Exit\tAlt+F4', self.on_exit)
         menubar.Append(menu, '&File')
@@ -308,16 +311,18 @@ class Frame(wx.Frame):
         self.panel.Layout()
     def on_reset(self, event):
         self.running = False
+        self.program = None
         self.emu.reset()
         self.program_list.update([])
         self.refresh_debug_info()
     def open_file(self, path):
         try:
-            program = assembler.open_file(path)
-            self.emu.load(program.assemble())
-            self.program_list.update(program.instructions)
+            self.program = assembler.open_file(path)
+            self.emu.load(self.program.assemble())
+            self.program_list.update(self.program.instructions)
             self.refresh_debug_info()
         except Exception as e:
+            self.program = None
             self.emu.reset()
             dialog = wx.MessageDialog(self, str(e), 'Error',
                 wx.ICON_ERROR | wx.OK)
@@ -329,6 +334,24 @@ class Frame(wx.Frame):
         if dialog.ShowModal() == wx.ID_OK:
             path = dialog.GetPath()
             self.open_file(path)
+        dialog.Destroy()
+    def save_binary(self, path):
+        words = self.program.assemble()
+        data = []
+        for word in words:
+            data.append(chr((word >> 8) & 0xff))
+            data.append(chr((word >> 0) & 0xff))
+        data = ''.join(data)
+        with open(path, 'wb') as fp:
+            fp.write(data)
+    def on_save_binary(self, event):
+        if self.program is None:
+            return
+        dialog = wx.FileDialog(self, 'Save Binary', wildcard='*.obj',
+            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        if dialog.ShowModal() == wx.ID_OK:
+            path = dialog.GetPath()
+            self.save_binary(path)
         dialog.Destroy()
     def on_exit(self, event):
         self.Close()
