@@ -108,6 +108,18 @@ class ProgramList(wx.ListCtrl):
             return instruction.pretty(None).strip()
         return ''
 
+class Editor(wx.TextCtrl):
+    def __init__(self, parent):
+        style = wx.TE_MULTILINE | wx.TE_PROCESS_TAB | wx.TE_DONTWRAP
+        super(Editor, self).__init__(parent, style=style)
+        self.SetFont(make_font('Courier New', 9))
+        self.Bind(wx.EVT_CHAR, self.on_char)
+    def on_char(self, event):
+        if event.GetKeyCode() == wx.WXK_TAB:
+            self.WriteText('    ')
+        else:
+            event.Skip()
+
 class Canvas(wx.Panel):
     def __init__(self, parent, emu):
         style = wx.WANTS_CHARS | wx.BORDER_STATIC
@@ -257,6 +269,10 @@ class Frame(wx.Frame):
         menu.AppendSeparator()
         menu_item(self, menu, 'Exit\tAlt+F4', self.on_exit)
         menubar.Append(menu, '&File')
+        # Edit
+        menu = wx.Menu()
+        menu_item(self, menu, 'Select All\tCtrl+A', self.on_select_all)
+        menubar.Append(menu, '&Edit')
         # Run
         menu = wx.Menu()
         menu_item(self, menu, 'Assemble\tF4', self.on_assemble)
@@ -375,6 +391,8 @@ class Frame(wx.Frame):
             path = dialog.GetPath()
             self.save_binary(path)
         dialog.Destroy()
+    def on_select_all(self, event):
+        self.editor.SelectAll()
     def on_exit(self, event):
         self.Close()
     def assemble(self):
@@ -478,9 +496,7 @@ class Frame(wx.Frame):
         return notebook
     def create_editor(self, parent):
         panel = wx.Panel(parent)
-        style = wx.TE_MULTILINE | wx.TE_PROCESS_TAB | wx.TE_DONTWRAP
-        self.editor = wx.TextCtrl(panel, style=style)
-        self.editor.SetFont(make_font('Courier New', 9))
+        self.editor = Editor(panel)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.editor, 1, wx.EXPAND | wx.ALL, 5)
         panel.SetSizer(sizer)
