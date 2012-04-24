@@ -4,11 +4,11 @@
 
 http://www.michaelfogleman.com/static/dcpu16-setup.exe
 
-### Visualizer
-
-    Usage: python main.py [input.dasm]
+### Screenshots
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/debug.png)
+
+![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/editor.png)
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/no_debug.png)
 
