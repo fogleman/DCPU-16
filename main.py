@@ -259,6 +259,7 @@ class Frame(wx.Frame):
         menubar.Append(menu, '&File')
         # Run
         menu = wx.Menu()
+        menu_item(self, menu, 'Assemble\tF4', self.on_assemble)
         menu_item(self, menu, 'Start\tF5', self.on_start)
         menu_item(self, menu, 'Stop\tF6', self.on_stop)
         menu_item(self, menu, 'Step\tF7', self.on_step)
@@ -291,6 +292,7 @@ class Frame(wx.Frame):
         tool_item(self, toolbar, 'Reset', self.on_reset, icons.page)
         tool_item(self, toolbar, 'Open', self.on_open, icons.folder_page)
         toolbar.AddSeparator()
+        tool_item(self, toolbar, 'Assemble', self.on_assemble, icons.basket_put)
         tool_item(self, toolbar, 'Start', self.on_start, icons.control_play)
         tool_item(self, toolbar, 'Stop', self.on_stop, icons.control_stop)
         tool_item(self, toolbar, 'Step', self.on_step, icons.control_end)
@@ -320,6 +322,7 @@ class Frame(wx.Frame):
     def on_reset(self, event):
         self.running = False
         self.program = None
+        self.editor.SetValue('')
         self.emu.reset()
         self.program_list.update([])
         self.refresh_debug_info()
@@ -364,6 +367,18 @@ class Frame(wx.Frame):
         dialog.Destroy()
     def on_exit(self, event):
         self.Close()
+    def on_assemble(self, event):
+        text = self.editor.GetValue()
+        try:
+            self.program = assembler.parse(text)
+            self.emu.load(self.program.assemble())
+            self.program_list.update(self.program.instructions)
+            self.refresh_debug_info()
+        except Exception as e:
+            dialog = wx.MessageDialog(self, str(e), 'Error',
+                wx.ICON_ERROR | wx.OK)
+            dialog.ShowModal()
+            dialog.Destroy()
     def on_start(self, event):
         self.running = True
         self.refresh_debug_info()
@@ -436,10 +451,10 @@ class Frame(wx.Frame):
         notebook = wx.Notebook(parent)
         editor = self.create_editor(notebook)
         canvas = self.create_canvas(notebook)
-        glyphs = self.create_glyphs(notebook)
+        #glyphs = self.create_glyphs(notebook)
         notebook.AddPage(editor, 'Editor')
         notebook.AddPage(canvas, 'Display')
-        notebook.AddPage(glyphs, 'Glyphs')
+        #notebook.AddPage(glyphs, 'Glyphs')
         return notebook
     def create_editor(self, parent):
         panel = wx.Panel(parent)
