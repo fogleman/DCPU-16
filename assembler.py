@@ -104,7 +104,7 @@ class Label(object):
     def assemble(self, lookup):
         return []
     def pretty(self, previous):
-        return ':%s' % self.name.lower()
+        return ':%s' % self.name
 
 class BasicInstruction(object):
     def __init__(self, opcode, arg1, arg2):
@@ -164,8 +164,6 @@ class Operand(object):
         word = self.word
         if isinstance(word, int):
             word = pretty_value(word)
-        elif isinstance(word, str):
-            word = word.lower()
         if x in REV_REGISTERS:
             return REV_REGISTERS[x]
         elif x - 0x08 in REV_REGISTERS:
@@ -218,7 +216,7 @@ def t_STRING(t):
     return t
 
 def t_HEX(t):
-    r'0X[a-fA-F0-9]+'
+    r'0x[a-fA-F0-9]+'
     t.value = int(t.value, 16)    
     return t
 
@@ -234,8 +232,10 @@ def t_LABEL(t):
 
 def t_ID(t):
     r'[a-zA-Z_][a-zA-Z_0-9]*'
-    if t.value in reserved:
-        t.type = t.value
+    upper = t.value.upper()
+    if upper in reserved:
+        t.type = upper
+        t.value = upper
     else:
         t.type = 'ID'
     return t
@@ -347,7 +347,7 @@ def p_error(t):
 def parse(text):
     lexer = lex.lex()
     parser = yacc.yacc(debug=False, write_tables=False)
-    return parser.parse(text.upper(), lexer=lexer)
+    return parser.parse(text, lexer=lexer)
 
 def parse_file(path):
     with open(path) as fp:
