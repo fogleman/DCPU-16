@@ -252,7 +252,6 @@ class Frame(wx.Frame):
         menu = wx.Menu()
         menu_item(self, menu, 'New\tCtrl+N', self.on_new)
         menu_item(self, menu, 'Open...\tCtrl+O', self.on_open)
-        menu.AppendSeparator()
         menu_item(self, menu, 'Save Binary...', self.on_save_binary)
         menu.AppendSeparator()
         menu_item(self, menu, 'Exit\tAlt+F4', self.on_exit)

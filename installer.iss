@@ -12,8 +12,8 @@ AppPublisher=Michael Fogleman
 AppPublisherURL=http://www.michaelfogleman.com/
 AppSupportURL=http://www.michaelfogleman.com/
 AppUpdatesURL=http://www.michaelfogleman.com/
-DefaultDirName={pf}\dcpu16
-DefaultGroupName=dcpu16
+DefaultDirName={pf}\DCPU-16
+DefaultGroupName=DCPU-16
 AllowNoIcons=yes
 OutputDir=installer
 OutputBaseFilename=dcpu16-setup
@@ -37,10 +37,10 @@ Source: "dist\w9xpopen.exe"; DestDir: "{app}"; Flags: ignoreversion; Permissions
 Source: "dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\dcpu16"; Filename: "{app}\dcpu16.exe"; WorkingDir: "{app}";
-Name: "{group}\{cm:UninstallProgram,dcpu16}"; Filename: "{uninstallexe}"
-Name: "{userdesktop}\dcpu16"; Filename: "{app}\dcpu16.exe"; WorkingDir: "{app}"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\dcpu16"; Filename: "{app}\dcpu16.exe"; WorkingDir: "{app}"; Tasks: quicklaunchicon
+Name: "{group}\DCPU-16"; Filename: "{app}\dcpu16.exe"; WorkingDir: "{app}";
+Name: "{group}\{cm:UninstallProgram,DCPU-16}"; Filename: "{uninstallexe}"
+Name: "{userdesktop}\DCPU-16"; Filename: "{app}\dcpu16.exe"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\DCPU-16"; Filename: "{app}\dcpu16.exe"; WorkingDir: "{app}"; Tasks: quicklaunchicon
 
 [Registry]
 Root: HKCR; Subkey: ".dasm"; ValueType: string; ValueName: ""; ValueData: "dcpu16file"; Flags: uninsdeletevalue
@@ -50,5 +50,5 @@ Root: HKCR; Subkey: "dcpu16file\DefaultIcon"; ValueType: string; ValueName: ""; 
 Root: HKCR; Subkey: "dcpu16file\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\dcpu16.exe"" ""%1"""
 
 [Run]
-Filename: "{app}\dcpu16.exe"; Description: "{cm:LaunchProgram,dcpu16}"; Flags: nowait postinstall
+Filename: "{app}\dcpu16.exe"; Description: "{cm:LaunchProgram,DCPU-16}"; Flags: nowait postinstall
 
