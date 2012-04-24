@@ -56,6 +56,7 @@ REV_SPECIAL = dict((v, k) for k, v in SPECIAL.items())
 class Program(object):
     def __init__(self, instructions):
         self.instructions = instructions
+        self.text = None
         self.lookup = {}
         self.size = 0
         for instruction in instructions:
@@ -337,7 +338,9 @@ def open_file(path):
 def parse(text):
     lexer = lex.lex()
     parser = yacc.yacc(debug=False, write_tables=False)
-    return parser.parse(text, lexer=lexer)
+    program = parser.parse(text, lexer=lexer)
+    program.text = text
+    return program
 
 def parse_file(path):
     with open(path) as fp:
@@ -407,7 +410,9 @@ def disassemble(words):
         else:
             instruction = Data([word])
             instructions.append(instruction)
-    return Program(instructions)
+    program = Program(instructions)
+    program.text = program.pretty()
+    return program
 
 def disassemble_file(path):
     with open(path, 'rb') as fp:

@@ -110,7 +110,7 @@ class ProgramList(wx.ListCtrl):
 
 class Canvas(wx.Panel):
     def __init__(self, parent, emu):
-        style = wx.WANTS_CHARS | wx.BORDER_DOUBLE
+        style = wx.WANTS_CHARS | wx.BORDER_STATIC
         super(Canvas, self).__init__(parent, style=style)
         self.emu = emu
         self.brushes = {
@@ -329,6 +329,7 @@ class Frame(wx.Frame):
             self.program = assembler.open_file(path)
             self.emu.load(self.program.assemble())
             self.program_list.update(self.program.instructions)
+            self.editor.SetValue(self.program.text)
             self.refresh_debug_info()
         except Exception as e:
             self.on_reset(None)
@@ -423,14 +424,41 @@ class Frame(wx.Frame):
         self.debug_controls.extend([c1, c2, c3, c4])
         return sizer
     def create_center(self, parent):
-        self.canvas = Canvas(parent, self.emu)
+        notebook = self.create_notebook(parent)
         registers = self.create_registers(parent)
         sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(self.canvas, 1, wx.EXPAND)
+        sizer.Add(notebook, 1, wx.EXPAND)
         c1 = sizer.AddSpacer(10)
         c2 = sizer.Add(registers, 0, wx.EXPAND)
         self.debug_controls.extend([c1, c2])
         return sizer
+    def create_notebook(self, parent):
+        notebook = wx.Notebook(parent)
+        editor = self.create_editor(notebook)
+        canvas = self.create_canvas(notebook)
+        glyphs = self.create_glyphs(notebook)
+        notebook.AddPage(editor, 'Editor')
+        notebook.AddPage(canvas, 'Display')
+        notebook.AddPage(glyphs, 'Glyphs')
+        return notebook
+    def create_editor(self, parent):
+        panel = wx.Panel(parent)
+        self.editor = wx.TextCtrl(panel, style=wx.TE_MULTILINE)
+        self.editor.SetFont(make_font('Courier New', 9))
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.editor, 1, wx.EXPAND | wx.ALL, 5)
+        panel.SetSizer(sizer)
+        return panel
+    def create_canvas(self, parent):
+        panel = wx.Panel(parent)
+        self.canvas = Canvas(panel, self.emu)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.canvas, 1, wx.EXPAND | wx.ALL, 5)
+        panel.SetSizer(sizer)
+        return panel
+    def create_glyphs(self, parent):
+        panel = wx.Panel(parent)
+        return panel
     def create_registers(self, parent):
         self.registers = {}
         sizer = wx.FlexGridSizer(4, 6, 5, 5)
