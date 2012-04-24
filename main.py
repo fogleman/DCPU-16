@@ -175,7 +175,7 @@ class Canvas(wx.Panel):
         mdc = wx.MemoryDC(bitmap)
         self.draw_screen(mdc)
         dc = wx.AutoBufferedPaintDC(self)
-        brush = self.brushes[self.get_character(0x8280)[1]]
+        brush = self.brushes[self.emu.ram[0x8280] & 0xf]
         dc.SetBackground(brush)
         dc.Clear()
         dc.Blit(dx, dy, bw, bh, mdc, 0, 0)
@@ -325,13 +325,13 @@ class Frame(wx.Frame):
         self.refresh_debug_info()
     def open_file(self, path):
         try:
+            self.on_reset(None)
             self.program = assembler.open_file(path)
             self.emu.load(self.program.assemble())
             self.program_list.update(self.program.instructions)
             self.refresh_debug_info()
         except Exception as e:
-            self.program = None
-            self.emu.reset()
+            self.on_reset(None)
             dialog = wx.MessageDialog(self, str(e), 'Error',
                 wx.ICON_ERROR | wx.OK)
             dialog.ShowModal()
