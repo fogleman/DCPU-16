@@ -6,14 +6,6 @@ import sys
 import time
 import wx
 
-# Select C or Python Emulator
-try:
-    import cEmulator
-    emulator = cEmulator
-    emulator_name = 'C'
-except Exception:
-    emulator_name = 'Python'
-
 # Constants
 SCALE = 3
 WIDTH = 128
@@ -341,8 +333,6 @@ class Frame(wx.Frame):
         bar.SetStatusText(running, 1)
         cycle = 'Cycle: %d' % self.emu.cycle
         bar.SetStatusText(cycle, 2)
-        text = 'Emulator Implementation: %s' % emulator_name
-        bar.SetStatusText(text, 3)
     def show_debug_controls(self, show):
         for item in self.debug_controls:
             item.Show(show)

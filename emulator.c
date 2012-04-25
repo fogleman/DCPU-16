@@ -57,8 +57,12 @@
 #define HWQ 0x11
 #define HWI 0x12
 
+// Hardware
+#define N_DEVICES 1
+#define LEM1802 0
+
 // Boolean
-#define bool unsigned char
+#define bool unsigned int
 #define true 1
 #define false 0
 
@@ -100,9 +104,15 @@ unsigned short GLYPHS[] = {
 
 // Emulator State
 typedef struct {
+    // System Properties
     unsigned short *ram;
     bool skip;
     unsigned long long int cycle;
+    // Hardware Properties
+    unsigned short lem1802_screen;
+    unsigned short lem1802_font;
+    unsigned short lem1802_palette;
+    unsigned short lem1802_border;
 } Emulator;
 
 // Emulator Functions
@@ -357,6 +367,43 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
     }
 }
 
+void lem1802(Emulator *emulator) {
+    switch (REG(0)) {
+        case 0: // MEM_MAP_SCREEN
+            emulator->lem1802_screen = REG(1);
+            break;
+        case 1: // MEM_MAP_FONT
+            emulator->lem1802_font = REG(1);
+            break;
+        case 2: // MEM_MAP_PALETTE
+            emulator->lem1802_palette = REG(1);
+            break;
+        case 3: // SET_BORDER_COLOR
+            emulator->lem1802_border = REG(1) & 0xf;
+            break;
+    }
+}
+
+void hardware_query(Emulator *emulator, unsigned short index) {
+    switch (index) {
+        case LEM1802:
+            REG(0) = 0x7349;
+            REG(1) = 0xf615;
+            REG(2) = 0x1802;
+            REG(3) = 0x1c6c;
+            REG(4) = 0x8b36;
+            break;
+    }
+}
+
+void hardware_interrupt(Emulator *emulator, unsigned short index) {
+    switch (index) {
+        case LEM1802:
+            lem1802(emulator);
+            break;
+    }
+}
+
 void special_instruction(Emulator *emulator, unsigned char opcode, 
     unsigned char op_dst) {
     unsigned int dst = operand(emulator, op_dst, 0);
@@ -372,7 +419,16 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
             CYCLES(3);
             break;
         case INT:
-            CYCLES(4);
+            if (IA) {
+                RAM(--SP) = PC;
+                RAM(--SP) = REG(0);
+                PC = IA;
+                REG(0) = ram;
+                CYCLES(4);
+            }
+            else {
+                CYCLES(2);
+            }
             break;
         case IAG:
             RAM(dst) = IA;
@@ -383,12 +439,15 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
             CYCLES(1);
             break;
         case HWN:
+            RAM(dst) = N_DEVICES;
             CYCLES(2);
             break;
         case HWQ:
+            hardware_query(emulator, ram);
             CYCLES(4);
             break;
         case HWI:
+            hardware_interrupt(emulator, ram);
             CYCLES(4);
             break;
     }
