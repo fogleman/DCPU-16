@@ -185,7 +185,8 @@ class Canvas(wx.Panel):
         event.Skip()
         self.Refresh()
         cw, ch = self.GetClientSize()
-        scale = min((cw - BORDER * 2) / WIDTH, (ch - BORDER * 2) / HEIGHT) or 1
+        scale = min((cw - BORDER * 2) / WIDTH, (ch - BORDER * 2) / HEIGHT)
+        scale = max(scale, 1)
         if scale != self.scale:
             self.scale = scale
             self.cache = {}
@@ -237,9 +238,9 @@ class Canvas(wx.Panel):
         show_blink = bool((self.emu.cycle / BLINK_RATE) % 2)
         for j in xrange(12):
             for i in xrange(32):
-                character, back, fore = self.get_character(address, show_blink)
-                a = font[character * 2]
-                b = font[character * 2 + 1]
+                ch, back, fore = self.get_character(address, show_blink)
+                a = font[ch * 2]
+                b = font[ch * 2 + 1]
                 bitmap = a << 16 | b
                 key = (palette[back], palette[fore], bitmap)
                 if self.cache.get((i, j)) != key:

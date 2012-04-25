@@ -513,12 +513,15 @@ def disassemble(words):
         dst = (word >> 5) & 0x1f
         src = (word >> 10) & 0x3f
         if op != 0 and op in REV_BASIC_OPCODES:
-            dst = DstOperand(dst, next_word() if dst in use_next_word else None)
-            src = SrcOperand(src, next_word() if src in use_next_word else None)
+            dst = DstOperand(dst, next_word()
+                if dst in use_next_word else None)
+            src = SrcOperand(src, next_word()
+                if src in use_next_word else None)
             instruction = BasicInstruction(op, dst, src)
             instructions.append(instruction)
         elif op == 0 and dst in REV_SPECIAL_OPCODES:
-            src = SrcOperand(src, next_word() if src in use_next_word else None)
+            src = SrcOperand(src, next_word()
+                if src in use_next_word else None)
             instruction = SpecialInstruction(dst, src)
             instructions.append(instruction)
         else:
