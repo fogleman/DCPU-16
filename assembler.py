@@ -52,7 +52,6 @@ REGISTERS = {
 DST_CODES = {
     'PUSH':  0x18,
     'PEEK': 0x19,
-    'PICK': 0x1a,
     'SP': 0x1b,
     'PC': 0x1c,
     'EX': 0x1d,
@@ -61,7 +60,6 @@ DST_CODES = {
 SRC_CODES = {
     'POP':  0x18,
     'PEEK': 0x19,
-    'PICK': 0x1a,
     'SP': 0x1b,
     'PC': 0x1c,
     'EX': 0x1d,
@@ -202,7 +200,7 @@ reserved = set(
     REGISTERS.keys() +
     DST_CODES.keys() +
     SRC_CODES.keys() +
-    ['DAT']
+    ['PICK', 'DAT']
 )
 
 tokens = [
@@ -315,6 +313,18 @@ def p_dst_operand_register_literal_dereference2(t):
     'dst_operand : LBRACK literal PLUS register RBRACK'
     t[0] = DstOperand(REGISTERS[t[4]] + 0x10, t[2])
 
+def p_dst_operand_pick1(t):
+    'dst_operand : LBRACK SP PLUS literal RBRACK'
+    t[0] = DstOperand(0x1a, t[4])
+
+def p_dst_operand_pick2(t):
+    'dst_operand : LBRACK literal PLUS SP RBRACK'
+    t[0] = DstOperand(0x1a, t[2])
+
+def p_dst_operand_pick3(t):
+    'dst_operand : PICK literal'
+    t[0] = DstOperand(0x1a, t[2])
+
 def p_dst_operand_code(t):
     'dst_operand : dst_code'
     t[0] = DstOperand(DST_CODES[t[1]])
@@ -342,6 +352,18 @@ def p_src_operand_register_literal_dereference1(t):
 def p_src_operand_register_literal_dereference2(t):
     'src_operand : LBRACK literal PLUS register RBRACK'
     t[0] = SrcOperand(REGISTERS[t[4]] + 0x10, t[2])
+
+def p_src_operand_pick1(t):
+    'src_operand : LBRACK SP PLUS literal RBRACK'
+    t[0] = SrcOperand(0x1a, t[4])
+
+def p_src_operand_pick2(t):
+    'src_operand : LBRACK literal PLUS SP RBRACK'
+    t[0] = SrcOperand(0x1a, t[2])
+
+def p_src_operand_pick3(t):
+    'src_operand : PICK literal'
+    t[0] = SrcOperand(0x1a, t[2])
 
 def p_src_operand_code(t):
     'src_operand : src_code'
@@ -447,19 +469,23 @@ def pretty_operand(x, word, codes):
         return '[%s + %s]' % (REV_REGISTERS[x - 0x10], word)
     elif x in codes:
         return codes[x]
+    elif x == 0x1a:
+        return 'PICK %s' % word
     elif x == 0x1e:
         return '[%s]' % word
     elif x == 0x1f:
         return '%s' % word
-    elif x >= 0x20:
-        return pretty_value(x - 0x20)
+    elif x == 0x20:
+        return pretty_value(0xffff)
+    elif x >= 0x21:
+        return pretty_value(x - 0x21)
 
 # Disassembler Functions
 def disassemble(words):
     def next_word():
         return words.pop() if words else 0
     instructions = []
-    use_next_word = set(range(0x10, 0x18) + [0x1e, 0x1f])
+    use_next_word = set(range(0x10, 0x18) + [0x1a, 0x1e, 0x1f])
     words = list(reversed(words))
     while words:
         word = next_word()

@@ -1,36 +1,50 @@
 # Constants
-MAX_VALUE = 0xffff
 SIZE = 0x10000
+MAX_VALUE = 0xffff
+EXT_SIZE = 0x1000d
 REGISTER = 0x10000
 SP = 0x10008
 PC = 0x10009
-O = 0x1000a
-LIT = 0x1000b
+EX = 0x1000a
+IA = 0x1000b
+LT = 0x1000c
 
 # Lookups
 REGISTERS = 'ABCXYZIJ'
 
 BASIC_OPCODES = {
-    0x1: 'SET',
-    0x2: 'ADD',
-    0x3: 'SUB',
-    0x4: 'MUL',
-    0x5: 'DIV',
-    0x6: 'MOD',
-    0x7: 'SHL',
-    0x8: 'SHR',
-    0x9: 'AND',
-    0xa: 'BOR',
-    0xb: 'XOR',
-    0xc: 'IFE',
-    0xd: 'IFN',
-    0xe: 'IFG',
-    0xf: 'IFB',
+    0x01: 'SET',
+    0x02: 'ADD',
+    0x03: 'SUB',
+    0x04: 'MUL',
+    0x05: 'MLI',
+    0x06: 'DIV',
+    0x07: 'DVI',
+    0x08: 'MOD',
+    0x09: 'AND',
+    0x0a: 'BOR',
+    0x0b: 'XOR',
+    0x0c: 'SHR',
+    0x0d: 'ASR',
+    0x0e: 'SHL',
+    0x10: 'IFB',
+    0x11: 'IFC',
+    0x12: 'IFE',
+    0x13: 'IFN',
+    0x14: 'IFG',
+    0x15: 'IFA',
+    0x16: 'IFL',
+    0x17: 'IFU',
 }
 
-NON_BASIC_OPCODES = {
-    0x0: 'BRK',
-    0x1: 'JSR',
+SPECIAL_OPCODES = {
+    0x01: 'JSR',
+    0x08: 'INT',
+    0x09: 'ING',
+    0x0a: 'INS',
+    0x10: 'HWN',
+    0x11: 'HWQ',
+    0x12: 'HWI',
 }
 
 GLYPHS = [
@@ -72,11 +86,11 @@ GLYPHS = [
 class Emulator(object):
     def __init__(self):
         self.basic_opcodes = {}
-        self.non_basic_opcodes = {}
+        self.special_opcodes = {}
         for key, value in BASIC_OPCODES.items():
             self.basic_opcodes[key] = getattr(self, value)
-        for key, value in NON_BASIC_OPCODES.items():
-            self.non_basic_opcodes[key] = getattr(self, value)
+        for key, value in SPECIAL_OPCODES.items():
+            self.special_opcodes[key] = getattr(self, value)
         self.reset()
     # Logging Functions
     def dump(self):
@@ -98,20 +112,26 @@ class Emulator(object):
     def sp(self, x):
         self.ram[SP] = x
     @property
-    def o(self):
-        return self.ram[O]
-    @o.setter
-    def o(self, x):
-        self.ram[O] = x
+    def ex(self):
+        return self.ram[EX]
+    @ex.setter
+    def ex(self, x):
+        self.ram[EX] = x
     @property
-    def lit(self):
-        return self.ram[LIT]
-    @lit.setter
-    def lit(self, x):
-        self.ram[LIT] = x
+    def ia(self):
+        return self.ram[IA]
+    @ia.setter
+    def ia(self, x):
+        self.ram[IA] = x
+    @property
+    def lt(self):
+        return self.ram[LT]
+    @lt.setter
+    def lt(self, x):
+        self.ram[LT] = x
     # Initialization Functions
     def reset(self):
-        self.ram = [0] * (SIZE + 12)
+        self.ram = [0] * EXT_SIZE
         self.skip = False
         self.halt = False
         self.cycle = 0
@@ -129,13 +149,13 @@ class Emulator(object):
         return word
     def step(self):
         word = self.next_word()
-        op = word & 0x000f
-        a = (word & 0x03f0) >> 4
-        b = (word & 0xfc00) >> 10
+        op = word & 0x1f
+        dst = (word >> 5) & 0x1f
+        src = (word >> 10) & 0x3f
         if op:
-            self.basic_instruction(op, a, b)
+            self.basic_instruction(op, dst, src)
         else:
-            self.non_basic_instruction(a, b)
+            self.special_instruction(dst, src)
     def n_steps(self, steps):
         for _ in xrange(steps):
             self.step()
@@ -143,23 +163,21 @@ class Emulator(object):
         cycle = self.cycle + cycles
         while self.cycle < cycle:
             self.step()
-    def basic_instruction(self, op, a, b):
-        a, _ta = self.operand(a, False)
-        b, _tb = self.operand(b, True)
+    def basic_instruction(self, op, dst, src):
+        src, _ = self.operand(src, True)
+        dst, _ = self.operand(dst, False)
         func = self.basic_opcodes[op]
         if self.skip:
             self.skip = False
         else:
-            #print '%04x: %s %s, %s' % (self.pc - 1, BASIC_OPCODES[op], _ta, _tb)
-            self.cycle += func(a, b)
-    def non_basic_instruction(self, op, a):
-        a, _ta = self.operand(a, True)
-        func = self.non_basic_opcodes[op]
+            self.cycle += func(dst, src)
+    def special_instruction(self, op, src):
+        src, _ = self.operand(src, False)
+        func = self.special_opcodes[op]
         if self.skip:
             self.skip = False
         else:
-            #print '%04x: %s %s' % (self.pc - 1, NON_BASIC_OPCODES[op], _ta)
-            self.cycle += func(a)
+            self.cycle += func(src)
     def operand(self, x, dereference):
         literal = False
         if x < 8: # register
@@ -172,28 +190,32 @@ class Emulator(object):
             word = self.next_word(int(not self.skip))
             desc = '[%s + 0x%04x]' % (REGISTERS[x - 0x10], word)
             result = self.ram[REGISTER + x - 0x10] + word
-        elif x == 0x18: # POP [SP++]
+        elif x == 0x18 and dereference: # POP [SP++]
             desc = 'POP'
             result = self.sp
             if not self.skip:
                 self.sp = (self.sp + 1) % SIZE
-        elif x == 0x19: # PEEK [SP]
-            desc = 'PEEK'
-            result = self.sp
-        elif x == 0x1a: # PUSH [--SP]
+        elif x == 0x18 and not dereference: # PUSH [--SP]
             desc = 'PUSH'
             if not self.skip:
                 self.sp = (self.sp - 1) % SIZE
             result = self.sp
+        elif x == 0x19: # PEEK [SP]
+            desc = 'PEEK'
+            result = self.sp
+        elif x == 0x1a: # PICK
+            word = self.next_word(int(not self.skip))
+            desc = 'PICK 0x%04x' % word
+            result = self.sp + word
         elif x == 0x1b: # SP
             desc = 'SP'
             result = SP
         elif x == 0x1c: # PC
             desc = 'PC'
             result = PC
-        elif x == 0x1d: # O
-            desc = 'O'
-            result = O
+        elif x == 0x1d: # EX
+            desc = 'EX'
+            result = EX
         elif x == 0x1e: # [next word]
             word = self.next_word(int(not self.skip))
             desc = '[0x%04x]' % word
@@ -203,13 +225,17 @@ class Emulator(object):
             word = self.next_word(int(not self.skip))
             desc = '0x%04x' % word
             result = word
-        elif x >= 0x20: # literal (constant)
+        elif x == 0x20: # literal (constant)
             literal = True
-            desc = '0x%04x' % (x - 0x20)
-            result = x - 0x20
+            desc = '0xffff'
+            result = 0xffff
+        elif x >= 0x21: # literal (constant)
+            literal = True
+            desc = '0x%04x' % (x - 0x21)
+            result = x - 0x21
         if literal and not dereference:
-            self.lit = result
-            result = LIT
+            self.lt = result
+            result = LT
         if dereference and not literal:
             result = self.ram[result]
         return result, desc
@@ -219,19 +245,30 @@ class Emulator(object):
         return 1
     def ADD(self, a, b):
         o, self.ram[a] = divmod(self.ram[a] + b, SIZE)
-        self.o = 1 if o else 0
+        self.ex = 1 if o else 0
         return 2
     def SUB(self, a, b):
         o, self.ram[a] = divmod(self.ram[a] - b, SIZE)
-        self.o = MAX_VALUE if o else 0
+        self.ex = MAX_VALUE if o else 0
         return 2
     def MUL(self, a, b):
         o, self.ram[a] = divmod(self.ram[a] * b, SIZE)
-        self.o = o % SIZE
+        self.ex = o % SIZE
+        return 2
+    def MLI(self, a, b): # TODO: signed
+        o, self.ram[a] = divmod(self.ram[a] * b, SIZE)
+        self.ex = o % SIZE
         return 2
     def DIV(self, a, b):
         if b:
-            self.o = ((self.ram[a] << 16) / b) % SIZE
+            self.ex = ((self.ram[a] << 16) / b) % SIZE
+            self.ram[a] /= b
+        else:
+            self.ram[a] = 0
+        return 3
+    def DVI(self, a, b): # TODO: signed
+        if b:
+            self.ex = ((self.ram[a] << 16) / b) % SIZE
             self.ram[a] /= b
         else:
             self.ram[a] = 0
@@ -242,14 +279,6 @@ class Emulator(object):
         else:
             self.ram[a] = 0
         return 3
-    def SHL(self, a, b):
-        o, self.ram[a] = divmod(self.ram[a] << b, SIZE)
-        self.o = o % SIZE
-        return 2
-    def SHR(self, a, b):
-        self.o = ((self.ram[a] << 16) >> b) % SIZE
-        self.ram[a] >>= b
-        return 2
     def AND(self, a, b):
         self.ram[a] &= b
         return 1
@@ -259,6 +288,24 @@ class Emulator(object):
     def XOR(self, a, b):
         self.ram[a] ^= b
         return 1
+    def SHR(self, a, b):
+        self.ex = ((self.ram[a] << 16) >> b) % SIZE
+        self.ram[a] >>= b
+        return 2
+    def ASR(self, a, b): # TODO: arithmetic
+        self.ex = ((self.ram[a] << 16) >> b) % SIZE
+        self.ram[a] >>= b
+        return 2
+    def SHL(self, a, b):
+        o, self.ram[a] = divmod(self.ram[a] << b, SIZE)
+        self.ex = o % SIZE
+        return 2
+    def IFB(self, a, b):
+        self.skip = not ((self.ram[a] & b) != 0)
+        return 2 + int(self.skip)
+    def IFC(self, a, b):
+        self.skip = not ((self.ram[a] & b) == 0)
+        return 2 + int(self.skip)
     def IFE(self, a, b):
         self.skip = not (self.ram[a] == b)
         return 2 + int(self.skip)
@@ -268,14 +315,31 @@ class Emulator(object):
     def IFG(self, a, b):
         self.skip = not (self.ram[a] > b)
         return 2 + int(self.skip)
-    def IFB(self, a, b):
-        self.skip = not (self.ram[a] & b)
+    def IFA(self, a, b): # TODO: signed
+        self.skip = not (self.ram[a] > b)
         return 2 + int(self.skip)
-    def BRK(self, a):
-        self.halt = True
-        return 1
+    def IFL(self, a, b):
+        self.skip = not (self.ram[a] < b)
+        return 2 + int(self.skip)
+    def IFU(self, a, b): # TODO: signed
+        self.skip = not (self.ram[a] < b)
+        return 2 + int(self.skip)
     def JSR(self, a):
         self.sp = (self.sp - 1) % SIZE
         self.ram[self.sp] = self.pc
-        self.pc = a
+        self.pc = self.ram[a]
+        return 3
+    def INT(self, a):
+        return 4
+    def ING(self, a):
+        self.ram[a] = self.ia
+        return 1
+    def INS(self, a):
+        self.ia = self.ram[a]
+        return 1
+    def HWN(self, a):
         return 2
+    def HWQ(self, a):
+        return 4
+    def HWI(self, a):
+        return 4

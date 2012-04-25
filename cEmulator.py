@@ -2,7 +2,7 @@ from ctypes import *
 
 dll = CDLL('_emulator')
 
-EXT_SIZE = 0x1000c
+EXT_SIZE = 0x1000d
 
 class cEmulator(Structure):
     _fields_ = [
