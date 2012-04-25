@@ -1,8 +1,13 @@
-## Python scripts for DCPU-16 emulation
+## DCPU-16 Emulator v1.3
 
-### Windows Installer
+### Download (Windows Installer)
 
 http://www.michaelfogleman.com/static/dcpu16-setup.exe
+
+### Links to Implemented Specifications
+
+- DCPU-16 1.3: http://dcpu.com/highnerd/dcpu16_1_3.txt
+- LEM1802: http://dcpu.com/highnerd/lem1802.txt
 
 ### Screenshots
 
@@ -12,21 +17,31 @@ http://www.michaelfogleman.com/static/dcpu16-setup.exe
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/no_debug.png)
 
+### Upgrading from v1.1
+
+Quickly get up and running for most programs using this code at the beginning.
+
+    ; map screen
+    SET A 0
+    SET B 0x8000
+    HWI 0
+    ; map font
+    SET A 1
+    SET B 0x8180
+    HWI 0
+
 ### Benchmarks
 
     Usage: python benchmark.py
 
-Run benchmarks on the C emulator and Python emulator to test performance.
+Run benchmarks on the emulator to test performance.
 
 MacBook Air (1.7 GHz Intel Core i5)
 
-    Benchmarking "Python" emulator using "programs/life.dasm"...
-    Result: 241310 cycles per second
-    
     Benchmarking "C" emulator using "programs/life.dasm"...
     Result: 88728989 cycles per second
 
-The C implementation is roughly 360 times faster than the Python implementation and could emulate over 800 DCPU-16 processors at their 100 kHz clock rate.
+The C implementation could emulate over 800 DCPU-16 processors at their 100 kHz clock rate.
 
 ### Pretty Print
 
