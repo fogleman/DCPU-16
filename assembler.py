@@ -4,26 +4,38 @@ import sys
 
 # Lookups
 BASIC_OPCODES = {
-    'SET': 0x1,
-    'ADD': 0x2,
-    'SUB': 0x3,
-    'MUL': 0x4,
-    'DIV': 0x5,
-    'MOD': 0x6,
-    'SHL': 0x7,
-    'SHR': 0x8,
-    'AND': 0x9,
-    'BOR': 0xa,
-    'XOR': 0xb,
-    'IFE': 0xc,
-    'IFN': 0xd,
-    'IFG': 0xe,
-    'IFB': 0xf,
+    'SET': 0x01,
+    'ADD': 0x02,
+    'SUB': 0x03,
+    'MUL': 0x04,
+    'MLI': 0x05,
+    'DIV': 0x06,
+    'DVI': 0x07,
+    'MOD': 0x08,
+    'AND': 0x09,
+    'BOR': 0x0a,
+    'XOR': 0x0b,
+    'SHR': 0x0c,
+    'ASR': 0x0d,
+    'SHL': 0x0e,
+    'IFB': 0x10,
+    'IFC': 0x11,
+    'IFE': 0x12,
+    'IFN': 0x13,
+    'IFG': 0x14,
+    'IFA': 0x15,
+    'IFL': 0x16,
+    'IFU': 0x17,
 }
 
-NON_BASIC_OPCODES = {
-    'BRK': 0x0,
-    'JSR': 0x1,
+SPECIAL_OPCODES = {
+    'JSR': 0x01,
+    'INT': 0x08,
+    'ING': 0x09,
+    'INS': 0x0a,
+    'HWN': 0x10,
+    'HWQ': 0x11,
+    'HWI': 0x12,
 }
 
 REGISTERS = {
@@ -37,20 +49,30 @@ REGISTERS = {
     'J': 0x7,
 }
 
-SPECIAL = {
+DST_CODES = {
+    'PUSH':  0x18,
+    'PEEK': 0x19,
+    'PICK': 0x1a,
+    'SP': 0x1b,
+    'PC': 0x1c,
+    'EX': 0x1d,
+}
+
+SRC_CODES = {
     'POP':  0x18,
     'PEEK': 0x19,
-    'PUSH': 0x1a,
-    'SP':   0x1b,
-    'PC':   0x1c,
-    'O':    0x1d,
+    'PICK': 0x1a,
+    'SP': 0x1b,
+    'PC': 0x1c,
+    'EX': 0x1d,
 }
 
 # Reverse Lookups
 REV_BASIC_OPCODES = dict((v, k) for k, v in BASIC_OPCODES.items())
-REV_NON_BASIC_OPCODES = dict((v, k) for k, v in NON_BASIC_OPCODES.items())
+REV_SPECIAL_OPCODES = dict((v, k) for k, v in SPECIAL_OPCODES.items())
 REV_REGISTERS = dict((v, k) for k, v in REGISTERS.items())
-REV_SPECIAL = dict((v, k) for k, v in SPECIAL.items())
+REV_DST_CODES = dict((v, k) for k, v in DST_CODES.items())
+REV_SRC_CODES = dict((v, k) for k, v in SRC_CODES.items())
 
 # Classes
 class Program(object):
@@ -108,52 +130,52 @@ class Label(object):
         return ':%s' % self.name
 
 class BasicInstruction(object):
-    def __init__(self, opcode, arg1, arg2):
-        self.opcode = opcode
-        self.arg1 = arg1
-        self.arg2 = arg2
-        value = self.opcode
-        value |= (self.arg1.value & 0x3f) << 4
-        value |= (self.arg2.value & 0x3f) << 10
+    def __init__(self, op, dst, src):
+        self.op = op
+        self.dst = dst
+        self.src = src
+        value = self.op
+        value |= (self.dst.value & 0x1f) << 5
+        value |= (self.src.value & 0x3f) << 10
         self.value = value
-        self.size = 1 + arg1.size + arg2.size
+        self.size = 1 + dst.size + src.size
         self.offset = None
-        self.conditional = 0xc <= self.opcode <= 0xf
+        self.conditional = 0x10 <= self.op <= 0x17
     def assemble(self, lookup):
         result = [self.value]
-        result.extend(self.arg1.assemble(lookup))
-        result.extend(self.arg2.assemble(lookup))
+        result.extend(self.src.assemble(lookup))
+        result.extend(self.dst.assemble(lookup))
         return result
     def pretty(self, previous):
-        a = REV_BASIC_OPCODES[self.opcode]
-        b = self.arg1.pretty()
-        c = self.arg2.pretty()
+        op = REV_BASIC_OPCODES[self.op]
+        dst = self.dst.pretty()
+        src = self.src.pretty()
         p = '    '
         if previous and previous.conditional:
             p *= 2
-        return '%s%s %s, %s' % (p, a, b, c)
+        return '%s%s %s, %s' % (p, op, dst, src)
 
-class NonBasicInstruction(object):
-    def __init__(self, opcode, arg):
-        self.opcode = opcode
-        self.arg = arg
+class SpecialInstruction(object):
+    def __init__(self, op, src):
+        self.op = op
+        self.src = src
         value = 0
-        value |= (self.opcode & 0x3f) << 4
-        value |= (self.arg.value & 0x3f) << 10
+        value |= (self.op & 0x1f) << 5
+        value |= (self.src.value & 0x3f) << 10
         self.value = value
-        self.size = 1 + arg.size
+        self.size = 1 + src.size
         self.offset = None
         self.conditional = False
     def assemble(self, lookup):
         result = [self.value]
-        result.extend(self.arg.assemble(lookup))
+        result.extend(self.src.assemble(lookup))
         return result
     def pretty(self, previous):
-        a = REV_NON_BASIC_OPCODES[self.opcode]
-        b = self.arg.pretty()
-        return '    %s %s' % (a, b)
+        op = REV_SPECIAL_OPCODES[self.op]
+        src = self.src.pretty()
+        return '    %s %s' % (op, src)
 
-class Operand(object):
+class DstOperand(object):
     def __init__(self, value, word=None):
         self.value = value
         self.word = word
@@ -161,14 +183,25 @@ class Operand(object):
     def assemble(self, lookup):
         return [] if self.word is None else [lookup.get(self.word, self.word)]
     def pretty(self):
-        return pretty_operand(self.value, self.word)
+        return pretty_operand(self.value, self.word, DST_CODES)
+
+class SrcOperand(object):
+    def __init__(self, value, word=None):
+        self.value = value
+        self.word = word
+        self.size = int(word is not None)
+    def assemble(self, lookup):
+        return [] if self.word is None else [lookup.get(self.word, self.word)]
+    def pretty(self):
+        return pretty_operand(self.value, self.word, SRC_CODES)
 
 # Lexer Rules
-reserved = (
-    BASIC_OPCODES.keys() + 
-    NON_BASIC_OPCODES.keys() + 
-    REGISTERS.keys() + 
-    SPECIAL.keys() +
+reserved = set(
+    BASIC_OPCODES.keys() +
+    SPECIAL_OPCODES.keys() +
+    REGISTERS.keys() +
+    DST_CODES.keys() +
+    SRC_CODES.keys() +
     ['DAT']
 )
 
@@ -181,7 +214,7 @@ tokens = [
     'DECIMAL',
     'HEX',
     'STRING',
-] + reserved
+] + list(reserved)
 
 t_ignore = ' \t\r,'
 t_ignore_COMMENT = r';.*'
@@ -259,43 +292,69 @@ def p_instruction_label(t):
     t[0] = Label(t[1])
 
 def p_instruction_basic(t):
-    'instruction : basic_opcode operand operand'
+    'instruction : basic_opcode dst_operand src_operand'
     t[0] = BasicInstruction(t[1], t[2], t[3])
 
-def p_instruction_non_basic(t):
-    'instruction : non_basic_opcode operand'
-    t[0] = NonBasicInstruction(t[1], t[2])
+def p_instruction_special(t):
+    'instruction : special_opcode src_operand'
+    t[0] = SpecialInstruction(t[1], t[2])
 
-def p_operand_register(t):
-    'operand : register'
-    t[0] = Operand(REGISTERS[t[1]])
+def p_dst_operand_register(t):
+    'dst_operand : register'
+    t[0] = DstOperand(REGISTERS[t[1]])
 
-def p_operand_register_dereference(t):
-    'operand : LBRACK register RBRACK'
-    t[0] = Operand(REGISTERS[t[2]] + 0x08)
+def p_dst_operand_register_dereference(t):
+    'dst_operand : LBRACK register RBRACK'
+    t[0] = DstOperand(REGISTERS[t[2]] + 0x08)
 
-def p_operand_register_literal1(t):
-    'operand : LBRACK register PLUS literal RBRACK'
-    t[0] = Operand(REGISTERS[t[2]] + 0x10, t[4])
+def p_dst_operand_register_literal_dereference1(t):
+    'dst_operand : LBRACK register PLUS literal RBRACK'
+    t[0] = DstOperand(REGISTERS[t[2]] + 0x10, t[4])
 
-def p_operand_register_literal2(t):
-    'operand : LBRACK literal PLUS register RBRACK'
-    t[0] = Operand(REGISTERS[t[4]] + 0x10, t[2])
+def p_dst_operand_register_literal_dereference2(t):
+    'dst_operand : LBRACK literal PLUS register RBRACK'
+    t[0] = DstOperand(REGISTERS[t[4]] + 0x10, t[2])
 
-def p_operand_special(t):
-    'operand : special'
-    t[0] = Operand(SPECIAL[t[1]])
+def p_dst_operand_code(t):
+    'dst_operand : dst_code'
+    t[0] = DstOperand(DST_CODES[t[1]])
 
-def p_operand_literal_dereference(t):
-    'operand : LBRACK literal RBRACK'
-    t[0] = Operand(0x1e, t[2])
+def p_dst_operand_literal_dereference(t):
+    'dst_operand : LBRACK literal RBRACK'
+    t[0] = DstOperand(0x1e, t[2])
 
-def p_operand_literal(t):
-    'operand : literal'
-    if t[1] < 0x20:
-        t[0] = Operand(t[1] + 0x20)
+def p_src_operand_register(t):
+    'src_operand : register'
+    t[0] = SrcOperand(REGISTERS[t[1]])
+
+def p_src_operand_register_dereference(t):
+    'src_operand : LBRACK register RBRACK'
+    t[0] = SrcOperand(REGISTERS[t[2]] + 0x08)
+
+def p_src_operand_register_literal_dereference1(t):
+    'src_operand : LBRACK register PLUS literal RBRACK'
+    t[0] = SrcOperand(REGISTERS[t[2]] + 0x10, t[4])
+
+def p_src_operand_register_literal_dereference2(t):
+    'src_operand : LBRACK literal PLUS register RBRACK'
+    t[0] = SrcOperand(REGISTERS[t[4]] + 0x10, t[2])
+
+def p_src_operand_code(t):
+    'src_operand : src_code'
+    t[0] = SrcOperand(SRC_CODES[t[1]])
+
+def p_src_operand_literal_dereference(t):
+    'src_operand : LBRACK literal RBRACK'
+    t[0] = SrcOperand(0x1e, t[2])
+
+def p_src_operand_literal(t):
+    'src_operand : literal'
+    if t[1] == 0xffff:
+        t[0] = SrcOperand(0x20)
+    elif t[1] <= 0x1e:
+        t[0] = SrcOperand(0x21 + t[1])
     else:
-        t[0] = Operand(0x1f, t[1])
+        t[0] = SrcOperand(0x1f, t[1])
 
 def p_literal(t):
     '''literal : DECIMAL
@@ -309,20 +368,25 @@ def p_basic_opcode(t):
 p_basic_opcode.__doc__ = ('basic_opcode : %s' % 
     '\n | '.join(sorted(BASIC_OPCODES)))
 
-def p_non_basic_opcode(t):
-    t[0] = NON_BASIC_OPCODES[t[1]]
-p_non_basic_opcode.__doc__ = ('non_basic_opcode : %s' % 
-    '\n | '.join(sorted(NON_BASIC_OPCODES)))
+def p_special_opcode(t):
+    t[0] = SPECIAL_OPCODES[t[1]]
+p_special_opcode.__doc__ = ('special_opcode : %s' % 
+    '\n | '.join(sorted(SPECIAL_OPCODES)))
 
 def p_register(t):
     t[0] = t[1]
 p_register.__doc__ = ('register : %s' % 
     '\n | '.join(sorted(REGISTERS)))
 
-def p_special(t):
+def p_dst_code(t):
     t[0] = t[1]
-p_special.__doc__ = ('special : %s' % 
-    '\n | '.join(sorted(SPECIAL)))
+p_dst_code.__doc__ = ('dst_code : %s' % 
+    '\n | '.join(sorted(DST_CODES)))
+
+def p_src_code(t):
+    t[0] = t[1]
+p_src_code.__doc__ = ('src_code : %s' % 
+    '\n | '.join(sorted(SRC_CODES)))
 
 def p_error(t):
     raise Exception(t)
@@ -368,7 +432,7 @@ def pretty_file(path):
 def pretty_value(x):
     return '%d' % x if x <= 0xff else '0x%04x' % x
 
-def pretty_operand(x, word):
+def pretty_operand(x, word, codes):
     if isinstance(word, int):
         word = pretty_value(word)
     if x in REV_REGISTERS:
@@ -377,8 +441,8 @@ def pretty_operand(x, word):
         return '[%s]' % REV_REGISTERS[x - 0x08]
     elif x - 0x10 in REV_REGISTERS:
         return '[%s + %s]' % (REV_REGISTERS[x - 0x10], word)
-    elif x in REV_SPECIAL:
-        return REV_SPECIAL[x]
+    elif x in codes:
+        return codes[x]
     elif x == 0x1e:
         return '[%s]' % word
     elif x == 0x1f:
@@ -395,17 +459,17 @@ def disassemble(words):
     words = list(reversed(words))
     while words:
         word = next_word()
-        op = word & 0x000f
-        a = (word & 0x03f0) >> 4
-        b = (word & 0xfc00) >> 10
+        op = word & 0x1f
+        dst = (word >> 5) & 0x1f
+        src = (word >> 10) & 0x3f
         if op != 0 and op in REV_BASIC_OPCODES:
-            a = Operand(a, next_word() if a in use_next_word else None)
-            b = Operand(b, next_word() if b in use_next_word else None)
-            instruction = BasicInstruction(op, a, b)
+            dst = DstOperand(dst, next_word() if dst in use_next_word else None)
+            src = SrcOperand(src, next_word() if src in use_next_word else None)
+            instruction = BasicInstruction(op, dst, src)
             instructions.append(instruction)
-        elif op == 0 and a in REV_NON_BASIC_OPCODES:
-            b = Operand(b, next_word() if b in use_next_word else None)
-            instruction = NonBasicInstruction(a, b)
+        elif op == 0 and dst in REV_SPECIAL_OPCODES:
+            src = SrcOperand(src, next_word() if src in use_next_word else None)
+            instruction = SpecialInstruction(dst, src)
             instructions.append(instruction)
         else:
             instruction = Data([word])
