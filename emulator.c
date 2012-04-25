@@ -10,6 +10,7 @@
 #define LT_ADDR 0x1000c
 
 // Helper Macros
+#define CONDITIONAL(opcode) ((opcode) >= 0x10 && (opcode) <= 0x17)
 #define CYCLES(count) (emulator->cycle += (count))
 #define RAM(address) (emulator->ram[(address)])
 #define REG(index) (emulator->ram[REG_ADDR + (index)])
@@ -36,7 +37,7 @@
 #define SHR 0x0c
 #define ASR 0x0d
 #define SHL 0x0e
-#define MVI 0x0f
+#define STI 0x0f
 #define IFB 0x10
 #define IFC 0x11
 #define IFE 0x12
@@ -58,8 +59,10 @@
 #define HWI 0x12
 
 // Hardware
-#define N_DEVICES 1
+#define N_DEVICES 3
 #define LEM1802 0
+#define KEYBOARD 1
+#define CLOCK 2
 
 // Boolean
 #define bool unsigned int
@@ -68,15 +71,17 @@
 
 // Emulator State
 typedef struct {
-    // System Properties
+    // DCPU-16
     unsigned short *ram;
     bool skip;
     unsigned long long int cycle;
-    // Hardware Properties
+    // LEM1802
     unsigned short lem1802_screen;
     unsigned short lem1802_font;
     unsigned short lem1802_palette;
     unsigned short lem1802_border;
+    // KEYBOARD
+    // CLOCK
 } Emulator;
 
 // Emulator Functions
@@ -195,7 +200,12 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
     short sram = (short)(unsigned short)ram;
     int quo;
     if (SKIP) {
-        SKIP = 0;
+        if (CONDITIONAL(opcode)) {
+            CYCLES(1);
+        }
+        else {
+            SKIP = 0;
+        }
         return;
     }
     switch (opcode) {
@@ -281,7 +291,7 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
             RAM(dst) = (ram << src) % SIZE;
             CYCLES(2);
             break;
-        case MVI:
+        case STI:
             RAM(dst) = src;
             REG(6)++;
             REG(7)++;
@@ -358,6 +368,20 @@ void hardware_query(Emulator *emulator, unsigned short index) {
             REG(3) = 0x8b36;
             REG(4) = 0x1c6c;
             break;
+        case KEYBOARD:
+            REG(0) = 0x7406;
+            REG(1) = 0x30cf;
+            REG(2) = 0x0001;
+            REG(3) = 0x8b36;
+            REG(4) = 0x1c6c;
+            break;
+        case CLOCK:
+            REG(0) = 0xb402;
+            REG(1) = 0x12d0;
+            REG(2) = 0x0001;
+            REG(3) = 0x8b36;
+            REG(4) = 0x1c6c;
+            break;
     }
 }
 
@@ -365,6 +389,10 @@ void hardware_interrupt(Emulator *emulator, unsigned short index) {
     switch (index) {
         case LEM1802:
             lem1802(emulator);
+            break;
+        case KEYBOARD:
+            break;
+        case CLOCK:
             break;
     }
 }

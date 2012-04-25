@@ -18,7 +18,7 @@ BASIC_OPCODES = {
     'SHR': 0x0c,
     'ASR': 0x0d,
     'SHL': 0x0e,
-    'MVI': 0x0f,
+    'STI': 0x0f,
     'IFB': 0x10,
     'IFC': 0x11,
     'IFE': 0x12,
