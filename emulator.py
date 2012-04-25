@@ -1,3 +1,5 @@
+import struct
+
 # Constants
 SIZE = 0x10000
 MAX_VALUE = 0xffff
@@ -27,6 +29,7 @@ BASIC_OPCODES = {
     0x0c: 'SHR',
     0x0d: 'ASR',
     0x0e: 'SHL',
+    0x0f: 'MVI',
     0x10: 'IFB',
     0x11: 'IFC',
     0x12: 'IFE',
@@ -35,13 +38,15 @@ BASIC_OPCODES = {
     0x15: 'IFA',
     0x16: 'IFL',
     0x17: 'IFU',
+    0x1a: 'ADX',
+    0x1b: 'SUX',
 }
 
 SPECIAL_OPCODES = {
     0x01: 'JSR',
     0x08: 'INT',
-    0x09: 'ING',
-    0x0a: 'INS',
+    0x09: 'IAG',
+    0x0a: 'IAS',
     0x10: 'HWN',
     0x11: 'HWQ',
     0x12: 'HWI',
@@ -82,6 +87,10 @@ GLYPHS = [
     0x0077, 0x0000, 0x4136, 0x0800, 0x0201, 0x0201, 0x704c, 0x7000,
 ]
 
+# Helper Functions
+def signed(x):
+    return struct.unpack('<h', struct.pack('<H', x))[0]
+
 # Emulator
 class Emulator(object):
     def __init__(self):
@@ -92,12 +101,6 @@ class Emulator(object):
         for key, value in SPECIAL_OPCODES.items():
             self.special_opcodes[key] = getattr(self, value)
         self.reset()
-    # Logging Functions
-    def dump(self):
-        for name, value in zip(['PC', 'SP'], [self.pc, self.sp]):
-            print '%s = 0x%x' % (name, value)
-        for name, value in zip(REGISTERS, self.ram[REGISTER:REGISTER+8]):
-            print '%s = 0x%x' % (name, value)
     # Helper Properties
     @property
     def pc(self):
@@ -133,7 +136,6 @@ class Emulator(object):
     def reset(self):
         self.ram = [0] * EXT_SIZE
         self.skip = False
-        self.halt = False
         self.cycle = 0
         for index, value in enumerate(GLYPHS):
             self.ram[0x8180 + index] = value
@@ -164,182 +166,186 @@ class Emulator(object):
         while self.cycle < cycle:
             self.step()
     def basic_instruction(self, op, dst, src):
-        src, _ = self.operand(src, True)
-        dst, _ = self.operand(dst, False)
-        func = self.basic_opcodes[op]
+        src = self.operand(src, True)
+        dst = self.operand(dst, False)
         if self.skip:
             self.skip = False
         else:
-            self.cycle += func(dst, src)
-    def special_instruction(self, op, src):
-        src, _ = self.operand(src, False)
-        func = self.special_opcodes[op]
+            func = self.basic_opcodes[op]
+            self.cycle += func(self.ram[dst], dst, src)
+    def special_instruction(self, op, dst):
+        dst = self.operand(dst, False)
         if self.skip:
             self.skip = False
         else:
-            self.cycle += func(src)
+            func = self.special_opcodes[op]
+            self.cycle += func(self.ram[dst], dst)
     def operand(self, x, dereference):
         literal = False
         if x < 8: # register
-            desc = REGISTERS[x]
             result = REGISTER + x
         elif 0x08 <= x <= 0x0f: # [register]
-            desc = '[%s]' % REGISTERS[x - 0x08]
             result = self.ram[REGISTER + x - 0x08]
         elif 0x10 <= x <= 0x17: # [register + next word]
             word = self.next_word(int(not self.skip))
-            desc = '[%s + 0x%04x]' % (REGISTERS[x - 0x10], word)
             result = self.ram[REGISTER + x - 0x10] + word
         elif x == 0x18 and dereference: # POP [SP++]
-            desc = 'POP'
             result = self.sp
             if not self.skip:
                 self.sp = (self.sp + 1) % SIZE
         elif x == 0x18 and not dereference: # PUSH [--SP]
-            desc = 'PUSH'
             if not self.skip:
                 self.sp = (self.sp - 1) % SIZE
             result = self.sp
         elif x == 0x19: # PEEK [SP]
-            desc = 'PEEK'
             result = self.sp
-        elif x == 0x1a: # PICK
+        elif x == 0x1a: # PICK [SP + next word]
             word = self.next_word(int(not self.skip))
-            desc = 'PICK 0x%04x' % word
             result = self.sp + word
         elif x == 0x1b: # SP
-            desc = 'SP'
             result = SP
         elif x == 0x1c: # PC
-            desc = 'PC'
             result = PC
         elif x == 0x1d: # EX
-            desc = 'EX'
             result = EX
         elif x == 0x1e: # [next word]
             word = self.next_word(int(not self.skip))
-            desc = '[0x%04x]' % word
             result = word
         elif x == 0x1f: # literal (next word)
             literal = True
             word = self.next_word(int(not self.skip))
-            desc = '0x%04x' % word
             result = word
         elif x == 0x20: # literal (constant)
             literal = True
-            desc = '0xffff'
             result = 0xffff
         elif x >= 0x21: # literal (constant)
             literal = True
-            desc = '0x%04x' % (x - 0x21)
             result = x - 0x21
         if literal and not dereference:
             self.lt = result
             result = LT
         if dereference and not literal:
             result = self.ram[result]
-        return result, desc
+        return result
     # Opcode Functions
-    def SET(self, a, b):
-        self.ram[a] = b
+    def SET(self, ram, dst, src):
+        self.ram[dst] = src
         return 1
-    def ADD(self, a, b):
-        o, self.ram[a] = divmod(self.ram[a] + b, SIZE)
-        self.ex = 1 if o else 0
+    def ADD(self, ram, dst, src):
+        ex, self.ram[dst] = divmod(ram + src, SIZE)
+        self.ex = 1 if ex else 0
         return 2
-    def SUB(self, a, b):
-        o, self.ram[a] = divmod(self.ram[a] - b, SIZE)
-        self.ex = MAX_VALUE if o else 0
+    def SUB(self, ram, dst, src):
+        ex, self.ram[dst] = divmod(ram - src, SIZE)
+        self.ex = MAX_VALUE if ex else 0
         return 2
-    def MUL(self, a, b):
-        o, self.ram[a] = divmod(self.ram[a] * b, SIZE)
-        self.ex = o % SIZE
+    def MUL(self, ram, dst, src):
+        ex, self.ram[dst] = divmod(ram * src, SIZE)
+        self.ex = ex % SIZE
         return 2
-    def MLI(self, a, b): # TODO: signed
-        o, self.ram[a] = divmod(self.ram[a] * b, SIZE)
-        self.ex = o % SIZE
+    def MLI(self, ram, dst, src):
+        ex, self.ram[dst] = divmod(signed(ram) * signed(src), SIZE)
+        self.ex = ex % SIZE
         return 2
-    def DIV(self, a, b):
-        if b:
-            self.ex = ((self.ram[a] << 16) / b) % SIZE
-            self.ram[a] /= b
+    def DIV(self, ram, dst, src):
+        if src:
+            self.ex = ((ram << 16) / src) % SIZE
+            self.ram[dst] = (ram / src) % SIZE
         else:
-            self.ram[a] = 0
+            self.ram[dst] = 0
+            self.ex = 0
         return 3
-    def DVI(self, a, b): # TODO: signed
-        if b:
-            self.ex = ((self.ram[a] << 16) / b) % SIZE
-            self.ram[a] /= b
+    def DVI(self, ram, dst, src):
+        if src:
+            ram = signed(ram)
+            src = signed(src)
+            self.ex = ((ram << 16) / src) % SIZE
+            self.ram[dst] = (ram / src) % SIZE
         else:
-            self.ram[a] = 0
+            self.ram[dst] = 0
+            self.ex = 0
         return 3
-    def MOD(self, a, b):
-        if b:
-            self.ram[a] %= b
+    def MOD(self, ram, dst, src):
+        if src:
+            self.ram[dst] %= src
         else:
-            self.ram[a] = 0
+            self.ram[dst] = 0
         return 3
-    def AND(self, a, b):
-        self.ram[a] &= b
+    def AND(self, ram, dst, src):
+        self.ram[dst] = (ram & src) % SIZE
         return 1
-    def BOR(self, a, b):
-        self.ram[a] |= b
+    def BOR(self, ram, dst, src):
+        self.ram[dst] = (ram | src) % SIZE
         return 1
-    def XOR(self, a, b):
-        self.ram[a] ^= b
+    def XOR(self, ram, dst, src):
+        self.ram[dst] = (ram ^ src) % SIZE
         return 1
-    def SHR(self, a, b):
-        self.ex = ((self.ram[a] << 16) >> b) % SIZE
-        self.ram[a] >>= b
+    def SHR(self, ram, dst, src):
+        self.ex = ((ram << 16) >> src) % SIZE
+        self.ram[dst] = (ram >> src) % SIZE
         return 2
-    def ASR(self, a, b): # TODO: arithmetic
-        self.ex = ((self.ram[a] << 16) >> b) % SIZE
-        self.ram[a] >>= b
+    def ASR(self, ram, dst, src):
+        ram = signed(ram)
+        self.ex = ((ram << 16) >> src) % SIZE
+        self.ram[dst] = (ram >> src) % SIZE
         return 2
-    def SHL(self, a, b):
-        o, self.ram[a] = divmod(self.ram[a] << b, SIZE)
-        self.ex = o % SIZE
+    def SHL(self, ram, dst, src):
+        self.ex = ((ram << src) >> 16) % SIZE
+        self.ram[dst] = (ram << src) % SIZE
         return 2
-    def IFB(self, a, b):
-        self.skip = not ((self.ram[a] & b) != 0)
+    def MVI(self, ram, dst, src):
+        self.ram[dst] = src
+        self.ram[REGISTER + 6] = (self.ram[REGISTER + 6] + 1) % SIZE
+        self.ram[REGISTER + 7] = (self.ram[REGISTER + 7] + 1) % SIZE
+        return 2
+    def IFB(self, ram, dst, src):
+        self.skip = not ((ram & src) != 0)
         return 2 + int(self.skip)
-    def IFC(self, a, b):
-        self.skip = not ((self.ram[a] & b) == 0)
+    def IFC(self, ram, dst, src):
+        self.skip = not ((ram & src) == 0)
         return 2 + int(self.skip)
-    def IFE(self, a, b):
-        self.skip = not (self.ram[a] == b)
+    def IFE(self, ram, dst, src):
+        self.skip = not (ram == src)
         return 2 + int(self.skip)
-    def IFN(self, a, b):
-        self.skip = not (self.ram[a] != b)
+    def IFN(self, ram, dst, src):
+        self.skip = not (ram != src)
         return 2 + int(self.skip)
-    def IFG(self, a, b):
-        self.skip = not (self.ram[a] > b)
+    def IFG(self, ram, dst, src):
+        self.skip = not (ram > src)
         return 2 + int(self.skip)
-    def IFA(self, a, b): # TODO: signed
-        self.skip = not (self.ram[a] > b)
+    def IFA(self, ram, dst, src):
+        self.skip = not (signed(ram) > signed(src))
         return 2 + int(self.skip)
-    def IFL(self, a, b):
-        self.skip = not (self.ram[a] < b)
+    def IFL(self, ram, dst, src):
+        self.skip = not (ram < src)
         return 2 + int(self.skip)
-    def IFU(self, a, b): # TODO: signed
-        self.skip = not (self.ram[a] < b)
+    def IFU(self, ram, dst, src):
+        self.skip = not (signed(ram) < signed(src))
         return 2 + int(self.skip)
-    def JSR(self, a):
+    def ADX(self, ram, dst, src):
+        ex, self.ram[dst] = divmod(ram + src + self.ex, SIZE)
+        self.ex = 1 if ex else 0
+        return 3
+    def SUX(self, ram, dst, src):
+        ex, self.ram[dst] = divmod(ram - src + self.ex, SIZE)
+        self.ex = MAX_VALUE if ex else 0
+        return 3
+    def JSR(self, ram, dst):
         self.sp = (self.sp - 1) % SIZE
         self.ram[self.sp] = self.pc
-        self.pc = self.ram[a]
+        self.pc = ram
         return 3
-    def INT(self, a):
+    def INT(self, ram, dst):
         return 4
-    def ING(self, a):
-        self.ram[a] = self.ia
+    def IAG(self, ram, dst):
+        self.ram[dst] = self.ia
         return 1
-    def INS(self, a):
-        self.ia = self.ram[a]
+    def IAS(self, ram, dst):
+        self.ia = ram
         return 1
-    def HWN(self, a):
+    def HWN(self, ram, dst):
         return 2
-    def HWQ(self, a):
+    def HWQ(self, ram, dst):
         return 4
-    def HWI(self, a):
+    def HWI(self, ram, dst):
         return 4
