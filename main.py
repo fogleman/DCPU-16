@@ -6,14 +6,6 @@ import sys
 import time
 import wx
 
-# Select C or Python Emulator
-try:
-    import cEmulator
-    emulator = cEmulator
-    emulator_name = 'C'
-except Exception:
-    emulator_name = 'Python'
-
 # Constants
 SCALE = 3
 WIDTH = 128
@@ -21,6 +13,46 @@ HEIGHT = 96
 BORDER = 10
 CYCLES_PER_SECOND = 100000
 BLINK_RATE = 50000
+
+FONT = [
+    0x000f, 0x0808, 0x080f, 0x0808, 0x08f8, 0x0808, 0x00ff, 0x0808,
+    0x0808, 0x0808, 0x08ff, 0x0808, 0x00ff, 0x1414, 0xff00, 0xff08,
+    0x1f10, 0x1714, 0xfc04, 0xf414, 0x1710, 0x1714, 0xf404, 0xf414,
+    0xff00, 0xf714, 0x1414, 0x1414, 0xf700, 0xf714, 0x1417, 0x1414,
+    0x0f08, 0x0f08, 0x14f4, 0x1414, 0xf808, 0xf808, 0x0f08, 0x0f08,
+    0x001f, 0x1414, 0x00fc, 0x1414, 0xf808, 0xf808, 0xff08, 0xff08,
+    0x14ff, 0x1414, 0x080f, 0x0000, 0x00f8, 0x0808, 0xffff, 0xffff,
+    0xf0f0, 0xf0f0, 0xffff, 0x0000, 0x0000, 0xffff, 0x0f0f, 0x0f0f,
+    0x0000, 0x0000, 0x005f, 0x0000, 0x0300, 0x0300, 0x3e14, 0x3e00,
+    0x266b, 0x3200, 0x611c, 0x4300, 0x3629, 0x7650, 0x0002, 0x0100,
+    0x1c22, 0x4100, 0x4122, 0x1c00, 0x2a1c, 0x2a00, 0x083e, 0x0800,
+    0x4020, 0x0000, 0x0808, 0x0800, 0x0040, 0x0000, 0x601c, 0x0300,
+    0x3e41, 0x3e00, 0x427f, 0x4000, 0x6259, 0x4600, 0x2249, 0x3600,
+    0x0f08, 0x7f00, 0x2745, 0x3900, 0x3e49, 0x3200, 0x6119, 0x0700,
+    0x3649, 0x3600, 0x2649, 0x3e00, 0x0024, 0x0000, 0x4024, 0x0000,
+    0x0814, 0x2241, 0x1414, 0x1400, 0x4122, 0x1408, 0x0259, 0x0600,
+    0x3e59, 0x5e00, 0x7e09, 0x7e00, 0x7f49, 0x3600, 0x3e41, 0x2200,
+    0x7f41, 0x3e00, 0x7f49, 0x4100, 0x7f09, 0x0100, 0x3e49, 0x3a00,
+    0x7f08, 0x7f00, 0x417f, 0x4100, 0x2040, 0x3f00, 0x7f0c, 0x7300,
+    0x7f40, 0x4000, 0x7f06, 0x7f00, 0x7f01, 0x7e00, 0x3e41, 0x3e00,
+    0x7f09, 0x0600, 0x3e41, 0xbe00, 0x7f09, 0x7600, 0x2649, 0x3200,
+    0x017f, 0x0100, 0x7f40, 0x7f00, 0x1f60, 0x1f00, 0x7f30, 0x7f00,
+    0x7708, 0x7700, 0x0778, 0x0700, 0x7149, 0x4700, 0x007f, 0x4100,
+    0x031c, 0x6000, 0x0041, 0x7f00, 0x0201, 0x0200, 0x8080, 0x8000,
+    0x0001, 0x0200, 0x2454, 0x7800, 0x7f44, 0x3800, 0x3844, 0x2800,
+    0x3844, 0x7f00, 0x3854, 0x5800, 0x087e, 0x0900, 0x4854, 0x3c00,
+    0x7f04, 0x7800, 0x447d, 0x4000, 0x2040, 0x3d00, 0x7f10, 0x6c00,
+    0x417f, 0x4000, 0x7c18, 0x7c00, 0x7c04, 0x7800, 0x3844, 0x3800,
+    0x7c14, 0x0800, 0x0814, 0x7c00, 0x7c04, 0x0800, 0x4854, 0x2400,
+    0x043e, 0x4400, 0x3c40, 0x7c00, 0x1c60, 0x1c00, 0x7c30, 0x7c00,
+    0x6c10, 0x6c00, 0x4c50, 0x3c00, 0x6454, 0x4c00, 0x0836, 0x4100,
+    0x0077, 0x0000, 0x4136, 0x0800, 0x0201, 0x0201, 0x704c, 0x7000,
+]
+
+PALETTE = [
+    0x0000, 0x000a, 0x00a0, 0x00aa, 0x0a00, 0x0a0a, 0x0a50, 0x0aaa,
+    0x0555, 0x055f, 0x05f5, 0x05ff, 0x0f55, 0x0f5f, 0x0ff5, 0x0fff,
+]
 
 # Helper Functions
 def menu_item(window, menu, label, func, kind=wx.ITEM_NORMAL):
@@ -125,24 +157,6 @@ class Canvas(wx.Panel):
         style = wx.WANTS_CHARS | wx.BORDER_STATIC
         super(Canvas, self).__init__(parent, style=style)
         self.emu = emu
-        self.brushes = {
-            0x0: wx.Brush(wx.Colour(0x00, 0x00, 0x00)),
-            0x1: wx.Brush(wx.Colour(0x00, 0x00, 0xaa)),
-            0x2: wx.Brush(wx.Colour(0x00, 0xaa, 0x00)),
-            0x3: wx.Brush(wx.Colour(0x00, 0xaa, 0xaa)),
-            0x4: wx.Brush(wx.Colour(0xaa, 0x00, 0x00)),
-            0x5: wx.Brush(wx.Colour(0xaa, 0x00, 0xaa)),
-            0x6: wx.Brush(wx.Colour(0xaa, 0x55, 0x00)),
-            0x7: wx.Brush(wx.Colour(0xaa, 0xaa, 0xaa)),
-            0x8: wx.Brush(wx.Colour(0x55, 0x55, 0x55)),
-            0x9: wx.Brush(wx.Colour(0x55, 0x55, 0xff)),
-            0xa: wx.Brush(wx.Colour(0x55, 0xff, 0x55)),
-            0xb: wx.Brush(wx.Colour(0x55, 0xff, 0xff)),
-            0xc: wx.Brush(wx.Colour(0xff, 0x55, 0x55)),
-            0xd: wx.Brush(wx.Colour(0xff, 0x55, 0xff)),
-            0xe: wx.Brush(wx.Colour(0xff, 0xff, 0x55)),
-            0xf: wx.Brush(wx.Colour(0xff, 0xff, 0xff)),
-        }
         self.scale = 0
         self.cache = {}
         self.bitmap = wx.EmptyBitmap(1, 1)
@@ -171,7 +185,8 @@ class Canvas(wx.Panel):
         event.Skip()
         self.Refresh()
         cw, ch = self.GetClientSize()
-        scale = min((cw - BORDER * 2) / WIDTH, (ch - BORDER * 2) / HEIGHT) or 1
+        scale = min((cw - BORDER * 2) / WIDTH, (ch - BORDER * 2) / HEIGHT)
+        scale = max(scale, 1)
         if scale != self.scale:
             self.scale = scale
             self.cache = {}
@@ -185,10 +200,9 @@ class Canvas(wx.Panel):
         bw, bh = bitmap.GetWidth(), bitmap.GetHeight()
         dx, dy = (cw - bw) / 2, (ch - bh) / 2
         mdc = wx.MemoryDC(bitmap)
-        self.draw_screen(mdc)
+        border_brush = self.draw_screen(mdc)
         dc = wx.AutoBufferedPaintDC(self)
-        brush = self.brushes[self.emu.ram[0x8280] & 0xf]
-        dc.SetBackground(brush)
+        dc.SetBackground(border_brush)
         dc.Clear()
         dc.Blit(dx, dy, bw, bh, mdc, 0, 0)
     def get_character(self, address, show_blink=True):
@@ -198,29 +212,45 @@ class Canvas(wx.Panel):
         color = (value >> 8) & 0xff
         back = color & 0x0f
         fore = (color >> 4) & 0x0f
-        a = self.emu.ram[0x8180 + character * 2]
-        b = self.emu.ram[0x8181 + character * 2]
-        bitmap = a << 16 | b
         if blink and not show_blink:
             fore = back
-        return bitmap, back, fore
+        return character, back, fore
     def draw_screen(self, dc):
+        address = self.emu.lem1802_screen
+        if not address:
+            return wx.BLACK_BRUSH
+        font_address = self.emu.lem1802_font
+        if font_address:
+            font = self.emu.ram[font_address : font_address + 256]
+        else:
+            font = FONT
+        palette_address = self.emu.lem1802_palette
+        if palette_address:
+            palette = self.emu.ram[palette_address : palette_address + 16]
+        else:
+            palette = PALETTE
+        brushes = []
+        for x in palette:
+            r, g, b = (x >> 8) & 0xf, (x >> 4) & 0xf, (x >> 0) & 0xf
+            r, g, b = (r << 4) | r, (g << 4) | g, (b << 4) | b
+            brushes.append(wx.Brush(wx.Colour(r, g, b)))
         dc.SetPen(wx.TRANSPARENT_PEN)
-        address = 0x8000
         show_blink = bool((self.emu.cycle / BLINK_RATE) % 2)
         for j in xrange(12):
             for i in xrange(32):
-                bitmap, back, fore = self.get_character(address, show_blink)
-                key = (back, fore, bitmap)
+                ch, back, fore = self.get_character(address, show_blink)
+                a = font[ch * 2]
+                b = font[ch * 2 + 1]
+                bitmap = a << 16 | b
+                key = (palette[back], palette[fore], bitmap)
                 if self.cache.get((i, j)) != key:
                     self.cache[(i, j)] = key
-                    x = i * 4 * self.scale
-                    y = j * 8 * self.scale
-                    self.draw_character(dc, x, y, back, fore, bitmap)
+                    x, y = i * 4 * self.scale, j * 8 * self.scale
+                    self.draw_character(dc, x, y, brushes[back],
+                        brushes[fore], bitmap)
                 address += 1
+        return brushes[self.emu.lem1802_border & 0xf]
     def draw_character(self, dc, x, y, back, fore, bitmap):
-        back = self.brushes[back]
-        fore = self.brushes[fore]
         mask = 1
         for i in xrange(3, -1, -1):
             for j in xrange(8):
@@ -341,8 +371,6 @@ class Frame(wx.Frame):
         bar.SetStatusText(running, 1)
         cycle = 'Cycle: %d' % self.emu.cycle
         bar.SetStatusText(cycle, 2)
-        text = 'Emulator Implementation: %s' % emulator_name
-        bar.SetStatusText(text, 3)
     def show_debug_controls(self, show):
         for item in self.debug_controls:
             item.Show(show)
@@ -539,8 +567,8 @@ class Frame(wx.Frame):
         data2 = [
             ('SP', 8),
             ('PC', 9),
-            ('O', 10),
-            ('LT', 11),
+            ('EX', 10),
+            ('IA', 11),
             ('I', 6),
             ('J', 7),
         ]

@@ -613,7 +613,7 @@ SET PC, stop
 
 :page_find_free_found_loop
       SHR PEEK, 1
-      IFN O, 0x0000
+      IFN EX, 0x0000
           SET PC, page_find_free_skip
 
       ADD SP, 1
@@ -1792,17 +1792,17 @@ SET PC, stop
     SET A, POP
 SET PC, POP
 
-; Compares strings and stores the result in C and O
-; A=B => C=0, O=0
-; A>B => C>0, O=0
-; A<B => C>0, O>0
+; Compares strings and stores the result in C and EX
+; A=B => C=0, EX=0
+; A>B => C>0, EX=0
+; A<B => C>0, EX>0
 ; Takes:
 ; A: source #1
 ; B: source #2
 :strcmp
     SET PUSH, A
     SET PUSH, B
-    SET O, 0
+    SET EX, 0
     SET C, 0
 :strcmp_loop
     IFE [A], 0

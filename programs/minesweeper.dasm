@@ -11,6 +11,15 @@
 
 ;            Upon winning or losing, press enter to start again.
 
+; map screen
+SET A 0
+SET B 0x8000
+HWI 0
+; map font
+SET A 1
+SET B 0x8180
+HWI 0
+
 JSR intro
 
 SET A, tile0
