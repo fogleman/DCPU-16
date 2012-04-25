@@ -1,5 +1,4 @@
 import assembler
-import cEmulator
 import emulator
 import time
 
@@ -23,5 +22,4 @@ def benchmark(name, module, program):
 
 if __name__ == '__main__':
     program = 'programs/life.dasm'
-    benchmark('Python', emulator, program)
-    benchmark('C', cEmulator, program)
+    benchmark('C', emulator, program)

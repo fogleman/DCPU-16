@@ -15,15 +15,17 @@ class cEmulator(Structure):
         ('lem1802_border', c_ushort),
     ]
 
+ATTRS = set([x[0] for x in cEmulator._fields_])
+
 class Emulator(object):
     def __init__(self):
         self.emulator = cEmulator()
         self.emulator.ram = (c_ushort * EXT_SIZE)()
-        self.ram = self.emulator.ram
         self.reset()
-    @property
-    def cycle(self):
-        return self.emulator.cycle
+    def __getattr__(self, name):
+        if name in ATTRS:
+            return getattr(self.emulator, name)
+        return super(Emulator, self).__getattr__(name)
     def reset(self):
         dll.reset(byref(self.emulator))
     def load(self, program):
