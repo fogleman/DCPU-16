@@ -219,8 +219,8 @@ tokens = [
 t_ignore = ' \t\r,'
 t_ignore_COMMENT = r';.*'
 
-t_INC = r'\++'
-t_DEC = r'\--'
+t_INC = r'\+\+'
+t_DEC = r'\-\-'
 t_LBRACK = r'\['
 t_RBRACK = r'\]'
 t_PLUS = r'\+'
