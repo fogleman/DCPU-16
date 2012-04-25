@@ -157,9 +157,9 @@ SET J, 0
     SET PC, loop_a
 SET PUSH, J
 SUB X, 2
-IFN O, 0
+IFN EX, 0
   SET X, 62
-IFN O, 0
+IFN EX, 0
   SUB Y, 8
 IFG SP, 0x8180  ; have we written the last character?
   SET PC, loop_group
@@ -170,7 +170,7 @@ SET PC, loop_main
 :rand ; simple LFSR RNG -- only use the low bit!
   SET A, randseed
   SHR [A], 1
-  IFN O, 0
+  IFN EX, 0
      XOR [A], 0xB400
   SET A, [A]
   SET PC, POP

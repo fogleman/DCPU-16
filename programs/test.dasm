@@ -5,7 +5,8 @@
 ; make whole screen white on blue
     SET SP 0x8000
 :loop1
-    SET POP 0xf180
+    SET SP 0xf180
+    ADD SP 1
     ADD A 1
     IFG 0x8180 SP
         SET PC loop1
@@ -15,7 +16,8 @@
     ADD SP 33
     SET A data
 :loop2
-    BOR POP [A]
+    BOR SP [A]
+    ADD SP 1
     ADD A 1
     IFG 0x8180 SP
         SET PC loop2
