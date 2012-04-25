@@ -183,7 +183,7 @@ class DstOperand(object):
     def assemble(self, lookup):
         return [] if self.word is None else [lookup.get(self.word, self.word)]
     def pretty(self):
-        return pretty_operand(self.value, self.word, DST_CODES)
+        return pretty_operand(self.value, self.word, REV_DST_CODES)
 
 class SrcOperand(object):
     def __init__(self, value, word=None):
@@ -193,7 +193,7 @@ class SrcOperand(object):
     def assemble(self, lookup):
         return [] if self.word is None else [lookup.get(self.word, self.word)]
     def pretty(self):
-        return pretty_operand(self.value, self.word, SRC_CODES)
+        return pretty_operand(self.value, self.word, REV_SRC_CODES)
 
 # Lexer Rules
 reserved = set(
@@ -322,6 +322,10 @@ def p_dst_operand_code(t):
 def p_dst_operand_literal_dereference(t):
     'dst_operand : LBRACK literal RBRACK'
     t[0] = DstOperand(0x1e, t[2])
+
+def p_dst_operand_literal(t):
+    'dst_operand : literal'
+    t[0] = DstOperand(0x1f, t[1])
 
 def p_src_operand_register(t):
     'src_operand : register'
