@@ -212,11 +212,15 @@ tokens = [
     'DECIMAL',
     'HEX',
     'STRING',
+    'INC',
+    'DEC',
 ] + list(reserved)
 
 t_ignore = ' \t\r,'
 t_ignore_COMMENT = r';.*'
 
+t_INC = r'\++'
+t_DEC = r'\--'
 t_LBRACK = r'\['
 t_RBRACK = r'\]'
 t_PLUS = r'\+'
@@ -329,6 +333,14 @@ def p_dst_operand_code(t):
     'dst_operand : dst_code'
     t[0] = DstOperand(DST_CODES[t[1]])
 
+def p_dst_operand_push(t):
+    'dst_operand : LBRACK DEC SP RBRACK'
+    t[0] = DstOperand(0x18)
+
+def p_dst_operand_peek(t):
+    'dst_operand : LBRACK SP RBRACK'
+    t[0] = DstOperand(0x19)
+
 def p_dst_operand_literal_dereference(t):
     'dst_operand : LBRACK literal RBRACK'
     t[0] = DstOperand(0x1e, t[2])
@@ -368,6 +380,14 @@ def p_src_operand_pick3(t):
 def p_src_operand_code(t):
     'src_operand : src_code'
     t[0] = SrcOperand(SRC_CODES[t[1]])
+
+def p_src_operand_pop(t):
+    'src_operand : LBRACK SP INC RBRACK'
+    t[0] = SrcOperand(0x18)
+
+def p_src_operand_peek(t):
+    'src_operand : LBRACK SP RBRACK'
+    t[0] = SrcOperand(0x19)
 
 def p_src_operand_literal_dereference(t):
     'src_operand : LBRACK literal RBRACK'
