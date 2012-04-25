@@ -86,6 +86,10 @@ void reset(Emulator *emulator) {
     for (unsigned int i = 0; i < EXT_SIZE; i++) {
         RAM(i) = 0;
     }
+    emulator->lem1802_screen = 0;
+    emulator->lem1802_font = 0;
+    emulator->lem1802_palette = 0;
+    emulator->lem1802_border = 0;
 }
 
 void load(Emulator *emulator, unsigned short *program, unsigned int length) {
@@ -348,11 +352,11 @@ void lem1802(Emulator *emulator) {
 void hardware_query(Emulator *emulator, unsigned short index) {
     switch (index) {
         case LEM1802:
-            REG(0) = 0x7349;
-            REG(1) = 0xf615;
+            REG(0) = 0xf615;
+            REG(1) = 0x7349;
             REG(2) = 0x1802;
-            REG(3) = 0x1c6c;
-            REG(4) = 0x8b36;
+            REG(3) = 0x8b36;
+            REG(4) = 0x1c6c;
             break;
     }
 }

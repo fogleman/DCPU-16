@@ -18,6 +18,7 @@ BASIC_OPCODES = {
     'SHR': 0x0c,
     'ASR': 0x0d,
     'SHL': 0x0e,
+    'MVI': 0x0f,
     'IFB': 0x10,
     'IFC': 0x11,
     'IFE': 0x12,
@@ -26,6 +27,8 @@ BASIC_OPCODES = {
     'IFA': 0x15,
     'IFL': 0x16,
     'IFU': 0x17,
+    'ADX': 0x1a,
+    'SUX': 0x1b,
 }
 
 SPECIAL_OPCODES = {
