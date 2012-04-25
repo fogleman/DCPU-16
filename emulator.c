@@ -230,6 +230,9 @@ void basic_instruction(Emulator *emulator, unsigned short opcode,
             EX = quo % SIZE;
             CYCLES(2);
             break;
+        case MLI:
+            CYCLES(2);
+            break;
         case DIV:
             if (src) {
                 EX = ((ram << 16) / src) % SIZE;
@@ -241,6 +244,9 @@ void basic_instruction(Emulator *emulator, unsigned short opcode,
             }
             CYCLES(3);
             break;
+        case DVI:
+            CYCLES(3);
+            break;
         case MOD:
             if (src) {
                 RAM(dst) %= src;
@@ -249,16 +255,6 @@ void basic_instruction(Emulator *emulator, unsigned short opcode,
                 RAM(dst) = 0;
             }
             CYCLES(3);
-            break;
-        case SHL:
-            RAM(dst) = divmod(ram << src, &quo);
-            EX = quo % SIZE;
-            CYCLES(2);
-            break;
-        case SHR:
-            EX = ((ram << 16) >> src) % SIZE;
-            RAM(dst) >>= src;
-            CYCLES(2);
             break;
         case AND:
             RAM(dst) &= src;
@@ -272,6 +268,29 @@ void basic_instruction(Emulator *emulator, unsigned short opcode,
             RAM(dst) ^= src;
             CYCLES(1);
             break;
+        case SHR:
+            EX = ((ram << 16) >> src) % SIZE;
+            RAM(dst) >>= src;
+            CYCLES(2);
+            break;
+        case ASR:
+            EX = ((ram << 16) >> src) % SIZE;
+            RAM(dst) >>= src;
+            CYCLES(2);
+            break;
+        case SHL:
+            RAM(dst) = divmod(ram << src, &quo);
+            EX = quo % SIZE;
+            CYCLES(2);
+            break;
+        case IFB:
+            SKIP = (ram & src) != 0 ? 0 : 1;
+            CYCLES(2 + SKIP);
+            break;
+        case IFC:
+            SKIP = (ram & src) == 0 ? 0 : 1;
+            CYCLES(2 + SKIP);
+            break;
         case IFE:
             SKIP = (ram == src) ? 0 : 1;
             CYCLES(2 + SKIP);
@@ -284,8 +303,16 @@ void basic_instruction(Emulator *emulator, unsigned short opcode,
             SKIP = (ram > src) ? 0 : 1;
             CYCLES(2 + SKIP);
             break;
-        case IFB:
-            SKIP = (ram & src) ? 0 : 1;
+        case IFA:
+            SKIP = ((int)ram > (int)src) ? 0 : 1;
+            CYCLES(2 + SKIP);
+            break;
+        case IFL:
+            SKIP = (ram < src) ? 0 : 1;
+            CYCLES(2 + SKIP);
+            break;
+        case IFU:
+            SKIP = ((int)ram < (int)src) ? 0 : 1;
             CYCLES(2 + SKIP);
             break;
     }
@@ -293,8 +320,8 @@ void basic_instruction(Emulator *emulator, unsigned short opcode,
 
 void special_instruction(Emulator *emulator, unsigned short opcode, 
     unsigned short op_src) {
-    unsigned int src = operand(emulator, op_src, 0);
-    unsigned int ram = RAM(src);
+    unsigned int dst = operand(emulator, op_src, 0);
+    unsigned int src = RAM(dst);
     if (SKIP) {
         SKIP = 0;
         return;
@@ -302,8 +329,28 @@ void special_instruction(Emulator *emulator, unsigned short opcode,
     switch (opcode) {
         case JSR:
             RAM(--SP) = PC;
-            PC = ram;
+            PC = src;
+            CYCLES(3);
+            break;
+        case INT:
+            CYCLES(4);
+            break;
+        case ING:
+            RAM(dst) = IA;
+            CYCLES(1);
+            break;
+        case INS:
+            IA = src;
+            CYCLES(1);
+            break;
+        case HWN:
             CYCLES(2);
+            break;
+        case HWQ:
+            CYCLES(4);
+            break;
+        case HWI:
+            CYCLES(4);
             break;
     }
 }
