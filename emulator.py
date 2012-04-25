@@ -188,7 +188,7 @@ class Emulator(object):
             result = self.ram[REGISTER + x - 0x08]
         elif 0x10 <= x <= 0x17: # [register + next word]
             word = self.next_word(int(not self.skip))
-            result = self.ram[REGISTER + x - 0x10] + word
+            result = (self.ram[REGISTER + x - 0x10] + word) % SIZE
         elif x == 0x18 and dereference: # POP [SP++]
             result = self.sp
             if not self.skip:
@@ -201,7 +201,7 @@ class Emulator(object):
             result = self.sp
         elif x == 0x1a: # PICK [SP + next word]
             word = self.next_word(int(not self.skip))
-            result = self.sp + word
+            result = (self.sp + word) % SIZE
         elif x == 0x1b: # SP
             result = SP
         elif x == 0x1c: # PC
@@ -217,7 +217,7 @@ class Emulator(object):
             result = word
         elif x == 0x20: # literal (constant)
             literal = True
-            result = 0xffff
+            result = MAX_VALUE
         elif x >= 0x21: # literal (constant)
             literal = True
             result = x - 0x21
@@ -252,8 +252,8 @@ class Emulator(object):
             self.ex = ((ram << 16) / src) % SIZE
             self.ram[dst] = (ram / src) % SIZE
         else:
-            self.ram[dst] = 0
             self.ex = 0
+            self.ram[dst] = 0
         return 3
     def DVI(self, ram, dst, src):
         if src:
@@ -262,12 +262,12 @@ class Emulator(object):
             self.ex = ((ram << 16) / src) % SIZE
             self.ram[dst] = (ram / src) % SIZE
         else:
-            self.ram[dst] = 0
             self.ex = 0
+            self.ram[dst] = 0
         return 3
     def MOD(self, ram, dst, src):
         if src:
-            self.ram[dst] %= src
+            self.ram[dst] = (ram % src) % SIZE
         else:
             self.ram[dst] = 0
         return 3

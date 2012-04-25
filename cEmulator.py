@@ -7,9 +7,8 @@ EXT_SIZE = 0x1000d
 class cEmulator(Structure):
     _fields_ = [
         ('ram', POINTER(c_ushort)),
-        ('skip', c_uint),
-        ('halt', c_uint),
-        ('cycle', c_uint),
+        ('skip', c_ubyte),
+        ('cycle', c_ulonglong),
     ]
 
 class Emulator(object):
