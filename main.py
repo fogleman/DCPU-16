@@ -9,7 +9,6 @@ import wx
 # Select C or Python Emulator
 try:
     import cEmulator
-    raise
     emulator = cEmulator
     emulator_name = 'C'
 except Exception:

@@ -1,12 +1,13 @@
 // Constants
 #define SIZE 0x10000
 #define MAX_VALUE 0xffff
-#define EXT_SIZE 0x1000c
+#define EXT_SIZE 0x1000d
 #define REG_ADDR 0x10000
 #define SP_ADDR 0x10008
 #define PC_ADDR 0x10009
-#define OV_ADDR 0x1000a
-#define LT_ADDR 0x1000b
+#define EX_ADDR 0x1000a
+#define IA_ADDR 0x1000b
+#define LT_ADDR 0x1000c
 
 // Helper Macros
 #define CYCLES(count) (emulator->cycle += (count))
@@ -14,32 +15,45 @@
 #define REG(index) (emulator->ram[REG_ADDR + (index)])
 #define SP (emulator->ram[SP_ADDR])
 #define PC (emulator->ram[PC_ADDR])
-#define OV (emulator->ram[OV_ADDR])
+#define EX (emulator->ram[EX_ADDR])
+#define IA (emulator->ram[IA_ADDR])
 #define LT (emulator->ram[LT_ADDR])
 #define SKIP (emulator->skip)
 #define HALT (emulator->halt)
 #define CYCLE (emulator->cycle)
 
 // Basic Opcodes
-#define SET 0x1
-#define ADD 0x2
-#define SUB 0x3
-#define MUL 0x4
-#define DIV 0x5
-#define MOD 0x6
-#define SHL 0x7
-#define SHR 0x8
-#define AND 0x9
-#define BOR 0xa
-#define XOR 0xb
-#define IFE 0xc
-#define IFN 0xd
-#define IFG 0xe
-#define IFB 0xf
+#define SET 0x01
+#define ADD 0x02
+#define SUB 0x03
+#define MUL 0x04
+#define MLI 0x05
+#define DIV 0x06
+#define DVI 0x07
+#define MOD 0x08
+#define AND 0x09
+#define BOR 0x0a
+#define XOR 0x0b
+#define SHR 0x0c
+#define ASR 0x0d
+#define SHL 0x0e
+#define IFB 0x10
+#define IFC 0x11
+#define IFE 0x12
+#define IFN 0x13
+#define IFG 0x14
+#define IFA 0x15
+#define IFL 0x16
+#define IFU 0x17
 
 // Non Basic Opcodes
-#define BRK 0x0
-#define JSR 0x1
+#define JSR 0x01
+#define INT 0x08
+#define ING 0x09
+#define INS 0x0a
+#define HWN 0x10
+#define HWQ 0x11
+#define HWI 0x12
 
 // Default Font Glyphs
 unsigned short GLYPHS[] = {
@@ -120,20 +134,26 @@ unsigned int operand(Emulator *emulator, unsigned short x,
             CYCLES(1);
         }
     }
-    else if (x == 0x18) {
+    else if (x == 0x18 && dereference) {
         result = SP;
         if (!SKIP) {
             SP++;
         }
     }
-    else if (x == 0x19) {
-        result = SP;
-    }
-    else if (x == 0x1a) {
+    else if (x == 0x18 && !dereference) {
         if (!SKIP) {
             SP--;
         }
         result = SP;
+    }
+    else if (x == 0x19) {
+        result = SP;
+    }
+    else if (x == 0x1a) {
+        result = SP + RAM(PC++);
+        if (!SKIP) {
+            CYCLES(1);
+        }
     }
     else if (x == 0x1b) {
         result = SP_ADDR;
@@ -142,7 +162,7 @@ unsigned int operand(Emulator *emulator, unsigned short x,
         result = PC_ADDR;
     }
     else if (x == 0x1d) {
-        result = OV_ADDR;
+        result = EX_ADDR;
     }
     else if (x == 0x1e) {
         result = RAM(PC++);
@@ -157,9 +177,13 @@ unsigned int operand(Emulator *emulator, unsigned short x,
             CYCLES(1);
         }
     }
+    else if (x == 0x20) {
+        literal = 1;
+        result = MAX_VALUE;
+    }
     else {
         literal = 1;
-        result = x - 0x20;
+        result = x - 0x21;
     }
     if (literal && !dereference) {
         LT = result;
@@ -177,10 +201,10 @@ unsigned short divmod(unsigned int x, unsigned short *quo) {
 }
 
 void basic_instruction(Emulator *emulator, unsigned short opcode, 
-    unsigned short op_a, unsigned short op_b) {
-    unsigned int a = operand(emulator, op_a, 0);
-    unsigned int b = operand(emulator, op_b, 1);
-    unsigned int ram = RAM(a);
+    unsigned short op_dst, unsigned short op_src) {
+    unsigned int src = operand(emulator, op_src, 1);
+    unsigned int dst = operand(emulator, op_dst, 0);
+    unsigned int ram = RAM(dst);
     unsigned short quo;
     if (SKIP) {
         SKIP = 0;
@@ -188,100 +212,97 @@ void basic_instruction(Emulator *emulator, unsigned short opcode,
     }
     switch (opcode) {
         case SET:
-            RAM(a) = b;
+            RAM(dst) = src;
             CYCLES(1);
             break;
         case ADD:
-            RAM(a) = divmod(ram + b, &quo);
-            OV = quo ? 1 : 0;
+            RAM(dst) = divmod(ram + src, &quo);
+            EX = quo ? 1 : 0;
             CYCLES(2);
             break;
         case SUB:
-            RAM(a) = divmod(ram - b, &quo);
-            OV = quo ? MAX_VALUE : 0;
+            RAM(dst) = divmod(ram - src, &quo);
+            EX = quo ? MAX_VALUE : 0;
             CYCLES(2);
             break;
         case MUL:
-            RAM(a) = divmod(ram * b, &quo);
-            OV = quo % SIZE;
+            RAM(dst) = divmod(ram * src, &quo);
+            EX = quo % SIZE;
             CYCLES(2);
             break;
         case DIV:
-            if (b) {
-                OV = ((ram << 16) / b) % SIZE;
-                RAM(a) /= b;
+            if (src) {
+                EX = ((ram << 16) / src) % SIZE;
+                RAM(dst) /= src;
             }
             else {
-                OV = 0;
-                RAM(a) = 0;
+                EX = 0;
+                RAM(dst) = 0;
             }
             CYCLES(3);
             break;
         case MOD:
-            if (b) {
-                RAM(a) %= b;
+            if (src) {
+                RAM(dst) %= src;
             }
             else {
-                RAM(a) = 0;
+                RAM(dst) = 0;
             }
             CYCLES(3);
             break;
         case SHL:
-            RAM(a) = divmod(ram << b, &quo);
-            OV = quo % SIZE;
+            RAM(dst) = divmod(ram << src, &quo);
+            EX = quo % SIZE;
             CYCLES(2);
             break;
         case SHR:
-            OV = ((ram << 16) >> b) % SIZE;
-            RAM(a) >>= b;
+            EX = ((ram << 16) >> src) % SIZE;
+            RAM(dst) >>= src;
             CYCLES(2);
             break;
         case AND:
-            RAM(a) &= b;
+            RAM(dst) &= src;
             CYCLES(1);
             break;
         case BOR:
-            RAM(a) |= b;
+            RAM(dst) |= src;
             CYCLES(1);
             break;
         case XOR:
-            RAM(a) ^= b;
+            RAM(dst) ^= src;
             CYCLES(1);
             break;
         case IFE:
-            SKIP = (ram == b) ? 0 : 1;
+            SKIP = (ram == src) ? 0 : 1;
             CYCLES(2 + SKIP);
             break;
         case IFN:
-            SKIP = (ram != b) ? 0 : 1;
+            SKIP = (ram != src) ? 0 : 1;
             CYCLES(2 + SKIP);
             break;
         case IFG:
-            SKIP = (ram > b) ? 0 : 1;
+            SKIP = (ram > src) ? 0 : 1;
             CYCLES(2 + SKIP);
             break;
         case IFB:
-            SKIP = (ram & b) ? 0 : 1;
+            SKIP = (ram & src) ? 0 : 1;
             CYCLES(2 + SKIP);
             break;
     }
 }
 
-void non_basic_instruction(Emulator *emulator, unsigned short opcode, 
-    unsigned short op_a) {
-    unsigned int a = operand(emulator, op_a, 1);
+void special_instruction(Emulator *emulator, unsigned short opcode, 
+    unsigned short op_src) {
+    unsigned int src = operand(emulator, op_src, 0);
+    unsigned int ram = RAM(src);
     if (SKIP) {
         SKIP = 0;
         return;
     }
     switch (opcode) {
-        case BRK:
-            HALT = 1;
-            CYCLES(1);
-            break;
         case JSR:
             RAM(--SP) = PC;
-            PC = a;
+            PC = ram;
             CYCLES(2);
             break;
     }
@@ -289,14 +310,14 @@ void non_basic_instruction(Emulator *emulator, unsigned short opcode,
 
 void step(Emulator *emulator) {
     unsigned short word = RAM(PC++);
-    unsigned short op = word & 0x000f;
-    unsigned short a = (word & 0x03f0) >> 4;
-    unsigned short b = (word & 0xfc00) >> 10;
+    unsigned short op = word & 0x1f;
+    unsigned short dst = (word >> 5) & 0x1f;
+    unsigned short src = (word >> 10) & 0x3f;
     if (op) {
-        basic_instruction(emulator, op, a, b);
+        basic_instruction(emulator, op, dst, src);
     }
     else {
-        non_basic_instruction(emulator, a, b);
+        special_instruction(emulator, dst, src);
     }
 }
 
