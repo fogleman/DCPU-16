@@ -31,8 +31,8 @@ BASIC_OPCODES = {
 SPECIAL_OPCODES = {
     'JSR': 0x01,
     'INT': 0x08,
-    'ING': 0x09,
-    'INS': 0x0a,
+    'IAG': 0x09,
+    'IAS': 0x0a,
     'HWN': 0x10,
     'HWQ': 0x11,
     'HWI': 0x12,
