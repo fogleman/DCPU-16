@@ -5,6 +5,12 @@ EXTENSIONS = set([
     '.png',
 ])
 
+IGNORE = set([
+    'icon24.png',
+    'icon48.png',
+    'icon256.png',
+])
+
 def print_data(data):
     size = 70
     offset = 0
@@ -18,6 +24,8 @@ def generate(folder):
     print 'from wx.lib.embeddedimage import PyEmbeddedImage'
     print
     for name in os.listdir(folder):
+        if name in IGNORE:
+            continue
         if name[-4:] not in EXTENSIONS:
             continue
         path = os.path.join(folder, name)
