@@ -2,11 +2,9 @@ from ctypes import *
 
 dll = CDLL('_emulator')
 
-EXT_SIZE = 0x1000d
-
 class cEmulator(Structure):
     _fields_ = [
-        ('ram', c_ushort * EXT_SIZE),
+        ('ram', c_ushort * 0x1000d),
         ('skip', c_uint),
         ('cycle', c_ulonglong),
         ('lem1802_screen', c_ushort),

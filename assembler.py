@@ -53,7 +53,7 @@ REGISTERS = {
 }
 
 DST_CODES = {
-    'PUSH':  0x18,
+    'PUSH': 0x18,
     'PEEK': 0x19,
     'SP': 0x1b,
     'PC': 0x1c,
@@ -61,7 +61,7 @@ DST_CODES = {
 }
 
 SRC_CODES = {
-    'POP':  0x18,
+    'POP': 0x18,
     'PEEK': 0x19,
     'SP': 0x1b,
     'PC': 0x1c,

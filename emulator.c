@@ -354,6 +354,8 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
             EX = quo ? MAX_VALUE : 0;
             CYCLES(3);
             break;
+        default:
+            CYCLES(1);
     }
 }
 
@@ -493,6 +495,8 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
             on_hwi(emulator, ram);
             CYCLES(4);
             break;
+        default:
+            CYCLES(1);
     }
 }
 
