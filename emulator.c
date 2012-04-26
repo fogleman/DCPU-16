@@ -72,7 +72,7 @@
 // Emulator State
 typedef struct {
     // DCPU-16
-    unsigned short *ram;
+    unsigned short ram[EXT_SIZE];
     bool skip;
     unsigned long long int cycle;
     // LEM1802
@@ -81,20 +81,35 @@ typedef struct {
     unsigned short lem1802_palette;
     unsigned short lem1802_border;
     // KEYBOARD
+    unsigned char keyboard_buffer[16];
+    bool keyboard_pressed[256];
+    unsigned short keyboard_pointer;
+    unsigned short keyboard_message;
     // CLOCK
 } Emulator;
 
 // Emulator Functions
 void reset(Emulator *emulator) {
-    SKIP = 0;
-    CYCLE = 0;
+    // DCPU-16
     for (unsigned int i = 0; i < EXT_SIZE; i++) {
         RAM(i) = 0;
     }
+    SKIP = 0;
+    CYCLE = 0;
+    // LEM1802
     emulator->lem1802_screen = 0;
     emulator->lem1802_font = 0;
     emulator->lem1802_palette = 0;
     emulator->lem1802_border = 0;
+    // KEYBOARD
+    for (unsigned int i = 0; i < 16; i++) {
+        emulator->keyboard_buffer[i] = 0;
+    }
+    for (unsigned int i = 0; i < 256; i++) {
+        emulator->keyboard_pressed[i] = 0;
+    }
+    emulator->keyboard_pointer = 0;
+    emulator->keyboard_message = 0;
 }
 
 void load(Emulator *emulator, unsigned short *program, unsigned int length) {
@@ -371,12 +386,27 @@ void on_lem1802(Emulator *emulator) {
 void on_keyboard(Emulator *emulator) {
     switch (REG(0)) {
         case 0: // CLEAR_BUFFER
+            for (unsigned int i = 0; i < 16; i++) {
+                emulator->keyboard_buffer[i] = 0;
+            }
+            emulator->keyboard_pointer = 0;
             break;
         case 1: // GET_CHARACTER
+            REG(2) = emulator->keyboard_buffer[0];
+            if (REG(2)) {
+                for (unsigned int i = 1; i < 16; i++) {
+                    emulator->keyboard_buffer[i - 1] =
+                        emulator->keyboard_buffer[i];
+                }
+                emulator->keyboard_buffer[15] = 0;
+                emulator->keyboard_pointer--;
+            }
             break;
         case 2: // IS_PRESSED
+            REG(2) = REG(1) < 256 ? emulator->keyboard_pressed[REG(1)] : 0;
             break;
         case 3: // ENABLE_INTERRUPTS
+            emulator->keyboard_message = REG(1);
             break;
     }
 }
@@ -436,7 +466,7 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
             break;
         case INT:
             if (IA) {
-                interrupt(ram);
+                interrupt(emulator, ram);
                 CYCLES(4);
             }
             else {
@@ -489,5 +519,29 @@ void n_cycles(Emulator *emulator, unsigned int cycles) {
     unsigned long long int cycle = CYCLE + cycles;
     while (CYCLE < cycle) {
         step(emulator);
+    }
+}
+
+void on_key_down(Emulator *emulator, unsigned char key) {
+    emulator->keyboard_pressed[key] = true;
+    if (emulator->keyboard_message) {
+        interrupt(emulator, emulator->keyboard_message);
+    }
+}
+
+void on_key_up(Emulator *emulator, unsigned char key) {
+    emulator->keyboard_pressed[key] = false;
+    if (emulator->keyboard_message) {
+        interrupt(emulator, emulator->keyboard_message);
+    }
+}
+
+void on_char(Emulator *emulator, unsigned char key) {
+    if (emulator->keyboard_pointer > 15) {
+        return;
+    }
+    emulator->keyboard_buffer[emulator->keyboard_pointer++] = key;
+    if (emulator->keyboard_message) {
+        interrupt(emulator, emulator->keyboard_message);
     }
 }

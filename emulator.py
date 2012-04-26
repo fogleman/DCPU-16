@@ -6,7 +6,7 @@ EXT_SIZE = 0x1000d
 
 class cEmulator(Structure):
     _fields_ = [
-        ('ram', POINTER(c_ushort)),
+        ('ram', c_ushort * EXT_SIZE),
         ('skip', c_uint),
         ('cycle', c_ulonglong),
         ('lem1802_screen', c_ushort),
@@ -20,7 +20,6 @@ ATTRS = set([x[0] for x in cEmulator._fields_])
 class Emulator(object):
     def __init__(self):
         self.emulator = cEmulator()
-        self.emulator.ram = (c_ushort * EXT_SIZE)()
         self.reset()
     def __getattr__(self, name):
         if name in ATTRS:
@@ -41,3 +40,9 @@ class Emulator(object):
         dll.n_steps(byref(self.emulator), steps)
     def n_cycles(self, cycles):
         dll.n_cycles(byref(self.emulator), cycles)
+    def on_key_down(self, key):
+        dll.on_key_down(byref(self.emulator), key)
+    def on_key_up(self, key):
+        dll.on_key_up(byref(self.emulator), key)
+    def on_char(self, key):
+        dll.on_char(byref(self.emulator), key)

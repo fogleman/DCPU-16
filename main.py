@@ -54,6 +54,19 @@ PALETTE = [
     0x0555, 0x055f, 0x05f5, 0x05ff, 0x0f55, 0x0f5f, 0x0ff5, 0x0fff,
 ]
 
+KEYS = {
+    wx.WXK_BACK: 0x10,
+    wx.WXK_RETURN: 0x11,
+    wx.WXK_INSERT: 0x12,
+    wx.WXK_DELETE: 0x13,
+    wx.WXK_UP: 0x80,
+    wx.WXK_DOWN: 0x81,
+    wx.WXK_LEFT: 0x82,
+    wx.WXK_RIGHT: 0x83,
+    wx.WXK_SHIFT: 0x90,
+    wx.WXK_CONTROL: 0x91,
+}
+
 # Helper Functions
 def menu_item(window, menu, label, func, kind=wx.ITEM_NORMAL):
     item = wx.MenuItem(menu, -1, label, '', kind)
@@ -163,24 +176,27 @@ class Canvas(wx.Panel):
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.Bind(wx.EVT_PAINT, self.on_paint)
+        self.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+        self.Bind(wx.EVT_KEY_UP, self.on_key_up)
         self.Bind(wx.EVT_CHAR, self.on_char)
         self.SetInitialSize((
             WIDTH * SCALE + BORDER * 4,
             HEIGHT * SCALE + BORDER * 4 + 24))
+    def on_key_down(self, event):
+        event.Skip()
+        code = event.GetKeyCode()
+        code = KEYS.get(code, code)
+        self.emu.on_key_down(code)
+    def on_key_up(self, event):
+        event.Skip()
+        code = event.GetKeyCode()
+        code = KEYS.get(code, code)
+        self.emu.on_key_up(code)
     def on_char(self, event):
-        lookup = {
-            wx.WXK_LEFT: 0x25,
-            wx.WXK_UP: 0x26,
-            wx.WXK_RIGHT: 0x27,
-            wx.WXK_DOWN: 0x28,
-            wx.WXK_RETURN: 0x0a,
-        }
-        code = lookup.get(event.GetKeyCode(), event.GetUniChar())
-        for address in xrange(0x9000, 0x9010):
-            if not self.emu.ram[address]:
-                self.emu.ram[address] = code
-                self.emu.ram[0x9010] = address
-                break
+        event.Skip()
+        code = event.GetKeyCode()
+        code = KEYS.get(code, code)
+        self.emu.on_char(code)
     def on_size(self, event):
         event.Skip()
         self.Refresh()
@@ -218,6 +234,9 @@ class Canvas(wx.Panel):
     def draw_screen(self, dc):
         address = self.emu.lem1802_screen
         if not address:
+            self.cache = {}
+            dc.SetBackground(wx.BLACK_BRUSH)
+            dc.Clear()
             return wx.BLACK_BRUSH
         font_address = self.emu.lem1802_font
         if font_address:
