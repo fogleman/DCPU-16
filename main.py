@@ -288,6 +288,7 @@ class Frame(wx.Frame):
         self.emu = emu
         self.last_time = time.time()
         self.last_refresh = time.time()
+        self._path = None
         self.program = None
         self.running = False
         self.step_power = 0
@@ -308,13 +309,24 @@ class Frame(wx.Frame):
         args = sys.argv[1:]
         if len(args) == 1:
             self.open_file(args[0])
+    @property
+    def path(self):
+        return self._path
+    @path.setter
+    def path(self, path):
+        self._path = path
+        if path:
+            self.SetTitle('DCPU-16 Emulator - %s' % path)
+        else:
+            self.SetTitle('DCPU-16 Emulator')
     def create_menu(self):
         menubar = wx.MenuBar()
         # File
         menu = wx.Menu()
         menu_item(self, menu, 'New\tCtrl+N', self.on_new)
         menu_item(self, menu, 'Open...\tCtrl+O', self.on_open)
-        menu_item(self, menu, 'Save As...\tCtrl+S', self.on_save_as)
+        menu_item(self, menu, 'Save\tCtrl+S', self.on_save)
+        menu_item(self, menu, 'Save As...\tCtrl+Shift+S', self.on_save_as)
         menu_item(self, menu, 'Save Binary...\tCtrl+D', self.on_save_binary)
         menu.AppendSeparator()
         menu_item(self, menu, 'Exit\tAlt+F4', self.on_exit)
@@ -395,6 +407,7 @@ class Frame(wx.Frame):
             item.Show(show)
         self.panel.Layout()
     def reset(self):
+        self.path = None
         self.running = False
         self.program = None
         self.emu.reset()
@@ -406,6 +419,7 @@ class Frame(wx.Frame):
     def open_file(self, path):
         try:
             self.reset()
+            self.path = path
             self.program = assembler.open_file(path)
             self.emu.load(self.program.assemble())
             self.program_list.update(self.program.instructions)
@@ -424,6 +438,11 @@ class Frame(wx.Frame):
             path = dialog.GetPath()
             self.open_file(path)
         dialog.Destroy()
+    def on_save(self, event):
+        if self.path is None:
+            return
+        with open(self.path, 'w') as fp:
+            fp.write(self.editor.GetValue())
     def on_save_as(self, event):
         dialog = wx.FileDialog(self, 'Save As', wildcard='*.dasm',
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
@@ -431,6 +450,7 @@ class Frame(wx.Frame):
             path = dialog.GetPath()
             with open(path, 'w') as fp:
                 fp.write(self.editor.GetValue())
+            self.path = path
         dialog.Destroy()
     def save_binary(self, path):
         words = self.program.assemble()
