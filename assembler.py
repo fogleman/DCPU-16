@@ -243,12 +243,12 @@ def t_STRING(t):
 
 def t_HEX(t):
     r'0x[a-fA-F0-9]+'
-    t.value = int(t.value, 16)    
+    t.value = int(t.value, 16)
     return t
 
 def t_DECIMAL(t):
     r'\d+'
-    t.value = int(t.value)    
+    t.value = int(t.value)
     return t
 
 def t_LABEL(t):
