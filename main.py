@@ -289,6 +289,7 @@ class Frame(wx.Frame):
         self.last_time = time.time()
         self.last_refresh = time.time()
         self._path = None
+        self._dirty = False
         self.program = None
         self.running = False
         self.step_power = 0
@@ -305,6 +306,7 @@ class Frame(wx.Frame):
         self.panel.SetSizerAndFit(sizer)
         self.Fit()
         self.SetTitle('DCPU-16 Emulator')
+        self.Bind(wx.EVT_CLOSE, self.on_close)
         wx.CallAfter(self.on_timer)
         args = sys.argv[1:]
         if len(args) == 1:
@@ -314,11 +316,54 @@ class Frame(wx.Frame):
         return self._path
     @path.setter
     def path(self, path):
-        self._path = path
-        if path:
-            self.SetTitle('DCPU-16 Emulator - %s' % path)
+        if path != self._path:
+            self._path = path
+            self.update_title()
+    @property
+    def dirty(self):
+        return self._dirty
+    @dirty.setter
+    def dirty(self, dirty):
+        if dirty != self._dirty:
+            self._dirty = dirty
+            self.update_title()
+    def update_title(self):
+        tokens = []
+        if self.dirty:
+            tokens.append('* ')
+        tokens.append('DCPU-16 Emulator')
+        if self.path:
+            tokens.append(' - %s' % self.path)
+        title = ''.join(tokens)
+        self.SetTitle(title)
+    def check_dirty(self, can_veto=True):
+        if not self.dirty:
+            return True
+        path = self.path or '(Untitled)'
+        style = wx.YES_NO | wx.YES_DEFAULT | wx.ICON_QUESTION
+        if can_veto:
+            style |= wx.CANCEL
+        dialog = wx.MessageDialog(self, 'Save changes to file %s?' % path,
+            'Save Changes?', style)
+        result = dialog.ShowModal()
+        dialog.Destroy()
+        if result == wx.ID_YES:
+            if self.path:
+                self.on_save(None)
+                return True
+            else:
+                return self.on_save_as(None)
+        elif result == wx.ID_NO:
+            return True
         else:
-            self.SetTitle('DCPU-16 Emulator')
+            return False
+    def on_close(self, event):
+        can_veto = event.CanVeto()
+        veto = not self.check_dirty(can_veto)
+        if veto and can_veto:
+            event.Veto()
+            return
+        event.Skip()
     def create_menu(self):
         menubar = wx.MenuBar()
         # File
@@ -408,14 +453,17 @@ class Frame(wx.Frame):
         self.panel.Layout()
     def reset(self):
         self.path = None
+        self.dirty = False
         self.running = False
         self.program = None
         self.emu.reset()
         self.program_list.update([])
         self.refresh_debug_info()
     def on_new(self, event):
+        if not self.check_dirty():
+            return
         self.reset()
-        self.editor.SetValue('')
+        self.editor.ChangeValue('')
     def open_file(self, path):
         try:
             self.reset()
@@ -423,7 +471,7 @@ class Frame(wx.Frame):
             self.program = assembler.open_file(path)
             self.emu.load(self.program.assemble())
             self.program_list.update(self.program.instructions)
-            self.editor.SetValue(self.program.text)
+            self.editor.ChangeValue(self.program.text)
             self.refresh_debug_info()
         except Exception as e:
             self.reset()
@@ -432,6 +480,8 @@ class Frame(wx.Frame):
             dialog.ShowModal()
             dialog.Destroy()
     def on_open(self, event):
+        if not self.check_dirty():
+            return
         dialog = wx.FileDialog(self, 'Open',
             style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
         if dialog.ShowModal() == wx.ID_OK:
@@ -446,12 +496,16 @@ class Frame(wx.Frame):
     def on_save_as(self, event):
         dialog = wx.FileDialog(self, 'Save As', wildcard='*.dasm',
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
-        if dialog.ShowModal() == wx.ID_OK:
+        result = dialog.ShowModal()
+        dialog.Destroy()
+        if result == wx.ID_OK:
             path = dialog.GetPath()
             with open(path, 'w') as fp:
                 fp.write(self.editor.GetValue())
             self.path = path
-        dialog.Destroy()
+            return True
+        else:
+            return False
     def save_binary(self, path):
         words = self.program.assemble()
         data = []
@@ -516,6 +570,9 @@ class Frame(wx.Frame):
             wx.CallAfter(self.editor.SetFocus)
         else:
             wx.CallAfter(self.canvas.SetFocus)
+    def on_text(self, event):
+        event.Skip()
+        self.dirty = True
     def update(self, dt):
         if self.running:
             cycles = int(dt * self.cycles_per_second)
@@ -579,6 +636,7 @@ class Frame(wx.Frame):
     def create_editor(self, parent):
         panel = wx.Panel(parent)
         self.editor = Editor(panel)
+        self.editor.Bind(wx.EVT_TEXT, self.on_text)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.editor, 1, wx.EXPAND | wx.ALL, 5)
         panel.SetSizer(sizer)
