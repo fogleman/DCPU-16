@@ -13,6 +13,10 @@ class cEmulator(Structure):
         ('lem1802_font', c_ushort),
         ('lem1802_palette', c_ushort),
         ('lem1802_border', c_ushort),
+        ('keyboard_buffer', c_ubyte * 16),
+        ('keyboard_pressed', c_uint * 256),
+        ('keyboard_pointer', c_ushort),
+        ('keyboard_message', c_ushort),
     ]
 
 ATTRS = set([x[0] for x in cEmulator._fields_])
