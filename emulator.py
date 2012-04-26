@@ -5,7 +5,8 @@ dll = CDLL('_emulator')
 class cEmulator(Structure):
     _fields_ = [
         ('ram', c_ushort * 0x10010),
-        ('skip', c_uint),
+        ('skip', c_ushort),
+        ('halt', c_ushort),
         ('cycle', c_ulonglong),
         ('lem_screen', c_ushort),
         ('lem_font', c_ushort),

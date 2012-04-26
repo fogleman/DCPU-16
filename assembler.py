@@ -35,6 +35,7 @@ BASIC_OPCODES = {
 
 SPECIAL_OPCODES = {
     'JSR': 0x01,
+    'BRK': 0x02,
     'INT': 0x08,
     'IAG': 0x09,
     'IAS': 0x0a,
@@ -177,8 +178,8 @@ class SpecialInstruction(object):
         return result
     def pretty(self, previous):
         op = REV_SPECIAL_OPCODES[self.op]
-        src = self.src.pretty()
-        return '    %s %s' % (op, src)
+        src = self.src.pretty() if op != 'BRK' else ''
+        return ('    %s %s' % (op, src)).rstrip()
 
 class DstOperand(object):
     def __init__(self, value, word=None):
@@ -299,6 +300,10 @@ def p_instruction_data(t):
 def p_instruction_label(t):
     'instruction : LABEL'
     t[0] = Label(t[1])
+
+def p_instruction_break(t):
+    'instruction : BRK'
+    t[0] = SpecialInstruction(SPECIAL_OPCODES['BRK'], SrcOperand(0))
 
 def p_instruction_basic(t):
     'instruction : basic_opcode dst_operand src_operand'

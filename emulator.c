@@ -21,6 +21,7 @@
 #define IA (emulator->ram[IA_ADDR])
 #define LT (emulator->ram[LT_ADDR])
 #define SKIP (emulator->skip)
+#define HALT (emulator->halt)
 #define CYCLE (emulator->cycle)
 
 // Basic Opcodes
@@ -54,6 +55,7 @@
 
 // Non Basic Opcodes
 #define JSR 0x01
+#define BRK 0x02
 #define INT 0x08
 #define IAG 0x09
 #define IAS 0x0a
@@ -115,7 +117,8 @@ unsigned short LEM_PALETTE[] = {
 typedef struct {
     // DCPU-16
     unsigned short ram[EXT_SIZE];
-    unsigned int skip;
+    unsigned short skip;
+    unsigned short halt;
     unsigned long long int cycle;
     // LEM
     unsigned short lem_screen;
@@ -142,6 +145,7 @@ void reset(Emulator *emulator) {
         RAM(i) = 0;
     }
     SKIP = 0;
+    HALT = 0;
     CYCLE = 0;
     // LEM
     emulator->lem_screen = 0;
@@ -566,6 +570,10 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
             PC = ram;
             CYCLES(3);
             break;
+        case BRK:
+            HALT = 1;
+            CYCLES(1);
+            break;
         case INT:
             if (IA) {
                 interrupt(emulator, ram);
@@ -636,6 +644,9 @@ void step(Emulator *emulator) {
 void n_steps(Emulator *emulator, unsigned int steps) {
     for (unsigned int i = 0; i < steps; i++) {
         step(emulator);
+        if (HALT) {
+            break;
+        }
     }
 }
 
@@ -643,6 +654,9 @@ void n_cycles(Emulator *emulator, unsigned int cycles) {
     unsigned long long int cycle = CYCLE + cycles;
     while (CYCLE < cycle) {
         step(emulator);
+        if (HALT) {
+            break;
+        }
     }
 }
 

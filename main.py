@@ -551,9 +551,10 @@ class Frame(wx.Frame):
         self.running = False
         self.refresh_debug_info()
     def on_step(self, event):
-        steps = 10 ** self.step_power
-        self.emu.n_steps(steps)
-        self.refresh_debug_info()
+        if not self.running:
+            steps = 10 ** self.step_power
+            self.emu.n_steps(steps)
+            self.refresh_debug_info()
     def on_step_power(self, event, power):
         self.step_power = power
     def on_clock_rate(self, event, power):
@@ -577,6 +578,9 @@ class Frame(wx.Frame):
         if self.running:
             cycles = int(dt * self.cycles_per_second)
             self.emu.n_cycles(cycles)
+            if self.emu.halt:
+                self.running = False
+                self.refresh_debug_info()
     def refresh(self):
         self.canvas.Refresh()
         self.canvas.Update()
