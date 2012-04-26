@@ -547,6 +547,7 @@ void on_hwi(Emulator *emulator, unsigned short index) {
             on_keyboard(emulator);
             break;
         case CLOCK:
+            on_clock(emulator);
             break;
     }
 }
