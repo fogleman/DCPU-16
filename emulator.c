@@ -375,6 +375,7 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
             break;
         default:
             CYCLES(1);
+            break;
     }
 }
 
@@ -473,8 +474,8 @@ void on_hwi(Emulator *emulator, unsigned short index) {
 
 void special_instruction(Emulator *emulator, unsigned char opcode, 
     unsigned char op_dst) {
-    unsigned int dst = operand(emulator, op_dst, false);
-    unsigned int ram = RAM(dst);
+    int dst = operand(emulator, op_dst, false);
+    int ram = RAM(dst);
     if (SKIP) {
         SKIP = 0;
         return;
@@ -526,6 +527,7 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
             break;
         default:
             CYCLES(1);
+            break;
     }
 }
 

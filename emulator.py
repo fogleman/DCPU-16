@@ -17,14 +17,13 @@ class cEmulator(Structure):
         ('keyboard_message', c_ushort),
     ]
 
-ATTRS = set([x[0] for x in cEmulator._fields_])
-
 class Emulator(object):
     def __init__(self):
+        self.attrs = set(x[0] for x in cEmulator._fields_)
         self.emulator = cEmulator()
         self.reset()
     def __getattr__(self, name):
-        if name in ATTRS:
+        if name in self.attrs:
             return getattr(self.emulator, name)
         return super(Emulator, self).__getattr__(name)
     def reset(self):
