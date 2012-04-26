@@ -2,6 +2,19 @@
 ; Renders a 64x64 field by writing characters
 ; on a 16x8 grid
 
+; map screen
+SET A 0
+SET B 0x8000
+HWI 0
+; map font
+SET A 1
+SET B 0x8180
+HWI 0
+; border color
+SET A 3
+SET B 0x4
+HWI 0
+
 ADD PC, 1
 :randseed  
 dat 0xACE1 ; change to get different initial states

@@ -1,3 +1,8 @@
+; map screen
+SET A 0
+SET B 0x8000
+HWI 0
+
 set z, 0x1234 ; rand_seed
 set y, z ; cur_rand
 set pc, main_loop
