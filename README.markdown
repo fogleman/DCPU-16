@@ -1,13 +1,18 @@
-## DCPU-16 Emulator v1.3
+## DCPU-16 Emulator v1.4
 
 ### Download (Windows Installer)
 
 http://www.michaelfogleman.com/static/dcpu16-setup.exe
 
-### Links to Implemented Specifications
+### Implemented Specifications
 
-- DCPU-16 1.3: http://dcpu.com/highnerd/dcpu16_1_3.txt
-- LEM1802: http://dcpu.com/highnerd/lem1802.txt
+- DCPU-16 1.4: http://dcpu.com/highnerd/rc_1/dcpu16.txt
+- LEM1802: http://dcpu.com/highnerd/rc_1/lem1802.txt
+- Generic Keyboard: http://dcpu.com/highnerd/rc_1/keyboard.txt
+
+### Not Yet Implemented Specifications
+
+- Generic Clock: http://dcpu.com/highnerd/rc_1/clock.txt
 
 ### Screenshots
 
@@ -25,7 +30,7 @@ Quickly get up and running for most programs using this code at the beginning.
     SET A 0
     SET B 0x8000
     HWI 0
-    ; map font
+    ; map font (only if using a custom font)
     SET A 1
     SET B 0x8180
     HWI 0
