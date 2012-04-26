@@ -31,13 +31,13 @@
 #define DIV 0x06
 #define DVI 0x07
 #define MOD 0x08
-#define AND 0x09
-#define BOR 0x0a
-#define XOR 0x0b
-#define SHR 0x0c
-#define ASR 0x0d
-#define SHL 0x0e
-#define STI 0x0f
+#define MDI 0x09
+#define AND 0x0a
+#define BOR 0x0b
+#define XOR 0x0c
+#define SHR 0x0d
+#define ASR 0x0e
+#define SHL 0x0f
 #define IFB 0x10
 #define IFC 0x11
 #define IFE 0x12
@@ -48,12 +48,16 @@
 #define IFU 0x17
 #define ADX 0x1a
 #define SUX 0x1b
+#define STI 0x1e
+#define STD 0x1f
 
 // Non Basic Opcodes
 #define JSR 0x01
 #define INT 0x08
 #define IAG 0x09
 #define IAS 0x0a
+#define IAP 0x0b
+#define IAQ 0x0c
 #define HWN 0x10
 #define HWQ 0x11
 #define HWI 0x12
@@ -279,6 +283,15 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
             }
             CYCLES(3);
             break;
+        case MDI:
+            if (src) {
+                RAM(dst) = (sram % ssrc) % SIZE;
+            }
+            else {
+                RAM(dst) = 0;
+            }
+            CYCLES(3);
+            break;
         case AND:
             RAM(dst) = (ram & src) % SIZE;
             CYCLES(1);
@@ -304,12 +317,6 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
         case SHL:
             EX = ((ram << src) >> 16) % SIZE;
             RAM(dst) = (ram << src) % SIZE;
-            CYCLES(2);
-            break;
-        case STI:
-            RAM(dst) = src;
-            REG(6)++;
-            REG(7)++;
             CYCLES(2);
             break;
         case IFB:
@@ -353,6 +360,18 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
             RAM(dst) = divmod(ram - src + EX, &quo);
             EX = quo ? MAX_VALUE : 0;
             CYCLES(3);
+            break;
+        case STI:
+            RAM(dst) = src;
+            REG(6)++;
+            REG(7)++;
+            CYCLES(2);
+            break;
+        case STD:
+            RAM(dst) = src;
+            REG(6)--;
+            REG(7)--;
+            CYCLES(2);
             break;
         default:
             CYCLES(1);
@@ -482,6 +501,16 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
         case IAS:
             IA = ram;
             CYCLES(1);
+            break;
+        case IAP:
+            if (IA) {
+                RAM(--SP) = IA;
+                IA = REG(0);
+            }
+            CYCLES(3);
+            break;
+        case IAQ:
+            CYCLES(2);
             break;
         case HWN:
             RAM(dst) = N_DEVICES;
