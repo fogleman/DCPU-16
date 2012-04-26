@@ -232,18 +232,18 @@ class Canvas(wx.Panel):
             fore = back
         return character, back, fore
     def draw_screen(self, dc):
-        address = self.emu.lem1802_screen
+        address = self.emu.lem_screen
         if not address:
             self.cache = {}
             dc.SetBackground(wx.BLACK_BRUSH)
             dc.Clear()
             return wx.BLACK_BRUSH
-        font_address = self.emu.lem1802_font
+        font_address = self.emu.lem_font
         if font_address:
             font = self.emu.ram[font_address : font_address + 256]
         else:
             font = FONT
-        palette_address = self.emu.lem1802_palette
+        palette_address = self.emu.lem_palette
         if palette_address:
             palette = self.emu.ram[palette_address : palette_address + 16]
         else:
@@ -268,7 +268,7 @@ class Canvas(wx.Panel):
                     self.draw_character(dc, x, y, brushes[back],
                         brushes[fore], bitmap)
                 address += 1
-        return brushes[self.emu.lem1802_border & 0xf]
+        return brushes[self.emu.lem_border & 0xf]
     def draw_character(self, dc, x, y, back, fore, bitmap):
         mask = 1
         for i in xrange(3, -1, -1):

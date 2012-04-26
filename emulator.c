@@ -65,12 +65,12 @@
 
 // Hardware
 #define N_DEVICES 3
-#define LEM1802 0
+#define LEM 0
 #define KEYBOARD 1
 #define CLOCK 2
 
 // Default Font
-unsigned short LEM1802_FONT[] = {
+unsigned short LEM_FONT[] = {
     0xb79e, 0x388e, 0x722c, 0x75f4, 0x19bb, 0x7f8f, 0x85f9, 0xb158,
     0x242e, 0x2400, 0x082a, 0x0800, 0x0008, 0x0000, 0x0808, 0x0808,
     0x00ff, 0x0000, 0x00f8, 0x0808, 0x08f8, 0x0000, 0x080f, 0x0000,
@@ -106,7 +106,7 @@ unsigned short LEM1802_FONT[] = {
 };
 
 // Default Palette
-unsigned short LEM1802_PALETTE[] = {
+unsigned short LEM_PALETTE[] = {
     0x0000, 0x000a, 0x00a0, 0x00aa, 0x0a00, 0x0a0a, 0x0a50, 0x0aaa,
     0x0555, 0x055f, 0x05f5, 0x05ff, 0x0f55, 0x0f5f, 0x0ff5, 0x0fff,
 };
@@ -117,11 +117,11 @@ typedef struct {
     unsigned short ram[EXT_SIZE];
     unsigned int skip;
     unsigned long long int cycle;
-    // LEM1802
-    unsigned short lem1802_screen;
-    unsigned short lem1802_font;
-    unsigned short lem1802_palette;
-    unsigned short lem1802_border;
+    // LEM
+    unsigned short lem_screen;
+    unsigned short lem_font;
+    unsigned short lem_palette;
+    unsigned short lem_border;
     // KEYBOARD
     unsigned char keyboard_buffer[16];
     unsigned char keyboard_pressed[256];
@@ -143,11 +143,11 @@ void reset(Emulator *emulator) {
     }
     SKIP = 0;
     CYCLE = 0;
-    // LEM1802
-    emulator->lem1802_screen = 0;
-    emulator->lem1802_font = 0;
-    emulator->lem1802_palette = 0;
-    emulator->lem1802_border = 0;
+    // LEM
+    emulator->lem_screen = 0;
+    emulator->lem_font = 0;
+    emulator->lem_palette = 0;
+    emulator->lem_border = 0;
     // KEYBOARD
     for (unsigned int i = 0; i < 16; i++) {
         emulator->keyboard_buffer[i] = 0;
@@ -436,32 +436,32 @@ void interrupt(Emulator *emulator, unsigned short message) {
     }
 }
 
-void on_lem1802(Emulator *emulator) {
+void on_lem(Emulator *emulator) {
     unsigned short address;
     switch (REG(0)) {
         case 0: // MEM_MAP_SCREEN
-            emulator->lem1802_screen = REG(1);
+            emulator->lem_screen = REG(1);
             break;
         case 1: // MEM_MAP_FONT
-            emulator->lem1802_font = REG(1);
+            emulator->lem_font = REG(1);
             break;
         case 2: // MEM_MAP_PALETTE
-            emulator->lem1802_palette = REG(1);
+            emulator->lem_palette = REG(1);
             break;
         case 3: // SET_BORDER_COLOR
-            emulator->lem1802_border = REG(1);
+            emulator->lem_border = REG(1);
             break;
         case 4: // DUMP_FONT
             address = REG(1);
             for (unsigned int i = 0; i < 256; i++) {
-                RAM(address++) = LEM1802_FONT[i];
+                RAM(address++) = LEM_FONT[i];
             }
             CYCLES(256);
             break;
         case 5: // DUMP_PALETTE
             address = REG(1);
             for (unsigned int i = 0; i < 16; i++) {
-                RAM(address++) = LEM1802_PALETTE[i];
+                RAM(address++) = LEM_PALETTE[i];
             }
             CYCLES(16);
             break;
@@ -514,7 +514,7 @@ void on_clock(Emulator *emulator) {
 
 void on_hwq(Emulator *emulator, unsigned short index) {
     switch (index) {
-        case LEM1802:
+        case LEM:
             REG(0) = 0xf615;
             REG(1) = 0x7349;
             REG(2) = 0x1802;
@@ -540,8 +540,8 @@ void on_hwq(Emulator *emulator, unsigned short index) {
 
 void on_hwi(Emulator *emulator, unsigned short index) {
     switch (index) {
-        case LEM1802:
-            on_lem1802(emulator);
+        case LEM:
+            on_lem(emulator);
             break;
         case KEYBOARD:
             on_keyboard(emulator);
