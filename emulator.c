@@ -1,7 +1,7 @@
 // Constants
 #define SIZE 0x10000
 #define MAX_VALUE 0xffff
-#define EXT_SIZE 0x1000d
+#define EXT_SIZE 0x10010
 #define REG_ADDR 0x10000
 #define SP_ADDR 0x10008
 #define PC_ADDR 0x10009
@@ -10,6 +10,7 @@
 #define LT_ADDR 0x1000c
 
 // Helper Macros
+#define NEXT_TICK (emulator->cycle + 100000 * emulator->clock_rate / 60)
 #define CONDITIONAL(opcode) ((opcode) >= 0x10 && (opcode) <= 0x17)
 #define CYCLES(count) (emulator->cycle += (count))
 #define RAM(address) (emulator->ram[(address)])
@@ -68,11 +69,6 @@
 #define KEYBOARD 1
 #define CLOCK 2
 
-// Boolean
-#define bool unsigned int
-#define true 1
-#define false 0
-
 // Default Font
 unsigned short LEM1802_FONT[] = {
     0x000f, 0x0808, 0x080f, 0x0808, 0x08f8, 0x0808, 0x00ff, 0x0808,
@@ -119,7 +115,7 @@ unsigned short LEM1802_PALETTE[] = {
 typedef struct {
     // DCPU-16
     unsigned short ram[EXT_SIZE];
-    bool skip;
+    unsigned int skip;
     unsigned long long int cycle;
     // LEM1802
     unsigned short lem1802_screen;
@@ -128,10 +124,15 @@ typedef struct {
     unsigned short lem1802_border;
     // KEYBOARD
     unsigned char keyboard_buffer[16];
-    bool keyboard_pressed[256];
+    unsigned char keyboard_pressed[256];
     unsigned short keyboard_pointer;
     unsigned short keyboard_message;
     // CLOCK
+    unsigned long long int clock_cycle;
+    unsigned short clock_rate;
+    unsigned short clock_ticks;
+    unsigned short clock_message;
+    unsigned short dummy;
 } Emulator;
 
 // Emulator Functions
@@ -156,6 +157,11 @@ void reset(Emulator *emulator) {
     }
     emulator->keyboard_pointer = 0;
     emulator->keyboard_message = 0;
+    // CLOCK
+    emulator->clock_cycle = 0;
+    emulator->clock_rate = 0;
+    emulator->clock_ticks = 0;
+    emulator->clock_message = 0;
 }
 
 void load(Emulator *emulator, unsigned short *program, unsigned int length) {
@@ -167,9 +173,9 @@ void load(Emulator *emulator, unsigned short *program, unsigned int length) {
     }
 }
 
-int operand(Emulator *emulator, unsigned char x, bool dereference) {
+int operand(Emulator *emulator, unsigned char x, unsigned char dereference) {
     int result;
-    bool literal = false;
+    unsigned char literal = 0;
     if (x < 0x08) {
         result = REG_ADDR + x;
     }
@@ -219,18 +225,18 @@ int operand(Emulator *emulator, unsigned char x, bool dereference) {
         }
     }
     else if (x == 0x1f) {
-        literal = true;
+        literal = 1;
         result = RAM(PC++);
         if (!SKIP) {
             CYCLES(1);
         }
     }
     else if (x == 0x20) {
-        literal = true;
+        literal = 1;
         result = MAX_VALUE;
     }
     else {
-        literal = true;
+        literal = 1;
         result = x - 0x21;
     }
     if (literal && !dereference) {
@@ -254,8 +260,8 @@ int divmod(int x, int *quo) {
 
 void basic_instruction(Emulator *emulator, unsigned char opcode, 
     unsigned char op_dst, unsigned char op_src) {
-    int src = operand(emulator, op_src, true);
-    int dst = operand(emulator, op_dst, false);
+    int src = operand(emulator, op_src, 1);
+    int dst = operand(emulator, op_dst, 0);
     int ram = RAM(dst);
     short ssrc = (short)(unsigned short)src;
     short sram = (short)(unsigned short)ram;
@@ -490,6 +496,22 @@ void on_keyboard(Emulator *emulator) {
     }
 }
 
+void on_clock(Emulator *emulator) {
+    switch (REG(0)) {
+        case 0: // SET_RATE
+            emulator->clock_cycle = REG(1) ? NEXT_TICK : 0;
+            emulator->clock_rate = REG(1);
+            emulator->clock_ticks = 0;
+            break;
+        case 1: // GET_TICKS
+            REG(2) = emulator->clock_ticks;
+            break;
+        case 2: // ENABLE_INTERRUPTS
+            emulator->clock_message = REG(1);
+            break;
+    }
+}
+
 void on_hwq(Emulator *emulator, unsigned short index) {
     switch (index) {
         case LEM1802:
@@ -531,7 +553,7 @@ void on_hwi(Emulator *emulator, unsigned short index) {
 
 void special_instruction(Emulator *emulator, unsigned char opcode, 
     unsigned char op_dst) {
-    int dst = operand(emulator, op_dst, false);
+    int dst = operand(emulator, op_dst, 0);
     int ram = RAM(dst);
     if (SKIP) {
         SKIP = 0;
@@ -599,6 +621,15 @@ void step(Emulator *emulator) {
     else {
         special_instruction(emulator, dst, src);
     }
+    if (emulator->clock_rate) {
+        if (emulator->cycle >= emulator->clock_cycle) {
+            emulator->clock_ticks++;
+            emulator->clock_cycle = NEXT_TICK;
+            if (emulator->clock_message) {
+                interrupt(emulator, emulator->clock_message);
+            }
+        }
+    }
 }
 
 void n_steps(Emulator *emulator, unsigned int steps) {
@@ -615,14 +646,14 @@ void n_cycles(Emulator *emulator, unsigned int cycles) {
 }
 
 void on_key_down(Emulator *emulator, unsigned char key) {
-    emulator->keyboard_pressed[key] = true;
+    emulator->keyboard_pressed[key] = 1;
     if (emulator->keyboard_message) {
         interrupt(emulator, emulator->keyboard_message);
     }
 }
 
 void on_key_up(Emulator *emulator, unsigned char key) {
-    emulator->keyboard_pressed[key] = false;
+    emulator->keyboard_pressed[key] = 0;
     if (emulator->keyboard_message) {
         interrupt(emulator, emulator->keyboard_message);
     }

@@ -4,7 +4,7 @@ dll = CDLL('_emulator')
 
 class cEmulator(Structure):
     _fields_ = [
-        ('ram', c_ushort * 0x1000d),
+        ('ram', c_ushort * 0x10010),
         ('skip', c_uint),
         ('cycle', c_ulonglong),
         ('lem1802_screen', c_ushort),
@@ -12,9 +12,14 @@ class cEmulator(Structure):
         ('lem1802_palette', c_ushort),
         ('lem1802_border', c_ushort),
         ('keyboard_buffer', c_ubyte * 16),
-        ('keyboard_pressed', c_uint * 256),
+        ('keyboard_pressed', c_ubyte * 256),
         ('keyboard_pointer', c_ushort),
         ('keyboard_message', c_ushort),
+        ('clock_cycle', c_ulonglong),
+        ('clock_rate', c_ushort),
+        ('clock_ticks', c_ushort),
+        ('clock_message', c_ushort),
+        ('dummy', c_ushort),
     ]
 
 class Emulator(object):
