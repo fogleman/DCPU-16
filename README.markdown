@@ -2,7 +2,7 @@
 
 ### Download (Windows Installer)
 
-http://www.michaelfogleman.com/static/dcpu16-setup.exe
+http://static.michaelfogleman.com/static/dcpu16-setup.exe
 
 ### Implemented Specifications
 
