@@ -193,8 +193,8 @@ int divmod(int x, int *quo) {
 
 void basic_instruction(Emulator *emulator, unsigned char opcode, 
     unsigned char op_dst, unsigned char op_src) {
-    int src = operand(emulator, op_src, 1);
-    int dst = operand(emulator, op_dst, 0);
+    int src = operand(emulator, op_src, true);
+    int dst = operand(emulator, op_dst, false);
     int ram = RAM(dst);
     short ssrc = (short)(unsigned short)src;
     short sram = (short)(unsigned short)ram;
@@ -342,7 +342,16 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
     }
 }
 
-void lem1802(Emulator *emulator) {
+void interrupt(Emulator *emulator, unsigned short message) {
+    if (IA) {
+        RAM(--SP) = PC;
+        RAM(--SP) = REG(0);
+        PC = IA;
+        REG(0) = message;
+    }
+}
+
+void on_lem1802(Emulator *emulator) {
     switch (REG(0)) {
         case 0: // MEM_MAP_SCREEN
             emulator->lem1802_screen = REG(1);
@@ -359,7 +368,20 @@ void lem1802(Emulator *emulator) {
     }
 }
 
-void hardware_query(Emulator *emulator, unsigned short index) {
+void on_keyboard(Emulator *emulator) {
+    switch (REG(0)) {
+        case 0: // CLEAR_BUFFER
+            break;
+        case 1: // GET_CHARACTER
+            break;
+        case 2: // IS_PRESSED
+            break;
+        case 3: // ENABLE_INTERRUPTS
+            break;
+    }
+}
+
+void on_hwq(Emulator *emulator, unsigned short index) {
     switch (index) {
         case LEM1802:
             REG(0) = 0xf615;
@@ -385,12 +407,13 @@ void hardware_query(Emulator *emulator, unsigned short index) {
     }
 }
 
-void hardware_interrupt(Emulator *emulator, unsigned short index) {
+void on_hwi(Emulator *emulator, unsigned short index) {
     switch (index) {
         case LEM1802:
-            lem1802(emulator);
+            on_lem1802(emulator);
             break;
         case KEYBOARD:
+            on_keyboard(emulator);
             break;
         case CLOCK:
             break;
@@ -399,7 +422,7 @@ void hardware_interrupt(Emulator *emulator, unsigned short index) {
 
 void special_instruction(Emulator *emulator, unsigned char opcode, 
     unsigned char op_dst) {
-    unsigned int dst = operand(emulator, op_dst, 0);
+    unsigned int dst = operand(emulator, op_dst, false);
     unsigned int ram = RAM(dst);
     if (SKIP) {
         SKIP = 0;
@@ -413,10 +436,7 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
             break;
         case INT:
             if (IA) {
-                RAM(--SP) = PC;
-                RAM(--SP) = REG(0);
-                PC = IA;
-                REG(0) = ram;
+                interrupt(ram);
                 CYCLES(4);
             }
             else {
@@ -436,11 +456,11 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
             CYCLES(2);
             break;
         case HWQ:
-            hardware_query(emulator, ram);
+            on_hwq(emulator, ram);
             CYCLES(4);
             break;
         case HWI:
-            hardware_interrupt(emulator, ram);
+            on_hwi(emulator, ram);
             CYCLES(4);
             break;
     }
