@@ -224,6 +224,7 @@ tokens = [
     'HEX',
     'OCT',
     'STRING',
+    'CHAR',
     'INC',
     'DEC',
 ] + list(reserved)
@@ -244,6 +245,11 @@ def t_newline(t):
 def t_STRING(t):
     r'"[^"]*"'
     t.value = tuple(ord(x) for x in t.value[1:-1])
+    return t
+
+def t_CHAR(t):
+    r"'[^']'"
+    t.value = ord(t.value[1])
     return t
 
 def t_HEX(t):
@@ -428,7 +434,8 @@ def p_literal(t):
                | HEX
                | OCT
                | ID
-               | STRING'''
+               | STRING
+               | CHAR'''
     t[0] = t[1]
 
 def p_basic_opcode(t):
