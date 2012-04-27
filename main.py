@@ -451,9 +451,10 @@ class Frame(wx.Frame):
         for item in self.debug_controls:
             item.Show(show)
         self.panel.Layout()
-    def reset(self):
-        self.path = None
-        self.dirty = False
+    def reset(self, flags=True):
+        if flags:
+            self.path = None
+            self.dirty = False
         self.running = False
         self.program = None
         self.emu.reset()
@@ -531,13 +532,13 @@ class Frame(wx.Frame):
     def assemble(self):
         text = self.editor.GetValue()
         try:
-            self.reset()
+            self.reset(False)
             self.program = assembler.parse(text)
             self.emu.load(self.program.assemble())
             self.program_list.update(self.program.instructions)
             self.refresh_debug_info()
         except Exception as e:
-            self.reset()
+            self.reset(False)
             dialog = wx.MessageDialog(self, str(e), 'Error',
                 wx.ICON_ERROR | wx.OK)
             dialog.ShowModal()
