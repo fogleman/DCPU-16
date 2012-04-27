@@ -17,7 +17,47 @@ http://static.michaelfogleman.com/static/dcpu16-setup.exe
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/editor.png)
 
-![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/no_debug.png)
+### Assembler Features
+
+    ; String Literals
+    DAT "Here is some text.", 0 ; null-terminated string
+    
+    ; Character Literals
+    SET A 'a' ; A = 0x61
+    SET B 'A' ; B = 0x41
+    
+    ; Negative Numbers
+    SET A -1    ; A = 0xffff
+    SET B -0xff ; B = 0xff01
+    
+    ; Breakpoints
+    BRK
+    
+    ; Opcode Aliases
+    SET A POP
+    SET A [SP++] ; equivalent to POP
+    
+    SET PUSH A
+    SET [--SP] A ; equivalent to PUSH
+    
+    SET A PICK 1
+    SET A [SP + 1] ; equivalent to PICK 1
+    
+    SET A PEEK
+    SET A [SP] ; equivalent to PEEK
+    
+    ; Local Labels
+    :prefix
+      SET A 10
+    :.loop ; becomes prefix.loop
+      SUB A 1
+      IFE A 0
+        SET PC .done
+      SET PC .loop
+    :.done ; becomes prefix.done
+    
+    ; Fixed Labels
+    :screen @ 0x8000
 
 ### Upgrading from v1.1
 
