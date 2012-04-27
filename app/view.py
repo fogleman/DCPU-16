@@ -366,6 +366,10 @@ class Frame(wx.Frame):
         menubar.Append(menu, '&File')
         # Edit
         menu = wx.Menu()
+        menu_item(self, menu, 'Cut\tCtrl+X', self.on_cut)
+        menu_item(self, menu, 'Copy\tCtrl+C', self.on_copy)
+        menu_item(self, menu, 'Paste\tCtrl+V', self.on_paste)
+        menu_item(self, menu, 'Delete\tDel', self.on_delete)
         menu_item(self, menu, 'Select All\tCtrl+A', self.on_select_all)
         menubar.Append(menu, '&Edit')
         # Run
@@ -516,6 +520,14 @@ class Frame(wx.Frame):
             path = dialog.GetPath()
             self.save_binary(path)
         dialog.Destroy()
+    def on_cut(self, event):
+        self.editor.Cut()
+    def on_copy(self, event):
+        self.editor.Copy()
+    def on_paste(self, event):
+        self.editor.Paste()
+    def on_delete(self, event):
+        self.editor.DeleteSelection()
     def on_select_all(self, event):
         self.editor.SelectAll()
     def on_exit(self, event):
