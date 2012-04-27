@@ -2,6 +2,9 @@ import ply.lex as lex
 import ply.yacc as yacc
 import sys
 
+# Constants
+SIZE = 0x10000
+
 # Lookups
 BASIC_OPCODES = {
     'SET': 0x01,
@@ -219,6 +222,7 @@ tokens = [
     'ID',
     'DECIMAL',
     'HEX',
+    'OCT',
     'STRING',
     'INC',
     'DEC',
@@ -243,13 +247,18 @@ def t_STRING(t):
     return t
 
 def t_HEX(t):
-    r'0x[a-fA-F0-9]+'
-    t.value = int(t.value, 16)
+    r'\-?0x[a-fA-F0-9]+'
+    t.value = int(t.value, 16) % SIZE
+    return t
+
+def t_OCT(t):
+    r'\-?0\d+'
+    t.value = int(t.value, 8) % SIZE
     return t
 
 def t_DECIMAL(t):
-    r'\d+'
-    t.value = int(t.value)
+    r'\-?\d+'
+    t.value = int(t.value) % SIZE
     return t
 
 def t_LABEL(t):
@@ -417,6 +426,7 @@ def p_src_operand_literal(t):
 def p_literal(t):
     '''literal : DECIMAL
                | HEX
+               | OCT
                | ID
                | STRING'''
     t[0] = t[1]
