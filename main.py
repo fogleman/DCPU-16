@@ -491,9 +491,11 @@ class Frame(wx.Frame):
         dialog.Destroy()
     def on_save(self, event):
         if self.path is None:
+            self.on_save_as(None)
             return
         with open(self.path, 'w') as fp:
             fp.write(self.editor.GetValue())
+        self.dirty = False
     def on_save_as(self, event):
         dialog = wx.FileDialog(self, 'Save As', wildcard='*.dasm',
             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
@@ -504,6 +506,7 @@ class Frame(wx.Frame):
             with open(path, 'w') as fp:
                 fp.write(self.editor.GetValue())
             self.path = path
+            self.dirty = False
             return True
         else:
             return False
