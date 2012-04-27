@@ -1,4 +1,4 @@
-## DCPU-16 Emulator v1.5
+## DCPU-16 Emulator v1.7
 
 ### Download (Windows Installer)
 
@@ -6,14 +6,10 @@ http://static.michaelfogleman.com/static/dcpu16-setup.exe
 
 ### Implemented Specifications
 
-- DCPU-16 1.5: http://dcpu.com/highnerd/dcpu16_1_5.txt
+- DCPU-16 1.7: http://pastebin.com/raw.php?i=Q4JvQvnM
 - LEM1802: http://dcpu.com/highnerd/rc_1/lem1802.txt
 - Generic Keyboard: http://dcpu.com/highnerd/rc_1/keyboard.txt
 - Generic Clock: http://dcpu.com/highnerd/rc_1/clock.txt
-
-### Not Yet Implemented
-
-- IAQ Instruction
 
 ### Screenshots
 
