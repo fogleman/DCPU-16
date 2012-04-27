@@ -83,6 +83,10 @@ REV_REGISTERS = dict((v, k) for k, v in REGISTERS.items())
 REV_DST_CODES = dict((v, k) for k, v in DST_CODES.items())
 REV_SRC_CODES = dict((v, k) for k, v in SRC_CODES.items())
 
+# Helper Functions
+def pretty_value(x):
+    return '%d' % x if x <= 0xff else '0x%04x' % x
+
 # Classes
 class Program(object):
     def __init__(self, instructions):
@@ -185,25 +189,45 @@ class SpecialInstruction(object):
         src = self.src.pretty() if op != 'BRK' else ''
         return ('    %s %s' % (op, src)).rstrip()
 
-class DstOperand(object):
-    def __init__(self, value, word=None):
+class Operand(object):
+    def __init__(self, codes, value, word=None):
+        self.codes = codes
         self.value = value
         self.word = word
         self.size = int(word is not None)
     def assemble(self, lookup):
         return [] if self.word is None else [lookup.get(self.word, self.word)]
     def pretty(self):
-        return pretty_operand(self.value, self.word, REV_DST_CODES)
+        x = self.value
+        word = self.word
+        if isinstance(word, int):
+            word = pretty_value(word)
+        if x in REV_REGISTERS:
+            return REV_REGISTERS[x]
+        elif x - 0x08 in REV_REGISTERS:
+            return '[%s]' % REV_REGISTERS[x - 0x08]
+        elif x - 0x10 in REV_REGISTERS:
+            return '[%s + %s]' % (REV_REGISTERS[x - 0x10], word)
+        elif x in self.codes:
+            return self.codes[x]
+        elif x == 0x1a:
+            return 'PICK %s' % word
+        elif x == 0x1e:
+            return '[%s]' % word
+        elif x == 0x1f:
+            return '%s' % word
+        elif x == 0x20:
+            return pretty_value(0xffff)
+        elif x >= 0x21:
+            return pretty_value(x - 0x21)
 
-class SrcOperand(object):
-    def __init__(self, value, word=None):
-        self.value = value
-        self.word = word
-        self.size = int(word is not None)
-    def assemble(self, lookup):
-        return [] if self.word is None else [lookup.get(self.word, self.word)]
-    def pretty(self):
-        return pretty_operand(self.value, self.word, REV_SRC_CODES)
+class DstOperand(Operand):
+    def __init__(self, *args):
+        super(DstOperand, self).__init__(REV_DST_CODES, *args)
+
+class SrcOperand(Operand):
+    def __init__(self, *args):
+        super(SrcOperand, self).__init__(REV_SRC_CODES, *args)
 
 # Lexer Rules
 reserved = set(
@@ -479,7 +503,7 @@ p_src_code.__doc__ = ('src_code : %s' %
 def p_error(t):
     raise Exception(t)
 
-# Parsing Functions
+# Assembler Functions
 def open_file(path):
     extensions = ['.dasm', '.dasm16']
     if any(ext in path for ext in extensions):
@@ -517,31 +541,6 @@ def pretty_file(path):
     with open(path) as fp:
         text = fp.read()
     return pretty(text)
-
-def pretty_value(x):
-    return '%d' % x if x <= 0xff else '0x%04x' % x
-
-def pretty_operand(x, word, codes):
-    if isinstance(word, int):
-        word = pretty_value(word)
-    if x in REV_REGISTERS:
-        return REV_REGISTERS[x]
-    elif x - 0x08 in REV_REGISTERS:
-        return '[%s]' % REV_REGISTERS[x - 0x08]
-    elif x - 0x10 in REV_REGISTERS:
-        return '[%s + %s]' % (REV_REGISTERS[x - 0x10], word)
-    elif x in codes:
-        return codes[x]
-    elif x == 0x1a:
-        return 'PICK %s' % word
-    elif x == 0x1e:
-        return '[%s]' % word
-    elif x == 0x1f:
-        return '%s' % word
-    elif x == 0x20:
-        return pretty_value(0xffff)
-    elif x >= 0x21:
-        return pretty_value(x - 0x21)
 
 # Disassembler Functions
 def disassemble(words):
