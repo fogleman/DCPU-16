@@ -91,10 +91,11 @@ class Program(object):
         self.lookup = {}
         self.size = 0
         for instruction in instructions:
-            instruction.offset = self.size
+            if instruction.offset is None:
+                instruction.offset = self.size
+                self.size += instruction.size
             if isinstance(instruction, Label):
                 self.lookup[instruction.name] = instruction.offset
-            self.size += instruction.size
     def assemble(self):
         result = []
         for instruction in self.instructions:
@@ -128,10 +129,10 @@ class Data(object):
         return '    DAT %s' % data
 
 class Label(object):
-    def __init__(self, name):
+    def __init__(self, name, offset=None):
         self.name = name
         self.size = 0
-        self.offset = None
+        self.offset = offset
         self.conditional = False
     def assemble(self, lookup):
         return []
@@ -227,6 +228,7 @@ tokens = [
     'CHAR',
     'INC',
     'DEC',
+    'AT'
 ] + list(reserved)
 
 t_ignore = ' \t\r,'
@@ -237,6 +239,7 @@ t_DEC = r'\-\-'
 t_LBRACK = r'\['
 t_RBRACK = r'\]'
 t_PLUS = r'\+'
+t_AT = r'\@'
 
 def t_newline(t):
     r'\n+'
@@ -318,9 +321,13 @@ def p_instruction_data(t):
     'instruction : DAT data'
     t[0] = Data(t[2])
 
-def p_instruction_label(t):
+def p_instruction_label1(t):
     'instruction : LABEL'
     t[0] = Label(t[1])
+
+def p_instruction_label2(t):
+    'instruction : LABEL AT literal'
+    t[0] = Label(t[1], t[3])
 
 def p_instruction_break(t):
     'instruction : BRK'
