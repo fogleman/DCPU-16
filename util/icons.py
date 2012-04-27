@@ -1,5 +1,6 @@
-import os
 import base64
+import os
+import sys
 
 EXTENSIONS = set([
     '.png',
@@ -38,4 +39,8 @@ def generate(folder):
             print
 
 if __name__ == '__main__':
-    generate('.')
+    args = sys.argv[1:]
+    if len(args) == 1:
+        generate(args[0])
+    else:
+        print 'Usage: python icons.py folder_name'

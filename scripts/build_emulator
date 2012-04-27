@@ -1,3 +1,0 @@
-gcc -std=c99 -O3 -c -o _emulator.o emulator.c
-gcc -shared -o _emulator _emulator.o
-rm _emulator.o
