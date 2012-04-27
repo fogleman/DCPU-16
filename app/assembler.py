@@ -268,18 +268,24 @@ def t_DECIMAL(t):
     return t
 
 def t_LABEL(t):
-    r':[a-zA-Z_][a-zA-Z_0-9]*'
+    r':\.?[a-zA-Z_][a-zA-Z_0-9]*'
     t.value = t.value[1:]
+    if t.value[0] == '.':
+        t.value = '%s%s' % (t.lexer.label_prefix, t.value)
+    else:
+        t.lexer.label_prefix = t.value
     return t
 
 def t_ID(t):
-    r'[a-zA-Z_][a-zA-Z_0-9]*'
+    r'\.?[a-zA-Z_][a-zA-Z_0-9]*'
     upper = t.value.upper()
     if upper in reserved:
         t.type = upper
         t.value = upper
     else:
         t.type = 'ID'
+        if t.value[0] == '.':
+            t.value = '%s%s' % (t.lexer.label_prefix, t.value)
     return t
 
 def t_error(t):
@@ -476,6 +482,7 @@ def open_file(path):
 
 def parse(text):
     lexer = lex.lex()
+    lexer.label_prefix = None
     parser = yacc.yacc(debug=False, write_tables=False)
     program = parser.parse(text, lexer=lexer)
     program.text = text
