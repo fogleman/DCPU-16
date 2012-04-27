@@ -44,7 +44,6 @@ class Editor(rt.RichTextCtrl):
     def init_style(self):
         attr = rt.RichTextAttr()
         attr.SetFlags(
-            rt.TEXT_ATTR_TEXT_COLOUR |
             rt.TEXT_ATTR_FONT_FACE |
             rt.TEXT_ATTR_FONT_SIZE)
         attr.SetFontFaceName('Courier New')
@@ -52,7 +51,9 @@ class Editor(rt.RichTextCtrl):
         self.SetBasicStyle(attr)
     def reset_style(self, start, end):
         attr = rt.RichTextAttr()
-        attr.SetFlags(rt.TEXT_ATTR_TEXT_COLOUR)
+        attr.SetFlags(
+            rt.TEXT_ATTR_TEXT_COLOUR |
+            rt.TEXT_ATTR_FONT_WEIGHT)
         attr.SetTextColour(wx.Colour(*COMMENT))
         self.SetStyle(rt.RichTextRange(start, end), attr)
     def colorize(self, line=None):
@@ -78,16 +79,16 @@ class Editor(rt.RichTextCtrl):
             end = offset + lexer.lexpos
             rng = rt.RichTextRange(start, end)
             color = None
-            weight = None
+            bold = False
             if token.type in assembler.BASIC_OPCODES:
                 color = OPCODE
-                weight = wx.BOLD
+                bold = True
             elif token.type in assembler.SPECIAL_OPCODES:
                 color = OPCODE
-                weight = wx.BOLD
+                bold = True
             elif token.type == 'DAT':
                 color = OPCODE
-                weight = wx.BOLD
+                bold = True
             elif token.type in assembler.REGISTERS:
                 color = OPERAND
             elif token.type in assembler.SRC_CODES:
@@ -102,7 +103,7 @@ class Editor(rt.RichTextCtrl):
                 color = STRING
             elif token.type in ['INC', 'DEC', 'LBRACK', 'RBRACK', 'PLUS', 'AT']:
                 color = SYMBOL
-                weight = wx.BOLD
+                bold = True
             elif token.type == 'LABEL':
                 color = LABEL
             elif token.type == 'ID':
@@ -111,12 +112,12 @@ class Editor(rt.RichTextCtrl):
                 color = UNKNOWN
             attr = rt.RichTextAttr()
             flags = 0
-            if color is not None:
+            if color:
                 flags |= rt.TEXT_ATTR_TEXT_COLOUR
                 attr.SetTextColour(wx.Colour(*color))
-            if weight is not None:
+            if bold:
                 flags |= rt.TEXT_ATTR_FONT_WEIGHT
-                attr.SetFontWeight(weight)
+                attr.SetFontWeight(wx.FONTWEIGHT_BOLD)
             attr.SetFlags(flags)
             self.SetStyle(rng, attr)
         self.EndSuppressUndo()
