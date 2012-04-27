@@ -59,7 +59,7 @@
 #define INT 0x08
 #define IAG 0x09
 #define IAS 0x0a
-#define IAP 0x0b
+#define RFI 0x0b
 #define IAQ 0x0c
 #define HWN 0x10
 #define HWQ 0x11
@@ -120,6 +120,9 @@ typedef struct {
     unsigned short skip;
     unsigned short halt;
     unsigned long long int cycle;
+    unsigned short interrupt_buffer[256];
+    unsigned short interrupt_index;
+    unsigned short interrupt_queueing;
     // LEM
     unsigned short lem_screen;
     unsigned short lem_font;
@@ -128,14 +131,13 @@ typedef struct {
     // KEYBOARD
     unsigned char keyboard_buffer[16];
     unsigned char keyboard_pressed[256];
-    unsigned short keyboard_pointer;
+    unsigned short keyboard_index;
     unsigned short keyboard_message;
     // CLOCK
     unsigned long long int clock_cycle;
     unsigned short clock_rate;
     unsigned short clock_ticks;
     unsigned short clock_message;
-    unsigned short dummy;
 } Emulator;
 
 // Emulator Functions
@@ -147,6 +149,11 @@ void reset(Emulator *emulator) {
     SKIP = 0;
     HALT = 0;
     CYCLE = 0;
+    for (unsigned int i = 0; i < 256; i++) {
+        emulator->interrupt_buffer[i] = 0;
+    }
+    emulator->interrupt_index = 0;
+    emulator->interrupt_queueing = 0;
     // LEM
     emulator->lem_screen = 0;
     emulator->lem_font = 0;
@@ -159,7 +166,7 @@ void reset(Emulator *emulator) {
     for (unsigned int i = 0; i < 256; i++) {
         emulator->keyboard_pressed[i] = 0;
     }
-    emulator->keyboard_pointer = 0;
+    emulator->keyboard_index = 0;
     emulator->keyboard_message = 0;
     // CLOCK
     emulator->clock_cycle = 0;
@@ -359,17 +366,17 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
         case SHR:
             EX = ((ram << 16) >> src) % SIZE;
             RAM(dst) = (ram >> src) % SIZE;
-            CYCLES(2);
+            CYCLES(1);
             break;
         case ASR:
             EX = ((sram << 16) >> src) % SIZE;
             RAM(dst) = (sram >> src) % SIZE;
-            CYCLES(2);
+            CYCLES(1);
             break;
         case SHL:
             EX = ((ram << src) >> 16) % SIZE;
             RAM(dst) = (ram << src) % SIZE;
-            CYCLES(2);
+            CYCLES(1);
             break;
         case IFB:
             SKIP = (ram & src) != 0 ? 0 : 1;
@@ -432,11 +439,27 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
 }
 
 void interrupt(Emulator *emulator, unsigned short message) {
-    if (IA) {
-        RAM(--SP) = PC;
-        RAM(--SP) = REG(0);
-        PC = IA;
-        REG(0) = message;
+    if (emulator->interrupt_index < 256) {
+        emulator->interrupt_buffer[emulator->interrupt_index++] = message;
+    }
+}
+
+void do_interrupt(Emulator *emulator) {
+    if (emulator->interrupt_index) {
+        unsigned short message = emulator->interrupt_buffer[0];
+        for (unsigned int i = 1; i < 256; i++) {
+            emulator->interrupt_buffer[i - 1] =
+                emulator->interrupt_buffer[i];
+        }
+        emulator->interrupt_buffer[255] = 0;
+        emulator->interrupt_index--;
+        if (IA) {
+            emulator->interrupt_queueing = 1;
+            RAM(--SP) = PC;
+            RAM(--SP) = REG(0);
+            PC = IA;
+            REG(0) = message;
+        }
     }
 }
 
@@ -478,17 +501,20 @@ void on_keyboard(Emulator *emulator) {
             for (unsigned int i = 0; i < 16; i++) {
                 emulator->keyboard_buffer[i] = 0;
             }
-            emulator->keyboard_pointer = 0;
+            emulator->keyboard_index = 0;
             break;
         case 1: // GET_CHARACTER
-            REG(2) = emulator->keyboard_buffer[0];
-            if (REG(2)) {
+            if (emulator->keyboard_index) {
+                REG(2) = emulator->keyboard_buffer[0];
                 for (unsigned int i = 1; i < 16; i++) {
                     emulator->keyboard_buffer[i - 1] =
                         emulator->keyboard_buffer[i];
                 }
                 emulator->keyboard_buffer[15] = 0;
-                emulator->keyboard_pointer--;
+                emulator->keyboard_index--;
+            }
+            else {
+                REG(2) = 0;
             }
             break;
         case 2: // IS_PRESSED
@@ -575,13 +601,8 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
             CYCLES(1);
             break;
         case INT:
-            if (IA) {
-                interrupt(emulator, ram);
-                CYCLES(4);
-            }
-            else {
-                CYCLES(2);
-            }
+            interrupt(emulator, ram);
+            CYCLES(4);
             break;
         case IAG:
             RAM(dst) = IA;
@@ -591,14 +612,14 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
             IA = ram;
             CYCLES(1);
             break;
-        case IAP:
-            if (IA) {
-                RAM(--SP) = IA;
-                IA = REG(0);
-            }
+        case RFI:
+            emulator->interrupt_queueing = 0;
+            REG(0) = RAM(SP++);
+            PC = RAM(SP++);
             CYCLES(3);
             break;
         case IAQ:
+            emulator->interrupt_queueing = ram;
             CYCLES(2);
             break;
         case HWN:
@@ -639,6 +660,9 @@ void step(Emulator *emulator) {
             }
         }
     }
+    if (!emulator->interrupt_queueing) {
+        do_interrupt(emulator);
+    }
 }
 
 void n_steps(Emulator *emulator, unsigned int steps) {
@@ -675,11 +699,10 @@ void on_key_up(Emulator *emulator, unsigned char key) {
 }
 
 void on_char(Emulator *emulator, unsigned char key) {
-    if (emulator->keyboard_pointer > 15) {
-        return;
-    }
-    emulator->keyboard_buffer[emulator->keyboard_pointer++] = key;
-    if (emulator->keyboard_message) {
-        interrupt(emulator, emulator->keyboard_message);
+    if (emulator->keyboard_index < 16) {
+        emulator->keyboard_buffer[emulator->keyboard_index++] = key;
+        if (emulator->keyboard_message) {
+            interrupt(emulator, emulator->keyboard_message);
+        }
     }
 }

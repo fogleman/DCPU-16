@@ -8,19 +8,21 @@ class cEmulator(Structure):
         ('skip', c_ushort),
         ('halt', c_ushort),
         ('cycle', c_ulonglong),
+        ('interrupt_buffer', c_ushort * 256),
+        ('interrupt_index', c_ushort),
+        ('interrupt_queueing', c_ushort),
         ('lem_screen', c_ushort),
         ('lem_font', c_ushort),
         ('lem_palette', c_ushort),
         ('lem_border', c_ushort),
         ('keyboard_buffer', c_ubyte * 16),
         ('keyboard_pressed', c_ubyte * 256),
-        ('keyboard_pointer', c_ushort),
+        ('keyboard_index', c_ushort),
         ('keyboard_message', c_ushort),
         ('clock_cycle', c_ulonglong),
         ('clock_rate', c_ushort),
         ('clock_ticks', c_ushort),
         ('clock_message', c_ushort),
-        ('dummy', c_ushort),
     ]
 
 class Emulator(object):

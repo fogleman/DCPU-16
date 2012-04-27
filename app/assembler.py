@@ -42,7 +42,7 @@ SPECIAL_OPCODES = {
     'INT': 0x08,
     'IAG': 0x09,
     'IAS': 0x0a,
-    'IAP': 0x0b,
+    'RFI': 0x0b,
     'IAQ': 0x0c,
     'HWN': 0x10,
     'HWQ': 0x11,
