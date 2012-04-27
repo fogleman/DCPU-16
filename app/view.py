@@ -1,4 +1,5 @@
 import assembler
+import editor
 import functools
 import icons
 import sys
@@ -151,18 +152,6 @@ class ProgramList(wx.ListCtrl):
         if column == ProgramList.INDEX_CODE:
             return instruction.pretty(None).strip()
         return ''
-
-class Editor(wx.TextCtrl):
-    def __init__(self, parent):
-        style = wx.TE_MULTILINE | wx.TE_PROCESS_TAB | wx.TE_DONTWRAP
-        super(Editor, self).__init__(parent, style=style)
-        self.SetFont(make_font('Courier New', 9))
-        self.Bind(wx.EVT_CHAR, self.on_char)
-    def on_char(self, event):
-        if event.GetKeyCode() == wx.WXK_TAB:
-            self.WriteText('    ')
-        else:
-            event.Skip()
 
 class Canvas(wx.Panel):
     def __init__(self, parent, emu):
@@ -463,7 +452,7 @@ class Frame(wx.Frame):
         if not self.check_dirty():
             return
         self.reset()
-        self.editor.ChangeValue('')
+        self.editor.set_value('')
     def open_file(self, path):
         try:
             self.reset()
@@ -471,7 +460,7 @@ class Frame(wx.Frame):
             self.program = assembler.open_file(path)
             self.emu.load(self.program.assemble())
             self.program_list.update(self.program.instructions)
-            self.editor.ChangeValue(self.program.text)
+            self.editor.set_value(self.program.text)
             self.refresh_debug_info()
         except Exception as e:
             self.reset()
@@ -642,8 +631,8 @@ class Frame(wx.Frame):
         return notebook
     def create_editor(self, parent):
         panel = wx.Panel(parent)
-        self.editor = Editor(panel)
-        self.editor.Bind(wx.EVT_TEXT, self.on_text)
+        self.editor = editor.Editor(panel)
+        self.editor.Bind(editor.EVT_CONTROL_CHANGED, self.on_text)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.editor, 1, wx.EXPAND | wx.ALL, 5)
         panel.SetSizer(sizer)

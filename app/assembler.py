@@ -504,6 +504,18 @@ def p_error(t):
     raise Exception(t)
 
 # Assembler Functions
+def create_lexer():
+    lexer = lex.lex()
+    lexer.label_prefix = None
+    return lexer
+
+def create_parser():
+    parser = yacc.yacc(debug=False, write_tables=False)
+    return parser
+
+LEXER = create_lexer()
+PARSER = create_parser()
+
 def open_file(path):
     extensions = ['.dasm', '.dasm16']
     if any(ext in path for ext in extensions):
@@ -512,10 +524,7 @@ def open_file(path):
         return disassemble_file(path)
 
 def parse(text):
-    lexer = lex.lex()
-    lexer.label_prefix = None
-    parser = yacc.yacc(debug=False, write_tables=False)
-    program = parser.parse(text, lexer=lexer)
+    program = PARSER.parse(text, lexer=LEXER)
     program.text = text
     return program
 
