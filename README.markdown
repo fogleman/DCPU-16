@@ -15,7 +15,7 @@ http://static.michaelfogleman.com/static/dcpu16-setup.exe
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/debug.png)
 
-![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/editor.png)
+![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/syntax.png)
 
 ### Assembler Features
 
