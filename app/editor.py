@@ -1,4 +1,5 @@
 import assembler
+import sys
 import wx
 import wx.richtext as rt
 
@@ -78,18 +79,21 @@ class Editor(rt.RichTextCtrl):
             self.post_events = True
         self.stylize()
     def init_style(self):
+        size = 10
+        if sys.platform == 'darwin':
+            size = int(size * 1.5)
         attr = rt.RichTextAttr()
         attr.SetFlags(
-            rt.TEXT_ATTR_FONT_FACE |
-            rt.TEXT_ATTR_FONT_SIZE)
+            wx.TEXT_ATTR_FONT_FACE |
+            wx.TEXT_ATTR_FONT_SIZE)
         attr.SetFontFaceName('Courier New')
-        attr.SetFontSize(10)
+        attr.SetFontSize(size)
         self.SetBasicStyle(attr)
     def reset_style(self, start, end):
         attr = rt.RichTextAttr()
         attr.SetFlags(
-            rt.TEXT_ATTR_TEXT_COLOUR |
-            rt.TEXT_ATTR_FONT_WEIGHT)
+            wx.TEXT_ATTR_TEXT_COLOUR |
+            wx.TEXT_ATTR_FONT_WEIGHT)
         attr.SetTextColour(COMMENT.color)
         self.SetStyle(rt.RichTextRange(start, end), attr)
     def stylize(self, line=None):
@@ -118,10 +122,10 @@ class Editor(rt.RichTextCtrl):
             rng = rt.RichTextRange(start, end)
             style = self.styles.get(token.type, UNKNOWN)
             attr = rt.RichTextAttr()
-            flags = rt.TEXT_ATTR_TEXT_COLOUR
+            flags = wx.TEXT_ATTR_TEXT_COLOUR
             attr.SetTextColour(style.color)
             if style.bold:
-                flags |= rt.TEXT_ATTR_FONT_WEIGHT
+                flags |= wx.TEXT_ATTR_FONT_WEIGHT
                 attr.SetFontWeight(wx.FONTWEIGHT_BOLD)
             attr.SetFlags(flags)
             self.SetStyle(rng, attr)
