@@ -1,6 +1,10 @@
 import assembler
+import sys
 import wx
 import wx.stc as stc
+
+FONT = 'Courier New'
+SIZE = 14 if sys.platform == 'darwin' else 10
 
 class Style(object):
     instances = []
@@ -27,8 +31,7 @@ class Editor(stc.StyledTextCtrl):
         for style in Style.instances:
             self.StyleSetForeground(style.number, wx.Colour(*style.color))
             self.StyleSetBold(style.number, int(style.bold))
-            self.StyleSetFontAttr(style.number, 14,
-                'Bitstream Vera Sans Mono', 0, 0, 0)
+            self.StyleSetFontAttr(style.number, SIZE, FONT, 0, 0, 0)
         self.SetLexer(stc.STC_LEX_CONTAINER)
         self.SetMarginType(0, stc.STC_MARGIN_NUMBER)
         self.SetMarginWidth(1, 0)
@@ -90,7 +93,7 @@ class Editor(stc.StyledTextCtrl):
     def on_style_needed(self, event):
         start = self.GetFirstVisibleLine()
         end = self.LineFromPosition(event.GetPosition())
-        for line in range(start, end + 1):
+        for line in xrange(start, end + 1):
             self.stylize(line)
     def on_update_ui(self, event):
         self.update_line_numbers()
