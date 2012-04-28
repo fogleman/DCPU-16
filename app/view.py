@@ -467,10 +467,17 @@ class Frame(wx.Frame):
         try:
             self.reset()
             self.path = path
-            self.program = assembler.open_file(path)
-            self.emu.load(self.program.assemble())
-            self.program_list.update(self.program.instructions)
-            self.editor.SetText(self.program.text)
+            extensions = ['.dasm', '.dasm16']
+            if any(ext in path for ext in extensions):
+                with open(path) as fp:
+                    text = fp.read()
+                wx.CallAfter(self.assemble)
+            else:
+                self.program = assembler.disassemble_file(path)
+                self.emu.load(self.program.assemble())
+                self.program_list.update(self.program.instructions)
+                text = self.program.pretty()
+            self.editor.SetText(text)
             self.editor.SetSavePoint()
             self.dirty = False
             self.refresh_debug_info()

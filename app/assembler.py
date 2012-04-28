@@ -541,13 +541,6 @@ def create_parser():
 LEXER = create_lexer()
 PARSER = create_parser()
 
-def open_file(path):
-    extensions = ['.dasm', '.dasm16']
-    if any(ext in path for ext in extensions):
-        return parse_file(path)
-    else:
-        return disassemble_file(path)
-
 def parse(text):
     program = PARSER.parse(text, lexer=LEXER)
     program.text = text
