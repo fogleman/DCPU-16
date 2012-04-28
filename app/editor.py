@@ -30,8 +30,8 @@ class Editor(stc.StyledTextCtrl):
         self.styles = self.build_styles()
         for style in Style.instances:
             self.StyleSetForeground(style.number, wx.Colour(*style.color))
-            self.StyleSetBold(style.number, int(style.bold))
-            self.StyleSetFontAttr(style.number, SIZE, FONT, 0, 0, 0)
+            self.StyleSetFontAttr(style.number, SIZE, FONT,
+                int(style.bold), 0, 0)
         self.SetLexer(stc.STC_LEX_CONTAINER)
         self.SetMarginType(0, stc.STC_MARGIN_NUMBER)
         self.SetMarginWidth(1, 0)
