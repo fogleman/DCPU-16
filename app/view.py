@@ -366,6 +366,9 @@ class Frame(wx.Frame):
         menubar.Append(menu, '&File')
         # Edit
         menu = wx.Menu()
+        menu_item(self, menu, 'Undo\tCtrl+Z', self.on_undo)
+        menu_item(self, menu, 'Redo\tCtrl+Y', self.on_redo)
+        menu.AppendSeparator()
         menu_item(self, menu, 'Cut\tCtrl+X', self.on_cut)
         menu_item(self, menu, 'Copy\tCtrl+C', self.on_copy)
         menu_item(self, menu, 'Paste\tCtrl+V', self.on_paste)
@@ -520,6 +523,10 @@ class Frame(wx.Frame):
             path = dialog.GetPath()
             self.save_binary(path)
         dialog.Destroy()
+    def on_undo(self, event):
+        self.editor.Undo()
+    def on_redo(self, event):
+        self.editor.Redo()
     def on_cut(self, event):
         self.editor.Cut()
     def on_copy(self, event):

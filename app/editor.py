@@ -6,8 +6,22 @@ import wx.richtext as rt
 # Styles
 class Style(object):
     def __init__(self, color, bold=False):
-        self.color = wx.Colour(*color)
-        self.bold = bold
+        attr = rt.RichTextAttr()
+        flags = wx.TEXT_ATTR_TEXT_COLOUR
+        attr.SetTextColour(wx.Colour(*color))
+        if bold:
+            flags |= wx.TEXT_ATTR_FONT_WEIGHT
+            attr.SetFontWeight(wx.FONTWEIGHT_BOLD)
+        attr.SetFlags(flags)
+        self.attr = attr
+        flags = 0
+        flags |= rt.RICHTEXT_SETSTYLE_OPTIMIZE
+        flags |= rt.RICHTEXT_SETSTYLE_CHARACTERS_ONLY
+        flags |= rt.RICHTEXT_SETSTYLE_RESET
+        self.flags = flags
+    def apply_style(self, control, start, end):
+        rng = rt.RichTextRange(start, end)
+        control.SetStyle(rng, self.attr)
 
 COMMENT = Style((0, 128, 0))
 OPCODE = Style((0, 64, 128), True)
@@ -90,12 +104,7 @@ class Editor(rt.RichTextCtrl):
         attr.SetFontSize(size)
         self.SetBasicStyle(attr)
     def reset_style(self, start, end):
-        attr = rt.RichTextAttr()
-        attr.SetFlags(
-            wx.TEXT_ATTR_TEXT_COLOUR |
-            wx.TEXT_ATTR_FONT_WEIGHT)
-        attr.SetTextColour(COMMENT.color)
-        self.SetStyle(rt.RichTextRange(start, end), attr)
+        COMMENT.apply_style(self, start, end)
     def stylize(self, line=None):
         if not self.post_events:
             return
@@ -119,17 +128,16 @@ class Editor(rt.RichTextCtrl):
                 break
             start = offset + token.lexpos
             end = offset + lexer.lexpos
-            rng = rt.RichTextRange(start, end)
             style = self.styles.get(token.type, UNKNOWN)
-            attr = rt.RichTextAttr()
-            flags = wx.TEXT_ATTR_TEXT_COLOUR
-            attr.SetTextColour(style.color)
-            if style.bold:
-                flags |= wx.TEXT_ATTR_FONT_WEIGHT
-                attr.SetFontWeight(wx.FONTWEIGHT_BOLD)
-            attr.SetFlags(flags)
-            self.SetStyle(rng, attr)
+            style.apply_style(self, start, end)
         self.EndSuppressUndo()
+        self.Thaw()
+    def stylize_visible(self):
+        self.Freeze()
+        line = self.PositionToXY(self.GetFirstVisiblePosition())[1]
+        while self.IsPositionVisible(self.XYToPosition(0, line)):
+            self.stylize(line)
+            line += 1
         self.Thaw()
     def on_character(self, event):
         event.Skip()
