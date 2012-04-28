@@ -1,29 +1,16 @@
 import assembler
-import sys
 import wx
-import wx.richtext as rt
+import wx.stc as stc
 
-# Styles
 class Style(object):
+    instances = []
     def __init__(self, color, bold=False):
-        attr = rt.RichTextAttr()
-        flags = wx.TEXT_ATTR_TEXT_COLOUR
-        attr.SetTextColour(wx.Colour(*color))
-        if bold:
-            flags |= wx.TEXT_ATTR_FONT_WEIGHT
-            attr.SetFontWeight(wx.FONTWEIGHT_BOLD)
-        attr.SetFlags(flags)
-        self.attr = attr
-        flags = 0
-        flags |= rt.RICHTEXT_SETSTYLE_OPTIMIZE
-        flags |= rt.RICHTEXT_SETSTYLE_CHARACTERS_ONLY
-        flags |= rt.RICHTEXT_SETSTYLE_RESET
-        self.flags = flags
-    def apply_style(self, control, start, end):
-        rng = rt.RichTextRange(start, end)
-        control.SetStyle(rng, self.attr)
+        Style.instances.append(self)
+        self.number = len(Style.instances) - 1
+        self.color = color
+        self.bold = bold
 
-COMMENT = Style((0, 128, 0))
+COMMENT = Style((0, 64, 0))
 OPCODE = Style((0, 64, 128), True)
 OPERAND = Style((128, 0, 64))
 LITERAL = Style((255, 0, 0))
@@ -33,27 +20,24 @@ LABEL = Style((0, 0, 0))
 ID = Style((0, 0, 0))
 UNKNOWN = Style((255, 0, 110))
 
-# Events
-class Event(wx.PyEvent):
-    def __init__(self, event_object, event_type):
-        super(Event, self).__init__()
-        self.SetEventType(event_type.typeId)
-        self.SetEventObject(event_object)
-
-EVT_CONTROL_CHANGED = wx.PyEventBinder(wx.NewEventType())
-
-# Editor Control
-class Editor(rt.RichTextCtrl):
+class Editor(stc.StyledTextCtrl):
     def __init__(self, parent):
-        super(Editor, self).__init__(parent, style=wx.WANTS_CHARS)
-        self.post_events = True
+        super(Editor, self).__init__(parent)
         self.styles = self.build_styles()
-        self.init_style()
-        self.Bind(rt.EVT_RICHTEXT_CHARACTER, self.on_character)
-        self.Bind(rt.EVT_RICHTEXT_CONTENT_DELETED, self.on_content_deleted)
-        self.Bind(rt.EVT_RICHTEXT_CONTENT_INSERTED, self.on_content_inserted)
-        self.Bind(rt.EVT_RICHTEXT_DELETE, self.on_delete)
-        self.Bind(rt.EVT_RICHTEXT_RETURN, self.on_return)
+        for style in Style.instances:
+            self.StyleSetForeground(style.number, wx.Colour(*style.color))
+            self.StyleSetBold(style.number, int(style.bold))
+            self.StyleSetFontAttr(style.number, 14,
+                'Bitstream Vera Sans Mono', 0, 0, 0)
+        self.SetLexer(stc.STC_LEX_CONTAINER)
+        self.SetMarginType(0, stc.STC_MARGIN_NUMBER)
+        self.SetMarginWidth(1, 0)
+        self.SetTabIndents(True)
+        self.SetTabWidth(4)
+        self.SetUseTabs(False)
+        self.SetBackSpaceUnIndents(True)
+        self.Bind(stc.EVT_STC_STYLENEEDED, self.on_style_needed)
+        self.Bind(stc.EVT_STC_UPDATEUI, self.on_update_ui)
     def build_styles(self):
         result = {}
         for name in assembler.BASIC_OPCODES:
@@ -81,44 +65,12 @@ class Editor(rt.RichTextCtrl):
         for name in ['ID']:
             result[name] = ID
         return result
-    def post_event(self):
-        if self.post_events:
-            event = Event(self, EVT_CONTROL_CHANGED)
-            wx.PostEvent(self, event)
-    def set_value(self, value):
-        self.post_events = False
-        try:
-            self.SetValue(value)
-        finally:
-            self.post_events = True
-        self.stylize()
-    def init_style(self):
-        size = 10
-        if sys.platform == 'darwin':
-            size = int(size * 1.5)
-        attr = rt.RichTextAttr()
-        attr.SetFlags(
-            wx.TEXT_ATTR_FONT_FACE |
-            wx.TEXT_ATTR_FONT_SIZE)
-        attr.SetFontFaceName('Courier New')
-        attr.SetFontSize(size)
-        self.SetBasicStyle(attr)
-    def reset_style(self, start, end):
-        COMMENT.apply_style(self, start, end)
-    def stylize(self, line=None):
-        if not self.post_events:
-            return
-        if line is None:
-            text = self.GetValue()
-            offset = 0
-        else:
-            text = self.GetLineText(line)
-            offset = self.XYToPosition(0, line)
+    def stylize(self, line):
+        position = 0
+        text = self.GetLine(line)
+        self.StartStyling(self.PositionFromLine(line), 0x1f)
         lexer = assembler.LEXER
         lexer.input(text)
-        self.Freeze()
-        self.BeginSuppressUndo()
-        self.reset_style(offset, offset + len(text))
         while True:
             try:
                 token = lexer.token()
@@ -126,53 +78,38 @@ class Editor(rt.RichTextCtrl):
                 break
             if token is None:
                 break
-            start = offset + token.lexpos
-            end = offset + lexer.lexpos
             style = self.styles.get(token.type, UNKNOWN)
-            style.apply_style(self, start, end)
-        self.EndSuppressUndo()
-        self.Thaw()
-    def stylize_visible(self):
-        self.Freeze()
-        line = self.PositionToXY(self.GetFirstVisiblePosition())[1]
-        while self.IsPositionVisible(self.XYToPosition(0, line)):
-            self.stylize(line)
-            line += 1
-        self.Thaw()
-    def on_character(self, event):
-        event.Skip()
-        if event.GetCharacter() == '\t':
-            pos = event.GetPosition()
-            self.Remove(pos, pos)
-            self.WriteText('    ')
-        line = self.PositionToXY(event.GetPosition())[1]
-        self.stylize(line)
-        self.post_event()
-    def on_content_deleted(self, event):
-        event.Skip()
-        line = self.PositionToXY(event.GetPosition())[1]
-        self.stylize(line)
-        self.stylize(line + 1)
-        self.post_event()
-    def on_content_inserted(self, event):
-        event.Skip()
-        start, end = event.GetRange()
-        start = self.PositionToXY(start)[1]
-        end = self.PositionToXY(end)[1]
-        self.Freeze()
+            start = token.lexpos
+            end = lexer.lexpos
+            length = start - position
+            self.SetStyling(length, 0)
+            position += length
+            length = end - position
+            self.SetStyling(length, style.number)
+            position += length
+    def on_style_needed(self, event):
+        start = self.GetFirstVisibleLine()
+        end = self.LineFromPosition(event.GetPosition())
         for line in range(start, end + 1):
             self.stylize(line)
-        self.Thaw()
-        self.post_event()
-    def on_delete(self, event):
-        event.Skip()
-        line = self.PositionToXY(event.GetPosition())[1]
-        self.stylize(line)
-        self.stylize(line + 1)
-        self.post_event()
-    def on_return(self, event):
-        event.Skip()
-        line = self.PositionToXY(event.GetPosition())[1]
-        self.stylize(line)
-        self.stylize(line + 1)
-        self.post_event()
+    def on_update_ui(self, event):
+        self.update_line_numbers()
+    def update_line_numbers(self):
+        text = ' %d ' % self.GetLineCount()
+        width = self.TextWidth(stc.STC_STYLE_LINENUMBER, text)
+        self.SetMarginWidth(0, width)
+
+def main():
+    app = wx.App(None)
+    frame = wx.Frame(None)
+    frame.SetTitle('DCPU-16 Emulator')
+    editor = Editor(frame)
+    with open('../programs/minesweeper.dasm') as fp:
+        editor.SetText(fp.read())
+    frame.SetSize((800, 600))
+    frame.Center()
+    frame.Show()
+    app.MainLoop()
+
+if __name__ == '__main__':
+    main()

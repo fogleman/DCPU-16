@@ -5,6 +5,7 @@ import icons
 import sys
 import time
 import wx
+import wx.stc as stc
 
 # Constants
 SCALE = 3
@@ -459,7 +460,9 @@ class Frame(wx.Frame):
         if not self.check_dirty():
             return
         self.reset()
-        self.editor.set_value('')
+        self.editor.SetText('')
+        self.editor.SetSavePoint()
+        self.dirty = False
     def open_file(self, path):
         try:
             self.reset()
@@ -467,7 +470,9 @@ class Frame(wx.Frame):
             self.program = assembler.open_file(path)
             self.emu.load(self.program.assemble())
             self.program_list.update(self.program.instructions)
-            self.editor.set_value(self.program.text)
+            self.editor.SetText(self.program.text)
+            self.editor.SetSavePoint()
+            self.dirty = False
             self.refresh_debug_info()
         except Exception as e:
             self.reset()
@@ -489,7 +494,7 @@ class Frame(wx.Frame):
             self.on_save_as(None)
             return
         with open(self.path, 'w') as fp:
-            fp.write(self.editor.GetValue())
+            fp.write(self.editor.GetText())
         self.dirty = False
     def on_save_as(self, event):
         dialog = wx.FileDialog(self, 'Save As', wildcard='*.dasm',
@@ -499,7 +504,7 @@ class Frame(wx.Frame):
         if result == wx.ID_OK:
             path = dialog.GetPath()
             with open(path, 'w') as fp:
-                fp.write(self.editor.GetValue())
+                fp.write(self.editor.GetText())
             self.path = path
             self.dirty = False
             return True
@@ -534,13 +539,13 @@ class Frame(wx.Frame):
     def on_paste(self, event):
         self.editor.Paste()
     def on_delete(self, event):
-        self.editor.DeleteSelection()
+        self.editor.Clear()
     def on_select_all(self, event):
         self.editor.SelectAll()
     def on_exit(self, event):
         self.Close()
     def assemble(self):
-        text = self.editor.GetValue()
+        text = self.editor.GetText()
         try:
             self.reset(False)
             self.program = assembler.parse(text)
@@ -584,7 +589,7 @@ class Frame(wx.Frame):
             wx.CallAfter(self.canvas.SetFocus)
     def on_text(self, event):
         event.Skip()
-        self.dirty = True
+        self.dirty = self.editor.GetModify()
     def update(self, dt):
         if self.running:
             cycles = int(dt * self.cycles_per_second)
@@ -651,7 +656,7 @@ class Frame(wx.Frame):
     def create_editor(self, parent):
         panel = wx.Panel(parent)
         self.editor = editor.Editor(panel)
-        self.editor.Bind(editor.EVT_CONTROL_CHANGED, self.on_text)
+        self.editor.Bind(stc.EVT_STC_CHANGE, self.on_text)
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.editor, 1, wx.EXPAND | wx.ALL, 5)
         panel.SetSizer(sizer)
