@@ -151,7 +151,7 @@ class ProgramList(wx.ListCtrl):
         if column == ProgramList.INDEX_ADDR:
             return '%04x' % instruction.offset
         if column == ProgramList.INDEX_CODE:
-            return instruction.pretty(None).strip()
+            return instruction.pretty().strip()
         return ''
 
 class Canvas(wx.Panel):

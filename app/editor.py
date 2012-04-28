@@ -28,10 +28,11 @@ class Editor(stc.StyledTextCtrl):
     def __init__(self, parent):
         super(Editor, self).__init__(parent)
         self.styles = self.build_styles()
+        self.StyleSetFontAttr(stc.STC_STYLE_DEFAULT, SIZE, FONT, 0, 0, 0)
+        self.StyleClearAll()
         for style in Style.instances:
             self.StyleSetForeground(style.number, wx.Colour(*style.color))
-            self.StyleSetFontAttr(style.number, SIZE, FONT,
-                int(style.bold), 0, 0)
+            self.StyleSetBold(style.number, style.bold)
         self.SetLexer(stc.STC_LEX_CONTAINER)
         self.SetMarginType(0, stc.STC_MARGIN_NUMBER)
         self.SetMarginWidth(1, 0)
@@ -46,6 +47,8 @@ class Editor(stc.StyledTextCtrl):
         for name in assembler.BASIC_OPCODES:
             result[name] = OPCODE
         for name in assembler.SPECIAL_OPCODES:
+            result[name] = OPCODE
+        for name in assembler.COMMAND_OPCODES:
             result[name] = OPCODE
         for name in ['DAT']:
             result[name] = OPCODE

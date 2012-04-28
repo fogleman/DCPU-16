@@ -38,15 +38,19 @@ BASIC_OPCODES = {
 
 SPECIAL_OPCODES = {
     'JSR': 0x01,
-    'BRK': 0x02,
     'INT': 0x08,
     'IAG': 0x09,
     'IAS': 0x0a,
-    'RFI': 0x0b,
     'IAQ': 0x0c,
     'HWN': 0x10,
     'HWQ': 0x11,
     'HWI': 0x12,
+}
+
+COMMAND_OPCODES = {
+    'NOP': 0x0000,
+    'BRK': 0x0040,
+    'RFI': 0x0160,
 }
 
 REGISTERS = {
@@ -79,6 +83,7 @@ SRC_CODES = {
 # Reverse Lookups
 REV_BASIC_OPCODES = dict((v, k) for k, v in BASIC_OPCODES.items())
 REV_SPECIAL_OPCODES = dict((v, k) for k, v in SPECIAL_OPCODES.items())
+REV_COMMAND_OPCODES = dict((v, k) for k, v in COMMAND_OPCODES.items())
 REV_REGISTERS = dict((v, k) for k, v in REGISTERS.items())
 REV_DST_CODES = dict((v, k) for k, v in DST_CODES.items())
 REV_SRC_CODES = dict((v, k) for k, v in SRC_CODES.items())
@@ -107,16 +112,21 @@ class Program(object):
         return result
     def pretty(self):
         lines = []
-        previous = None
+        skip = False
         for instruction in self.instructions:
-            line = instruction.pretty(previous)
+            line = instruction.pretty().strip()
+            if isinstance(instruction, Label):
+                pad = 0
+            else:
+                pad = 4 if skip else 2
+            line = '%s%s' % (' ' * pad, line)
             data = instruction.assemble(self.lookup)
             if data and not isinstance(instruction, Data):
                 pad = ' ' * (32 - len(line))
                 data = ' '.join('%04x' % x for x in data)
                 line = '%s%s; %s' % (line, pad, data)
             lines.append(line)
-            previous = instruction
+            skip = instruction.conditional
         return '\n'.join(lines)
 
 class Data(object):
@@ -127,10 +137,10 @@ class Data(object):
         self.conditional = False
     def assemble(self, lookup):
         return [lookup.get(x, x) for x in self.data]
-    def pretty(self, previous):
+    def pretty(self):
         data = ', '.join('"%s"' % x if isinstance(x, str) else pretty_value(x)
             for x in self.data)
-        return '    DAT %s' % data
+        return 'DAT %s' % data
 
 class Label(object):
     def __init__(self, name, offset=None):
@@ -140,7 +150,7 @@ class Label(object):
         self.conditional = False
     def assemble(self, lookup):
         return []
-    def pretty(self, previous):
+    def pretty(self):
         return ':%s' % self.name
 
 class BasicInstruction(object):
@@ -160,14 +170,11 @@ class BasicInstruction(object):
         result.extend(self.src.assemble(lookup))
         result.extend(self.dst.assemble(lookup))
         return result
-    def pretty(self, previous):
+    def pretty(self):
         op = REV_BASIC_OPCODES[self.op]
         dst = self.dst.pretty()
         src = self.src.pretty()
-        p = '    '
-        if previous and previous.conditional:
-            p *= 2
-        return '%s%s %s, %s' % (p, op, dst, src)
+        return '%s %s, %s' % (op, dst, src)
 
 class SpecialInstruction(object):
     def __init__(self, op, src):
@@ -184,10 +191,22 @@ class SpecialInstruction(object):
         result = [self.value]
         result.extend(self.src.assemble(lookup))
         return result
-    def pretty(self, previous):
+    def pretty(self):
         op = REV_SPECIAL_OPCODES[self.op]
-        src = self.src.pretty() if op != 'BRK' else ''
-        return ('    %s %s' % (op, src)).rstrip()
+        src = self.src.pretty()
+        return '%s %s' % (op, src)
+
+class CommandInstruction(object):
+    def __init__(self, value):
+        self.value = value
+        self.size = 1
+        self.offset = None
+        self.conditional = False
+    def assemble(self, lookup):
+        result = [self.value]
+        return result
+    def pretty(self):
+        return REV_COMMAND_OPCODES[self.value]
 
 class Operand(object):
     def __init__(self, codes, value, word=None):
@@ -233,6 +252,7 @@ class SrcOperand(Operand):
 reserved = set(
     BASIC_OPCODES.keys() +
     SPECIAL_OPCODES.keys() +
+    COMMAND_OPCODES.keys() +
     REGISTERS.keys() +
     DST_CODES.keys() +
     SRC_CODES.keys() +
@@ -353,10 +373,6 @@ def p_instruction_label2(t):
     'instruction : LABEL AT literal'
     t[0] = Label(t[1], t[3])
 
-def p_instruction_break(t):
-    'instruction : BRK'
-    t[0] = SpecialInstruction(SPECIAL_OPCODES['BRK'], SrcOperand(0))
-
 def p_instruction_basic(t):
     'instruction : basic_opcode dst_operand src_operand'
     t[0] = BasicInstruction(t[1], t[2], t[3])
@@ -364,6 +380,10 @@ def p_instruction_basic(t):
 def p_instruction_special(t):
     'instruction : special_opcode src_operand'
     t[0] = SpecialInstruction(t[1], t[2])
+
+def p_instruction_command(t):
+    'instruction : command_opcode'
+    t[0] = CommandInstruction(t[1])
 
 def p_dst_operand_register(t):
     'dst_operand : register'
@@ -484,6 +504,11 @@ def p_special_opcode(t):
     t[0] = SPECIAL_OPCODES[t[1]]
 p_special_opcode.__doc__ = ('special_opcode : %s' % 
     '\n | '.join(sorted(SPECIAL_OPCODES)))
+
+def p_command_opcode(t):
+    t[0] = COMMAND_OPCODES[t[1]]
+p_command_opcode.__doc__ = ('command_opcode : %s' %
+    '\n | '.join(sorted(COMMAND_OPCODES)))
 
 def p_register(t):
     t[0] = t[1]
