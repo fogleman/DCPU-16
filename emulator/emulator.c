@@ -651,6 +651,9 @@ void step(Emulator *emulator) {
     else {
         special_instruction(emulator, dst, src);
     }
+    while (SKIP) {
+        step(emulator);
+    }
     if (emulator->clock_rate) {
         if (emulator->cycle >= emulator->clock_cycle) {
             emulator->clock_ticks++;
