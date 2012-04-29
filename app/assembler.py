@@ -542,6 +542,7 @@ LEXER = create_lexer()
 PARSER = create_parser()
 
 def parse(text):
+    LEXER.lineno = 1
     program = PARSER.parse(text, lexer=LEXER)
     program.text = text
     return program

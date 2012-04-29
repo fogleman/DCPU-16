@@ -99,9 +99,9 @@ class Editor(stc.StyledTextCtrl):
         for line in xrange(start, end + 1):
             self.stylize(line)
     def on_update_ui(self, event):
-        self.update_line_numbers()
+        wx.CallAfter(self.update_line_numbers)
     def update_line_numbers(self):
-        text = ' %d ' % self.GetLineCount()
+        text = ' %d' % self.GetLineCount()
         width = self.TextWidth(stc.STC_STYLE_LINENUMBER, text)
         self.SetMarginWidth(0, width)
 
