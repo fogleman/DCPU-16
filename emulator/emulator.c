@@ -641,19 +641,18 @@ void special_instruction(Emulator *emulator, unsigned char opcode,
 }
 
 void step(Emulator *emulator) {
-    unsigned short word = RAM(PC++);
-    unsigned char op = word & 0x1f;
-    unsigned char dst = (word >> 5) & 0x1f;
-    unsigned char src = (word >> 10) & 0x3f;
-    if (op) {
-        basic_instruction(emulator, op, dst, src);
-    }
-    else {
-        special_instruction(emulator, dst, src);
-    }
-    while (SKIP) {
-        step(emulator);
-    }
+    do {
+        unsigned short word = RAM(PC++);
+        unsigned char op = word & 0x1f;
+        unsigned char dst = (word >> 5) & 0x1f;
+        unsigned char src = (word >> 10) & 0x3f;
+        if (op) {
+            basic_instruction(emulator, op, dst, src);
+        }
+        else {
+            special_instruction(emulator, dst, src);
+        }
+    } while (SKIP);
     if (emulator->clock_rate) {
         if (emulator->cycle >= emulator->clock_cycle) {
             emulator->clock_ticks++;
