@@ -1,6 +1,5 @@
 import ply.lex as lex
 import ply.yacc as yacc
-import sys
 
 # Constants
 SIZE = 0x10000
@@ -620,11 +619,3 @@ def disassemble_file(path):
         data = fp.read()
     words = [(ord(a) << 8) | ord(b) for a, b in zip(data[::2], data[1::2])]
     return disassemble(words)
-
-# Main
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    if len(args) == 1:
-        print pretty_file(args[0])
-    else:
-        print 'Usage: python assembler.py input.dasm'

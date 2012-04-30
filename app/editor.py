@@ -104,18 +104,3 @@ class Editor(stc.StyledTextCtrl):
         text = ' %d' % self.GetLineCount()
         width = self.TextWidth(stc.STC_STYLE_LINENUMBER, text)
         self.SetMarginWidth(0, width)
-
-def main():
-    app = wx.App(None)
-    frame = wx.Frame(None)
-    frame.SetTitle('DCPU-16 Emulator')
-    editor = Editor(frame)
-    with open('../programs/minesweeper.dasm') as fp:
-        editor.SetText(fp.read())
-    frame.SetSize((800, 600))
-    frame.Center()
-    frame.Show()
-    app.MainLoop()
-
-if __name__ == '__main__':
-    main()

@@ -193,7 +193,6 @@ def create_parser():
 LEXER = create_lexer()
 PARSER = create_parser()
 
-# Main
 def preprocess(text):
     lookup = None
     while True:
