@@ -1,5 +1,6 @@
 import ply.lex as lex
 import ply.yacc as yacc
+import re
 
 # Classes
 class Program(object):
@@ -213,7 +214,38 @@ def create_parser():
 LEXER = create_lexer()
 PARSER = create_parser()
 
+def include_files(text):
+    lines = []
+    pattern = re.compile(r'\#include\s+\"([^"]+)\"')
+    for line in text.split('\n'):
+        match = pattern.match(line.strip())
+        if match is None:
+            lines.append(line)
+        else:
+            path = match.group(1)
+            with open(path) as fp:
+                lines.extend(fp.read().split('\n'))
+    result = '\n'.join(lines)
+    return result
+
+def convert_defines(text):
+    lines = []
+    pattern = re.compile(r'\#define\s+([_a-zA-Z][_a-zA-Z0-9]*)\s+(.+)')
+    for line in text.split('\n'):
+        match = pattern.match(line.strip())
+        if match is None:
+            lines.append(line)
+        else:
+            name = match.group(1)
+            value = match.group(2)
+            macro = '#macro %s { %s }' % (name, value)
+            print macro
+            lines.append(macro)
+    result = '\n'.join(lines)
+    return result
+
 def preprocess(text):
+    text = convert_defines(text)
     lookup = None
     while True:
         LEXER.lineno = 1
