@@ -11,7 +11,12 @@ class Program(object):
     def preprocess(self, lookup):
         items = []
         count = 0
+        line = 1
         for item in self.items:
+            newlines = item.line - line
+            if newlines:
+                items.append('\n' * (newlines))
+                line = item.line
             if isinstance(item, MacroCall):
                 if item.name not in lookup:
                     raise Exception('Call to undefined macro: %s'
@@ -25,12 +30,14 @@ class Program(object):
                     items.extend(macro.invoke(()))
                     count += 1
                 else:
-                    items.append(item)
-        result = ' '.join(x.name for x in items)
+                    items.append(item.name)
+        lines = ' '.join(items).split('\n')
+        result = '\n'.join(line.strip() for line in lines)
         return count, result
 
 class MacroDefinition(object):
-    def __init__(self, name, parameters, tokens):
+    def __init__(self, line, name, parameters, tokens):
+        self.line = line
         self.name = name
         self.parameters = parameters
         self.tokens = tokens
@@ -39,15 +46,17 @@ class MacroDefinition(object):
             raise Exception('Incorrect number of arguments for macro: %s'
                 % self.name)
         lookup = dict((a, b) for a, b in zip(self.parameters, arguments))
-        return [lookup.get(x.name, x) for x in self.tokens]
+        return [lookup.get(x.name, x).name for x in self.tokens]
 
 class MacroCall(object):
-    def __init__(self, name, arguments):
+    def __init__(self, line, name, arguments):
+        self.line = line
         self.name = name
         self.arguments = arguments
 
 class Token(object):
-    def __init__(self, name):
+    def __init__(self, line, name):
+        self.line = line
         self.name = name
 
 # Lexer Rules
@@ -63,7 +72,7 @@ tokens = [
     'OTHER',
 ]
 
-t_ignore = ' \t\r\n'
+t_ignore = ' \t\r'
 t_ignore_COMMENT = r';.*'
 
 t_MACRO = r'\#macro'
@@ -75,6 +84,10 @@ t_RPAREN = r'\)'
 t_STRING = r'"[^"]*"'
 t_ID = r'[_a-zA-Z][_a-zA-Z0-9]*'
 t_OTHER = r'[^_a-zA-Z\s\;\,\{\}\(\)\"\#][^\s\;\,\{\}\(\)\"\#]*'
+
+def t_newline(t):
+    r'\n+'
+    t.lexer.lineno += len(t.value)
 
 def t_error(t):
     raise Exception(t)
@@ -100,7 +113,7 @@ def p_item(t):
 
 def p_macro_definition(t):
     'macro_definition : MACRO ID parameter_list LBRACE tokens RBRACE'
-    t[0] = MacroDefinition(t[2], t[3], t[5])
+    t[0] = MacroDefinition(t.lineno(1), t[2], t[3], t[5])
 
 def p_parameter_list1(t):
     'parameter_list : LPAREN parameters RPAREN'
@@ -120,7 +133,7 @@ def p_parameters2(t):
 
 def p_macro_call(t):
     'macro_call : ID argument_list'
-    t[0] = MacroCall(t[1], t[2])
+    t[0] = MacroCall(t.lineno(1), t[1], t[2])
 
 def p_argument_list1(t):
     'argument_list : LPAREN arguments RPAREN'
@@ -142,7 +155,7 @@ def p_argument(t):
     '''argument : STRING
                 | ID
                 | OTHER'''
-    t[0] = Token(t[1])
+    t[0] = Token(t.lineno(1), t[1])
 
 def p_tokens1(t):
     'tokens : token tokens'
@@ -159,7 +172,7 @@ def p_token(t):
              | STRING
              | ID
              | OTHER'''
-    t[0] = Token(t[1])
+    t[0] = Token(t.lineno(1), t[1])
 
 def p_empty(t):
     'empty :'
@@ -184,6 +197,7 @@ PARSER = create_parser()
 def preprocess(text):
     lookup = None
     while True:
+        LEXER.lineno = 1
         program = PARSER.parse(text)
         if lookup is None:
             lookup = program.get_lookup()
