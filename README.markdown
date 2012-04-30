@@ -73,19 +73,46 @@ SET A [SP] ; equivalent to PEEK
 :screen @ 0x8000
 ```
 
-### Upgrading from v1.1
+### Hardware Enumeration
 
-Quickly get up and running for most programs using this code at the beginning. Note that you should really enumerate devices instead of assuming a certain device is at a certain index.
+The following code enumerates available hardware devices and populates the variables lem, keyboard and clock with their respective hardware identifiers.
 
 ```dasm
-; map screen
+#macro match_hardware(a, b, location) {
+    IFE A a
+    IFE B b
+    SET [location] I
+}
+
+JSR enumerate_hardware
+
+; now you can use the devices, e.g.
 SET A 0
 SET B 0x8000
-HWI 0
-; map font (only if using a custom font)
-SET A 1
-SET B 0x8180
-HWI 0
+HWI [lem]
+
+BRK
+
+:enumerate_hardware
+HWN I
+:.loop
+IFE I 0
+SET PC .done
+SUB I 1
+HWQ I
+match_hardware(0xf615, 0x7349, lem)
+match_hardware(0x7406, 0x30cf, keyboard)
+match_hardware(0xb402, 0x12d0, clock)
+SET PC .loop
+:.done
+SET PC POP
+
+:lem
+DAT -1
+:keyboard
+DAT -1
+:clock
+DAT -1
 ```
 
 ### Benchmarks
