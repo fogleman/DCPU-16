@@ -346,7 +346,7 @@ def t_ID(t):
     return t
 
 def t_error(t):
-    raise Exception(t)
+    raise Exception('Unrecognized token on line %d: %s' % (t.lineno, t.value))
 
 # Parser Rules
 def p_program(t):
@@ -540,7 +540,7 @@ p_src_code.__doc__ = ('src_code : %s' %
     '\n | '.join(sorted(SRC_CODES)))
 
 def p_error(t):
-    raise Exception(t)
+    raise Exception('Invalid token on line %d: %s' % (t.lineno, t.value))
 
 # Assembler Functions
 def create_lexer():
