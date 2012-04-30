@@ -200,18 +200,18 @@ LEXER = create_lexer()
 PARSER = create_parser()
 
 # Main
-def test(path):
+def preprocess(text):
+    lookup = None
+    while True:
+        program = PARSER.parse(text)
+        if lookup is None:
+            lookup = program.get_lookup()
+        count, text = program.preprocess(lookup)
+        if count == 0:
+            break
+    return text
+
+def preprocess_file(path):
     with open(path) as fp:
         text = fp.read()
-        program = PARSER.parse(text)
-        lookup = program.get_lookup()
-        while True:
-            program = PARSER.parse(text)
-            count, text = program.preprocess(lookup)
-            if count == 0:
-                break
-        print text
-
-if __name__ == '__main__':
-    test('../programs/preprocessor.dasm')
-    test('../programs/atlas.dasm')
+    return preprocess(text)

@@ -2,6 +2,7 @@ import assembler
 import editor
 import functools
 import icons
+import preprocessor
 import sys
 import time
 import wx
@@ -555,7 +556,7 @@ class Frame(wx.Frame):
         text = self.editor.GetText()
         try:
             self.reset(False)
-            self.program = assembler.parse(text)
+            self.program = assembler.parse(preprocessor.preprocess(text))
             self.emu.load(self.program.assemble())
             self.program_list.update(self.program.instructions)
             self.refresh_debug_info()
