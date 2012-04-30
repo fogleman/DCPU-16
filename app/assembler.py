@@ -142,6 +142,16 @@ class Data(object):
             for x in self.data)
         return 'DAT %s' % data
 
+class Reserve(object):
+    def __init__(self, size):
+        self.size = size
+        self.offset = None
+        self.conditional = False
+    def assemble(self, lookup):
+        return [0] * self.size
+    def pretty(self):
+        return 'RESERVE %s' % pretty_value(self.size)
+
 class Label(object):
     def __init__(self, name, offset=None):
         self.name = name
@@ -256,7 +266,7 @@ reserved = set(
     REGISTERS.keys() +
     DST_CODES.keys() +
     SRC_CODES.keys() +
-    ['PICK', 'DAT']
+    ['PICK', 'DAT', 'RESERVE']
 )
 
 tokens = [
@@ -364,6 +374,10 @@ def p_data2(t):
 def p_instruction_data(t):
     'instruction : DAT data'
     t[0] = Data(t[2])
+
+def p_instruction_reserve(t):
+    'instruction : RESERVE literal'
+    t[0] = Reserve(t[2])
 
 def p_instruction_label1(t):
     'instruction : LABEL'

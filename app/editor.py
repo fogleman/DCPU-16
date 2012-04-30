@@ -50,7 +50,7 @@ class Editor(stc.StyledTextCtrl):
             result[name] = OPCODE
         for name in assembler.COMMAND_OPCODES:
             result[name] = OPCODE
-        for name in ['DAT']:
+        for name in ['DAT', 'RESERVE']:
             result[name] = OPCODE
         for name in assembler.REGISTERS:
             result[name] = OPERAND

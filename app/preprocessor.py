@@ -12,16 +12,14 @@ class Program(object):
         items = []
         count = 0
         for item in self.items:
-            if isinstance(item, MacroDefinition):
-                pass
-            elif isinstance(item, MacroCall):
+            if isinstance(item, MacroCall):
                 if item.name not in lookup:
                     raise Exception('Call to undefined macro: %s'
                         % item.name)
                 macro = lookup[item.name]
                 items.extend(macro.invoke(item.arguments))
                 count += 1
-            else:
+            elif isinstance(item, Token):
                 if item.name in lookup:
                     macro = lookup[item.name]
                     items.extend(macro.invoke(()))
@@ -41,29 +39,16 @@ class MacroDefinition(object):
             raise Exception('Incorrect number of arguments for macro: %s'
                 % self.name)
         lookup = dict((a, b) for a, b in zip(self.parameters, arguments))
-        print lookup
         return [lookup.get(x.name, x) for x in self.tokens]
-    def __repr__(self):
-        return str(self)
-    def __str__(self):
-        return '#macro %s%s %s' % (self.name, self.parameters, self.tokens)
 
 class MacroCall(object):
     def __init__(self, name, arguments):
         self.name = name
         self.arguments = arguments
-    def __repr__(self):
-        return str(self)
-    def __str__(self):
-        return '%s%s' % (self.name, self.arguments)
 
 class Token(object):
     def __init__(self, name):
         self.name = name
-    def __repr__(self):
-        return str(self)
-    def __str__(self):
-        return self.name
 
 # Lexer Rules
 tokens = [
@@ -78,7 +63,7 @@ tokens = [
     'OTHER',
 ]
 
-t_ignore = ' \t\r'
+t_ignore = ' \t\r\n'
 t_ignore_COMMENT = r';.*'
 
 t_MACRO = r'\#macro'
@@ -90,10 +75,6 @@ t_RPAREN = r'\)'
 t_STRING = r'"[^"]*"'
 t_ID = r'[_a-zA-Z][_a-zA-Z0-9]*'
 t_OTHER = r'[^_a-zA-Z\s\;\,\{\}\(\)\"\#][^\s\;\,\{\}\(\)\"\#]*'
-
-def t_newline(t):
-    r'\n+'
-    t.lexer.lineno += len(t.value)
 
 def t_error(t):
     raise Exception(t)
