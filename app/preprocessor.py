@@ -2,11 +2,47 @@ import ply.lex as lex
 import ply.yacc as yacc
 
 # Classes
+class Program(object):
+    def __init__(self, items):
+        self.items = items
+    def get_lookup(self):
+        return dict((x.name, x) for x in self.items
+            if isinstance(x, MacroDefinition))
+    def preprocess(self, lookup):
+        items = []
+        count = 0
+        for item in self.items:
+            if isinstance(item, MacroDefinition):
+                pass
+            elif isinstance(item, MacroCall):
+                if item.name not in lookup:
+                    raise Exception('Call to undefined macro: %s'
+                        % item.name)
+                macro = lookup[item.name]
+                items.extend(macro.invoke(item.arguments))
+                count += 1
+            else:
+                if item.name in lookup:
+                    macro = lookup[item.name]
+                    items.extend(macro.invoke(()))
+                    count += 1
+                else:
+                    items.append(item)
+        result = ' '.join(x.name for x in items)
+        return count, result
+
 class MacroDefinition(object):
     def __init__(self, name, parameters, tokens):
         self.name = name
         self.parameters = parameters
         self.tokens = tokens
+    def invoke(self, arguments):
+        if len(arguments) != len(self.parameters):
+            raise Exception('Incorrect number of arguments for macro: %s'
+                % self.name)
+        lookup = dict((a, b) for a, b in zip(self.parameters, arguments))
+        print lookup
+        return [lookup.get(x.name, x) for x in self.tokens]
     def __repr__(self):
         return str(self)
     def __str__(self):
@@ -65,7 +101,7 @@ def t_error(t):
 # Parser Rules
 def p_program(t):
     'program : items'
-    t[0] = t[1]
+    t[0] = Program(t[1])
 
 def p_items1(t):
     'items : item items'
@@ -125,7 +161,7 @@ def p_argument(t):
     '''argument : STRING
                 | ID
                 | OTHER'''
-    t[0] = t[1]
+    t[0] = Token(t[1])
 
 def p_tokens1(t):
     'tokens : token tokens'
@@ -167,10 +203,15 @@ PARSER = create_parser()
 def test(path):
     with open(path) as fp:
         text = fp.read()
-        items = PARSER.parse(text)
-        for item in items:
-            print item
+        program = PARSER.parse(text)
+        lookup = program.get_lookup()
+        while True:
+            program = PARSER.parse(text)
+            count, text = program.preprocess(lookup)
+            if count == 0:
+                break
+        print text
 
 if __name__ == '__main__':
     test('../programs/preprocessor.dasm')
-    #test('../programs/atlas.dasm')
+    test('../programs/atlas.dasm')

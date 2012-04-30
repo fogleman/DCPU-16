@@ -19,3 +19,4 @@ push(B)
 pop(X)
 pop(Y)
 do(SET, A, B)
+brk
