@@ -42,6 +42,7 @@ class Editor(stc.StyledTextCtrl):
         self.SetBackSpaceUnIndents(True)
         self.Bind(stc.EVT_STC_STYLENEEDED, self.on_style_needed)
         self.Bind(stc.EVT_STC_UPDATEUI, self.on_update_ui)
+        self.Bind(stc.EVT_STC_CHARADDED, self.on_charadded)
     def build_styles(self):
         result = {}
         for name in assembler.BASIC_OPCODES:
@@ -98,6 +99,16 @@ class Editor(stc.StyledTextCtrl):
         end = self.LineFromPosition(event.GetPosition())
         for line in xrange(start, end + 1):
             self.stylize(line)
+    def on_charadded(self, event):
+        code = event.GetKey()
+        if code == ord('\n'):
+            line = self.GetCurrentLine() - 1
+            if line >= 0:
+                text = self.GetLine(line)
+                for index, ch in enumerate(text):
+                    if ch not in ' \t':
+                        self.ReplaceSelection(text[:index])
+                        break
     def on_update_ui(self, event):
         wx.CallAfter(self.update_line_numbers)
     def update_line_numbers(self):
