@@ -1,29 +1,29 @@
-#macro match_hardware(a, b, location) {
-    IFE A a
-    IFE B b
-    SET [location] I
-}
-
-JSR enumerate_hardware
-BRK
-
-:enumerate_hardware
-HWN I
-:.loop
-IFE I 0
-SET PC .done
-SUB I 1
-HWQ I
-match_hardware(0xf615, 0x7349, lem)
-match_hardware(0x7406, 0x30cf, keyboard)
-match_hardware(0xb402, 0x12d0, clock)
-SET PC .loop
-:.done
-SET PC POP
-
-:lem
-DAT -1
-:keyboard
-DAT -1
-:clock
-DAT -1
+#macro match_hardware(a, b, location) {
+    IFE A a
+    IFE B b
+    SET [location] I
+}
+
+JSR enumerate_hardware
+BRK
+
+:enumerate_hardware
+HWN I
+:.loop
+IFE I 0
+SET PC .done
+SUB I 1
+HWQ I
+match_hardware(0xf615, 0x7349, lem)
+match_hardware(0x7406, 0x30cf, keyboard)
+match_hardware(0xb402, 0x12d0, clock)
+SET PC .loop
+:.done
+SET PC POP
+
+:lem
+DAT -1
+:keyboard
+DAT -1
+:clock
+DAT -1

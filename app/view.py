@@ -501,7 +501,7 @@ class Frame(wx.Frame):
         if self.path is None:
             self.on_save_as(None)
             return
-        with open(self.path, 'w') as fp:
+        with open(self.path, 'wb') as fp:
             fp.write(self.editor.GetText())
         self.dirty = False
     def on_save_as(self, event):
@@ -511,7 +511,7 @@ class Frame(wx.Frame):
         dialog.Destroy()
         if result == wx.ID_OK:
             path = dialog.GetPath()
-            with open(path, 'w') as fp:
+            with open(path, 'wb') as fp:
                 fp.write(self.editor.GetText())
             self.path = path
             self.dirty = False
