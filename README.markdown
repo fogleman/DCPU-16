@@ -20,6 +20,13 @@ http://static.michaelfogleman.com/static/dcpu16-setup.exe
 ### Assembler Features
 
 ```dasm
+; Macros
+#macro BRK { NOP } ; ignore breakpoints
+
+#macro push(x) {
+  SET PUSH x
+}
+
 ; String Literals
 DAT "Here is some text.", 0 ; null-terminated string
 
