@@ -1,0 +1,21 @@
+#macro brk { nop } ; ignore breakpoints
+
+#macro do(x, y, z) { ; silly macro to "do" anything
+    x y, z
+}
+
+#macro push(x) { ; test use of reserved words
+    SET PUSH x
+}
+
+#macro pop(x) {
+    do(SET, x, POP)
+}
+
+SET A 0x0001 ; do some normal stuff
+SET B 2
+push(A) ; call some macros
+push(B)
+pop(X)
+pop(Y)
+do(SET, A, B)
