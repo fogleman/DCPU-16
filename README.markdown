@@ -4,6 +4,8 @@
 
 http://static.michaelfogleman.com/static/dcpu16-setup.exe
 
+Last Updated: 2012-04-30
+
 ### Implemented Specifications
 
 - DCPU-16 1.7: http://pastebin.com/raw.php?i=Q4JvQvnM
@@ -20,7 +22,7 @@ http://static.michaelfogleman.com/static/dcpu16-setup.exe
 ### Assembler Features
 
 ```dasm
-; Macros
+; Macros (can be nested)
 #macro BRK { NOP } ; ignore breakpoints
 
 #macro push(x) {
@@ -29,6 +31,9 @@ http://static.michaelfogleman.com/static/dcpu16-setup.exe
 
 ; String Literals
 DAT "Here is some text.", 0 ; null-terminated string
+
+; Reserve block of memory
+RESERVE 0xff
 
 ; Character Literals
 SET A 'a' ; A = 0x61
@@ -70,7 +75,7 @@ SET A [SP] ; equivalent to PEEK
 
 ### Upgrading from v1.1
 
-Quickly get up and running for most programs using this code at the beginning.
+Quickly get up and running for most programs using this code at the beginning. Note that you should really enumerate devices instead of assuming a certain device is at a certain index.
 
 ```dasm
 ; map screen
