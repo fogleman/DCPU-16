@@ -69,6 +69,8 @@ tokens = [
     'COMMA',
     'LBRACE',
     'RBRACE',
+    'LBRACK',
+    'RBRACK',
     'LPAREN',
     'RPAREN',
     'STRING',
@@ -83,11 +85,13 @@ t_MACRO = r'\#macro'
 t_COMMA = r'\,'
 t_LBRACE = r'\{'
 t_RBRACE = r'\}'
+t_LBRACK = r'\['
+t_RBRACK = r'\]'
 t_LPAREN = r'\('
 t_RPAREN = r'\)'
 t_STRING = r'"[^"]*"'
 t_ID = r'[_a-zA-Z][_a-zA-Z0-9]*'
-t_OTHER = r'[^_a-zA-Z\s\;\,\{\}\(\)\"\#][^\s\;\,\{\}\(\)\"\#]*'
+t_OTHER = r'[^_a-zA-Z\s\;\,\{\}\[\]\(\)\"\#][^\s\;\,\{\}\[\]\(\)\"\#]*'
 
 def t_newline(t):
     r'\n+'
@@ -164,7 +168,9 @@ def p_argument2(t):
     t[0] = (t[1],)
 
 def p_argument_token(t):
-    '''argument_token : STRING
+    '''argument_token : LBRACK
+                      | RBRACK
+                      | STRING
                       | ID
                       | OTHER'''
     t[0] = Token(t.lineno(1), t[1])
@@ -179,6 +185,8 @@ def p_tokens2(t):
 
 def p_token(t):
     '''token : COMMA
+             | LBRACK
+             | RBRACK
              | LPAREN
              | RPAREN
              | STRING

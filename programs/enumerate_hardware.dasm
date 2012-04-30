@@ -1,0 +1,29 @@
+JSR enumerate_hardware
+BRK
+
+#macro check_hardware_id(a, b, location) {
+    IFE A a
+    IFE B b
+    SET [location] I
+}
+
+:enumerate_hardware
+HWN I
+:.loop
+IFE I 0
+SET PC .done
+SUB I 1
+HWQ I
+check_hardware_id(0xf615, 0x7349, lem)
+check_hardware_id(0x7406, 0x30cf, keyboard)
+check_hardware_id(0xb402, 0x12d0, clock)
+SET PC .loop
+:.done
+SET PC, POP
+
+:lem
+DAT -1
+:keyboard
+DAT -1
+:clock
+DAT -1
