@@ -6,8 +6,8 @@ class Program(object):
     def __init__(self, items):
         self.items = items
     def get_lookup(self):
-        return dict((x.name, x) for x in self.items
-            if isinstance(x, MacroDefinition))
+        return dict((item.name, item) for item in self.items
+            if isinstance(item, MacroDefinition))
     def preprocess(self, lookup):
         items = []
         count = 0
@@ -45,8 +45,12 @@ class MacroDefinition(object):
         if len(arguments) != len(self.parameters):
             raise Exception('Incorrect number of arguments for macro: %s'
                 % self.name)
-        lookup = dict((a, b) for a, b in zip(self.parameters, arguments))
-        return [lookup.get(x.name, x).name for x in self.tokens]
+        lookup = dict(zip(self.parameters, arguments))
+        tokens = []
+        for token in self.tokens:
+            tokens.extend(lookup.get(token.name, [token]))
+        result = [token.name for token in tokens]
+        return result
 
 class MacroCall(object):
     def __init__(self, line, name, arguments):
@@ -151,10 +155,18 @@ def p_arguments2(t):
     'arguments : argument'
     t[0] = (t[1],)
 
-def p_argument(t):
-    '''argument : STRING
-                | ID
-                | OTHER'''
+def p_argument1(t):
+    'argument : argument_token argument'
+    t[0] = (t[1],) + t[2]
+
+def p_argument2(t):
+    'argument : argument_token'
+    t[0] = (t[1],)
+
+def p_argument_token(t):
+    '''argument_token : STRING
+                      | ID
+                      | OTHER'''
     t[0] = Token(t.lineno(1), t[1])
 
 def p_tokens1(t):
