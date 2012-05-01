@@ -539,8 +539,10 @@ class Frame(wx.Frame):
         dialog.Destroy()
     def on_undo(self, event):
         self.editor.Undo()
+        self.dirty = self.editor.GetModify()
     def on_redo(self, event):
         self.editor.Redo()
+        self.dirty = self.editor.GetModify()
     def on_cut(self, event):
         self.editor.Cut()
     def on_copy(self, event):

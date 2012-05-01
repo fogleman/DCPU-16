@@ -277,6 +277,7 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
     short ssrc = (short)(unsigned short)src;
     short sram = (short)(unsigned short)ram;
     int quo;
+    int mod;
     if (SKIP) {
         if (CONDITIONAL(opcode)) {
             CYCLES(1);
@@ -292,23 +293,27 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
             CYCLES(1);
             break;
         case ADD:
-            RAM(dst) = divmod(ram + src, &quo);
+            mod = divmod(ram + src, &quo);
             EX = quo ? 1 : 0;
+            RAM(dst) = mod;
             CYCLES(2);
             break;
         case SUB:
-            RAM(dst) = divmod(ram - src, &quo);
+            mod = divmod(ram - src, &quo);
             EX = quo ? MAX_VALUE : 0;
+            RAM(dst) = mod;
             CYCLES(2);
             break;
         case MUL:
-            RAM(dst) = divmod(ram * src, &quo);
+            mod = divmod(ram * src, &quo);
             EX = quo % SIZE;
+            RAM(dst) = mod;
             CYCLES(2);
             break;
         case MLI:
-            RAM(dst) = divmod(sram * ssrc, &quo);
+            mod = divmod(sram * ssrc, &quo);
             EX = quo % SIZE;
+            RAM(dst) = mod;
             CYCLES(2);
             break;
         case DIV:
@@ -411,13 +416,15 @@ void basic_instruction(Emulator *emulator, unsigned char opcode,
             CYCLES(2 + SKIP);
             break;
         case ADX:
-            RAM(dst) = divmod(ram + src + EX, &quo);
+            mod = divmod(ram + src + EX, &quo);
             EX = quo ? 1 : 0;
+            RAM(dst) = mod;
             CYCLES(3);
             break;
         case SUX:
-            RAM(dst) = divmod(ram - src + EX, &quo);
+            mod = divmod(ram - src + EX, &quo);
             EX = quo ? MAX_VALUE : 0;
+            RAM(dst) = mod;
             CYCLES(3);
             break;
         case STI:
