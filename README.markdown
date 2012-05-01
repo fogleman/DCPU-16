@@ -4,7 +4,7 @@
 
 http://static.michaelfogleman.com/static/dcpu16-setup.exe
 
-Last Updated: 2012-04-30
+Last Updated: 2012-05-01
 
 ### Implemented Specifications
 
