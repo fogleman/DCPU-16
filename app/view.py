@@ -422,6 +422,7 @@ class Frame(wx.Frame):
         toolbar.SetToolBitmapSize((18, 18))
         tool_item(self, toolbar, 'New', self.on_new, icons.page)
         tool_item(self, toolbar, 'Open', self.on_open, icons.folder_page)
+        tool_item(self, toolbar, 'Save', self.on_save, icons.disk)
         toolbar.AddSeparator()
         tool_item(self, toolbar, 'Assemble', self.on_assemble, icons.basket_put)
         tool_item(self, toolbar, 'Start', self.on_start, icons.control_play)
