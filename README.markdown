@@ -19,6 +19,8 @@ Last Updated: 2012-04-30
 
 ![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/syntax.png)
 
+![](https://raw.github.com/fogleman/DCPU-16/master/screenshots/nyan.gif)
+
 ### Assembler Features
 
 ```dasm
