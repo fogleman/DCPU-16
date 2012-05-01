@@ -1,0 +1,26 @@
+; configure interrupt handler
+IAS interrupt_handler
+
+; subscribe to keyboard interrupts
+SET A 3
+SET B 1
+HWI 1
+
+; busy loop
+:loop
+SET PC loop
+
+; our interrupt handler
+:interrupt_handler
+SET A 1
+HWI 1 ; get next character in buffer
+IFE C 0
+    RFI ; buffer is empty
+SET PUSH C ; call keyboard handler
+JSR keyboard_handler
+SET 0 POP ; clean up stack
+RFI
+
+:keyboard_handler
+SET Z PICK 1 ; Z is now the character
+SET PC POP
