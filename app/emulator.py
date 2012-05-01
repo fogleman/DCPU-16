@@ -25,15 +25,20 @@ class cEmulator(Structure):
         ('clock_message', c_ushort),
     ]
 
+FIELDS = set(x[0] for x in cEmulator._fields_)
+
 class Emulator(object):
     def __init__(self):
-        self.attrs = set(x[0] for x in cEmulator._fields_)
         self.emulator = cEmulator()
         self.reset()
     def __getattr__(self, name):
-        if name in self.attrs:
+        if name in FIELDS:
             return getattr(self.emulator, name)
         return super(Emulator, self).__getattr__(name)
+    def __setattr__(self, name, value):
+        if name in FIELDS:
+            return setattr(self.emulator, name, value)
+        return super(Emulator, self).__setattr__(name, value)
     def reset(self):
         dll.reset(byref(self.emulator))
     def load(self, program):

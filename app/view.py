@@ -605,6 +605,7 @@ class Frame(wx.Frame):
             self.emu.n_cycles(cycles)
             if self.emu.halt:
                 self.running = False
+                self.emu.halt = 0
                 self.refresh_debug_info()
     def refresh(self):
         self.canvas.Refresh()
