@@ -40,6 +40,7 @@ SPECIAL_OPCODES = {
     'INT': 0x08,
     'IAG': 0x09,
     'IAS': 0x0a,
+    'RFI': 0x0b,
     'IAQ': 0x0c,
     'HWN': 0x10,
     'HWQ': 0x11,
@@ -91,6 +92,14 @@ REV_SRC_CODES = dict((v, k) for k, v in SRC_CODES.items())
 def pretty_value(x):
     return '%d' % x if x <= 0xff else '0x%04x' % x
 
+def do_lookup(lookup, word):
+    if isinstance(word, basestring):
+        try:
+            word = lookup[word]
+        except KeyError:
+            raise Exception('Undefined symbol: "%s"' % word)
+    return word
+
 # Classes
 class Program(object):
     def __init__(self, instructions):
@@ -135,7 +144,7 @@ class Data(object):
         self.offset = None
         self.conditional = False
     def assemble(self, lookup):
-        return [lookup.get(x, x) for x in self.data]
+        return [do_lookup(lookup, word) for word in self.data]
     def pretty(self):
         data = ', '.join('"%s"' % x if isinstance(x, str) else pretty_value(x)
             for x in self.data)
@@ -224,7 +233,7 @@ class Operand(object):
         self.word = word
         self.size = int(word is not None)
     def assemble(self, lookup):
-        return [] if self.word is None else [lookup.get(self.word, self.word)]
+        return [] if self.word is None else [do_lookup(lookup, self.word)]
     def pretty(self):
         x = self.value
         word = self.word
