@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="DCPU-16 Emulator : DCPU-16 Emulator written in Python and C." />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>DCPU-16 Emulator</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/fogleman/DCPU-16">View on GitHub</a>
+
+          <h1 id="project_title">DCPU-16 Emulator</h1>
+          <h2 id="project_tagline">DCPU-16 Emulator written in Python and C.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/fogleman/DCPU-16/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/fogleman/DCPU-16/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h2>DCPU-16 Emulator v1.7</h2>
+
+<h3>Download (Windows Installer)</h3>
+
+<p>See the downloads page:</p>
+
+<p><a href="https://github.com/fogleman/DCPU-16/downloads">https://github.com/fogleman/DCPU-16/downloads</a></p>
+
+<h3>Implemented Specifications</h3>
+
+<ul>
+<li>DCPU-16 1.7: <a href="http://pastebin.com/raw.php?i=Q4JvQvnM">http://pastebin.com/raw.php?i=Q4JvQvnM</a>
+</li>
+<li>LEM1802: <a href="http://dcpu.com/highnerd/rc_1/lem1802.txt">http://dcpu.com/highnerd/rc_1/lem1802.txt</a>
+</li>
+<li>Generic Keyboard: <a href="http://dcpu.com/highnerd/rc_1/keyboard.txt">http://dcpu.com/highnerd/rc_1/keyboard.txt</a>
+</li>
+<li>Generic Clock: <a href="http://dcpu.com/highnerd/rc_1/clock.txt">http://dcpu.com/highnerd/rc_1/clock.txt</a>
+</li>
+</ul><h3>Screenshots</h3>
+
+<p><img src="https://raw.github.com/fogleman/DCPU-16/master/screenshots/debug.png" alt=""></p>
+
+<p><img src="https://raw.github.com/fogleman/DCPU-16/master/screenshots/syntax.png" alt=""></p>
+
+<p><img src="https://raw.github.com/fogleman/DCPU-16/master/screenshots/nyan.gif" alt=""></p>
+
+<h3>Assembler Features</h3>
+
+<div class="highlight">
+<pre><span class="c">; Macros (can be nested)</span>
+<span class="err">#macro</span> <span class="err">BRK</span> <span class="err">{</span> <span class="err">NOP</span> <span class="err">}</span> <span class="c">; ignore breakpoints</span>
+
+<span class="err">#macro</span> <span class="err">push(x)</span> <span class="err">{</span>
+  <span class="nf">SET</span> <span class="nv">PUSH</span> <span class="nv">x</span>
+<span class="err">}</span>
+
+<span class="c">; String Literals</span>
+<span class="nf">DAT</span> <span class="s">"Here is some text."</span><span class="p">,</span> <span class="mi">0</span> <span class="c">; null-terminated string</span>
+
+<span class="c">; Reserve block of memory</span>
+<span class="err">RESERVE</span> <span class="err">0xff</span>
+
+<span class="c">; Character Literals</span>
+<span class="nf">SET</span> <span class="nv">A</span> <span class="err">'</span><span class="nv">a</span><span class="err">'</span> <span class="c">; A = 0x61</span>
+<span class="nf">SET</span> <span class="nv">B</span> <span class="err">'</span><span class="nv">A</span><span class="err">'</span> <span class="c">; B = 0x41</span>
+
+<span class="c">; Negative Numbers</span>
+<span class="nf">SET</span> <span class="nv">A</span> <span class="err">-</span><span class="mi">1</span>    <span class="c">; A = 0xffff</span>
+<span class="nf">SET</span> <span class="nv">B</span> <span class="err">-</span><span class="mi">0xff</span> <span class="c">; B = 0xff01</span>
+
+<span class="c">; Breakpoints</span>
+<span class="err">BRK</span>
+
+<span class="c">; Opcode Aliases</span>
+<span class="nf">SET</span> <span class="nv">A</span> <span class="nv">POP</span>
+<span class="nf">SET</span> <span class="nv">A</span> <span class="p">[</span><span class="nv">SP</span><span class="p">++]</span> <span class="c">; equivalent to POP</span>
+
+<span class="nf">SET</span> <span class="nv">PUSH</span> <span class="nv">A</span>
+<span class="nf">SET</span> <span class="p">[</span><span class="err">--</span><span class="nv">SP</span><span class="p">]</span> <span class="nv">A</span> <span class="c">; equivalent to PUSH</span>
+
+<span class="nf">SET</span> <span class="nv">A</span> <span class="nl">PICK</span> <span class="mi">1</span>
+<span class="nf">SET</span> <span class="nv">A</span> <span class="p">[</span><span class="nv">SP</span> <span class="p">+</span> <span class="mi">1</span><span class="p">]</span> <span class="c">; equivalent to PICK 1</span>
+
+<span class="nf">SET</span> <span class="nv">A</span> <span class="nv">PEEK</span>
+<span class="nf">SET</span> <span class="nv">A</span> <span class="p">[</span><span class="nv">SP</span><span class="p">]</span> <span class="c">; equivalent to PEEK</span>
+
+<span class="c">; Local Labels</span>
+<span class="nl">:prefix</span>
+  <span class="nf">SET</span> <span class="nv">A</span> <span class="mi">10</span>
+<span class="nl">:.loop</span> <span class="c">; becomes prefix.loop</span>
+  <span class="nf">SUB</span> <span class="nv">A</span> <span class="mi">1</span>
+  <span class="nf">IFE</span> <span class="nv">A</span> <span class="mi">0</span>
+    <span class="nf">SET</span> <span class="nv">PC</span> <span class="nl">.done</span>
+  <span class="nf">SET</span> <span class="nv">PC</span> <span class="nl">.loop</span>
+<span class="nl">:.done</span> <span class="c">; becomes prefix.done</span>
+
+<span class="c">; Fixed Labels</span>
+<span class="nl">:screen</span> <span class="err">@</span> <span class="err">0x8000</span>
+</pre>
+</div>
+
+
+<h3>Hardware Enumeration</h3>
+
+<p>The following code enumerates available hardware devices and populates the variables lem, keyboard and clock with their respective hardware identifiers.</p>
+
+<div class="highlight">
+<pre><span class="err">#macro</span> <span class="err">match_hardware(a,</span> <span class="err">b,</span> <span class="err">location)</span> <span class="err">{</span>
+    <span class="nf">IFE</span> <span class="nv">A</span> <span class="nv">a</span>
+    <span class="nf">IFE</span> <span class="nv">B</span> <span class="nv">b</span>
+    <span class="nf">SET</span> <span class="p">[</span><span class="nl">location</span><span class="p">]</span> <span class="nv">I</span>
+<span class="err">}</span>
+
+<span class="nf">JSR</span> <span class="nl">enumerate_hardware</span>
+
+<span class="c">; now you can use the devices, e.g.</span>
+<span class="nf">SET</span> <span class="nv">A</span> <span class="mi">0</span>
+<span class="nf">SET</span> <span class="nv">B</span> <span class="mi">0x8000</span>
+<span class="err">HWI</span> <span class="err">[lem]</span>
+
+<span class="err">BRK</span>
+
+<span class="nl">:enumerate_hardware</span>
+<span class="err">HWN</span> <span class="err">I</span>
+<span class="nl">:.loop</span>
+<span class="nf">IFE</span> <span class="nv">I</span> <span class="mi">0</span>
+<span class="nf">SET</span> <span class="nv">PC</span> <span class="nl">.done</span>
+<span class="nf">SUB</span> <span class="nv">I</span> <span class="mi">1</span>
+<span class="err">HWQ</span> <span class="err">I</span>
+<span class="err">match_hardware(0xf615,</span> <span class="err">0x7349,</span> <span class="err">lem)</span>
+<span class="err">match_hardware(0x7406,</span> <span class="err">0x30cf,</span> <span class="err">keyboard)</span>
+<span class="err">match_hardware(0xb402,</span> <span class="err">0x12d0,</span> <span class="err">clock)</span>
+<span class="nf">SET</span> <span class="nv">PC</span> <span class="nl">.loop</span>
+<span class="nl">:.done</span>
+<span class="nf">SET</span> <span class="nv">PC</span> <span class="nv">POP</span>
+
+<span class="nl">:lem</span>
+<span class="nf">DAT</span> <span class="err">-</span><span class="mi">1</span>
+<span class="nl">:keyboard</span>
+<span class="nf">DAT</span> <span class="err">-</span><span class="mi">1</span>
+<span class="nl">:clock</span>
+<span class="nf">DAT</span> <span class="err">-</span><span class="mi">1</span>
+</pre>
+</div>
+
+
+<h3>Benchmarks</h3>
+
+<pre><code>Usage: python benchmark.py
+</code></pre>
+
+<p>Run benchmarks on the emulator to test performance.</p>
+
+<p>MacBook Air (1.7 GHz Intel Core i5)</p>
+
+<pre><code>Benchmarking "C" emulator using "programs/life.dasm"...
+Result: 88728989 cycles per second
+</code></pre>
+
+<p>The C implementation could emulate over 800 DCPU-16 processors at their 100 kHz clock rate.</p>
+
+<h3>Pretty Print</h3>
+
+<pre><code>Usage: python assembler.py programs/example.dasm &gt; pretty_output.dasm
+</code></pre>
+
+<p>Assemble and output in pretty format. Shows machine code in comments. Comments from the input file are not retained.</p>
+
+<div class="highlight">
+<pre>    <span class="nf">SET</span> <span class="nv">A</span><span class="p">,</span> <span class="mi">48</span>                   <span class="c">; 7c01 0030</span>
+    <span class="nf">SET</span> <span class="p">[</span><span class="mi">0x1000</span><span class="p">],</span> <span class="mi">32</span>            <span class="c">; 7de1 1000 0020</span>
+    <span class="nf">SUB</span> <span class="nv">A</span><span class="p">,</span> <span class="p">[</span><span class="mi">0x1000</span><span class="p">]</span>             <span class="c">; 7803 1000</span>
+    <span class="nf">IFN</span> <span class="nv">A</span><span class="p">,</span> <span class="mi">16</span>                   <span class="c">; c00d</span>
+        <span class="nf">SET</span> <span class="nv">PC</span><span class="p">,</span> <span class="nl">crash</span>           <span class="c">; 7dc1 001a</span>
+    <span class="nf">SET</span> <span class="nv">I</span><span class="p">,</span> <span class="mi">10</span>                   <span class="c">; a861</span>
+    <span class="nf">SET</span> <span class="nv">A</span><span class="p">,</span> <span class="mi">0x2000</span>               <span class="c">; 7c01 2000</span>
+<span class="nl">:loop</span>
+    <span class="nf">SET</span> <span class="p">[</span><span class="nv">I</span> <span class="p">+</span> <span class="mi">0x2000</span><span class="p">],</span> <span class="p">[</span><span class="nv">A</span><span class="p">]</span>       <span class="c">; 2161 2000</span>
+    <span class="nf">SUB</span> <span class="nv">I</span><span class="p">,</span> <span class="mi">1</span>                    <span class="c">; 8463</span>
+    <span class="nf">IFN</span> <span class="nv">I</span><span class="p">,</span> <span class="mi">0</span>                    <span class="c">; 806d</span>
+        <span class="nf">SET</span> <span class="nv">PC</span><span class="p">,</span> <span class="nl">loop</span>            <span class="c">; 7dc1 000d</span>
+    <span class="nf">SET</span> <span class="nv">X</span><span class="p">,</span> <span class="mi">4</span>                    <span class="c">; 9031</span>
+    <span class="nf">JSR</span> <span class="nl">testsub</span>                 <span class="c">; 7c10 0018</span>
+    <span class="nf">SET</span> <span class="nv">PC</span><span class="p">,</span> <span class="nl">crash</span>               <span class="c">; 7dc1 001a</span>
+<span class="nl">:testsub</span>
+    <span class="nf">SHL</span> <span class="nv">X</span><span class="p">,</span> <span class="mi">4</span>                    <span class="c">; 9037</span>
+    <span class="nf">SET</span> <span class="nv">PC</span><span class="p">,</span> <span class="nv">POP</span>                 <span class="c">; 61c1</span>
+<span class="nl">:crash</span>
+    <span class="nf">SET</span> <span class="nv">PC</span><span class="p">,</span> <span class="nl">crash</span>               <span class="c">; 7dc1 001a</span>
+</pre>
+</div>
+
+
+<h3>Dependencies</h3>
+
+<ul>
+<li>
+<strong>Python 2.5+</strong>: <a href="http://www.python.org/">http://www.python.org/</a>
+</li>
+<li>
+<strong>PLY</strong>: <a href="http://www.dabeaz.com/ply/">http://www.dabeaz.com/ply/</a>
+</li>
+<li>
+<strong>wxPython</strong>: <a href="http://www.wxpython.org/">http://www.wxpython.org/</a>
+</li>
+</ul>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">DCPU-16 Emulator maintained by <a href="https://github.com/fogleman">fogleman</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
