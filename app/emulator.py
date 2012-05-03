@@ -48,6 +48,9 @@ class Emulator(object):
         for index, value in enumerate(program):
             data[index] = value
         dll.load(byref(self.emulator), data, length)
+    def load_raw(self, data):
+        words = [(ord(a) << 8) | ord(b) for a, b in zip(data[::2], data[1::2])]
+        self.load(words)
     def step(self):
         dll.step(byref(self.emulator))
     def n_steps(self, steps):
