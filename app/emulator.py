@@ -54,7 +54,7 @@ class Emulator(object):
         words = [(ord(a) << 8) | ord(b) for a, b in zip(data[::2], data[1::2])]
         self.load(words)
     def step(self):
-        dll.step(byref(self.emulator))
+        dll.do_step(byref(self.emulator))
     def n_steps(self, steps):
         dll.n_steps(byref(self.emulator), steps)
     def n_cycles(self, cycles):
