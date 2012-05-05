@@ -2,7 +2,7 @@ from ctypes import *
 import os
 
 dll = CDLL(os.path.realpath(os.path.join(
-    os.path.basename(__file__), '..', '_emulator')))
+    os.path.dirname(__file__), '..', '_emulator')))
 
 class cEmulator(Structure):
     _fields_ = [
@@ -54,7 +54,7 @@ class Emulator(object):
         words = [(ord(a) << 8) | ord(b) for a, b in zip(data[::2], data[1::2])]
         self.load(words)
     def step(self):
-        dll.step(byref(self.emulator))
+        dll.one_step(byref(self.emulator))
     def n_steps(self, steps):
         dll.n_steps(byref(self.emulator), steps)
     def n_cycles(self, cycles):
