@@ -432,7 +432,7 @@ void do_interrupt(Emulator *emulator) {
     }
 }
 
-void step(Emulator *emulator) {
+static void _step(Emulator *emulator) {
     do {
         unsigned short word = RAM(PC++);
         unsigned char op = word & 0x1f;
@@ -451,9 +451,13 @@ void step(Emulator *emulator) {
     }
 }
 
+void step(Emulator *emulator) {
+    _step(emulator);
+}
+
 void n_steps(Emulator *emulator, unsigned int steps) {
     for (unsigned int i = 0; i < steps; i++) {
-        step(emulator);
+        _step(emulator);
         if (HALT) {
             break;
         }
@@ -463,7 +467,7 @@ void n_steps(Emulator *emulator, unsigned int steps) {
 void n_cycles(Emulator *emulator, unsigned int cycles) {
     unsigned long long int cycle = CYCLE + cycles;
     while (CYCLE < cycle) {
-        step(emulator);
+        _step(emulator);
         if (HALT) {
             break;
         }
