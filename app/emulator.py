@@ -1,7 +1,7 @@
 from ctypes import *
 import os.path
 
-dll = CDLL(os.path.realpath(os.path.join(os.path.basename(__file__),
+dll = CDLL(os.path.realpath(os.path.join(os.path.dirname(__file__),
                                 '..', '_emulator')))
 
 class cEmulator(Structure):
